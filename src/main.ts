@@ -468,8 +468,8 @@ function draw() {
       },
     ],
   });
-  const codomainTree = biggerTree;
-  const domainTree = biggerTree;
+  const codomainTree = simpleTree;
+  const domainTree = simpleTree;
 
   // Build Hasse diagram and layout
   const diagram = buildHasseDiagram(domainTree, codomainTree);
