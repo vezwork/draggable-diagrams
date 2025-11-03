@@ -150,12 +150,7 @@ function drawBgSubtree(
     (n) => morph[n.id] === bgNode.id,
   );
 
-  const {
-    maxX: bgNodeMaxX,
-    maxY: bgNodeMaxY,
-    fgNodeCentersAbove: newFgNodeCentersAbove,
-    fgNodesBelow: newFgNodesBelow,
-  } = drawBgNodeWithDomainStuffInside(
+  const bgNodeR = drawBgNodeWithDomainStuffInside(
     pos,
     bgLyr,
     fgLyr,
@@ -165,7 +160,7 @@ function drawBgSubtree(
     fgNodeCentersAbove,
   );
 
-  fgNodesBelow.push(...newFgNodesBelow);
+  fgNodesBelow.push(...bgNodeR.fgNodesBelow);
 
   // console.log(
   //   "Drawing background node",
@@ -178,8 +173,8 @@ function drawBgSubtree(
   // );
 
   const thisBgNodeCenter: Vec2 = [
-    (pos[0] + bgNodeMaxX) / 2,
-    (pos[1] + bgNodeMaxY) / 2,
+    (pos[0] + bgNodeR.maxX) / 2,
+    (pos[1] + bgNodeR.maxY) / 2,
   ];
 
   // draw line from parent bg node to this bg node
@@ -195,25 +190,25 @@ function drawBgSubtree(
   }
 
   let x = pos[0];
-  let y = bgNodeMaxY + BG_NODE_GAP;
-  let maxX = bgNodeMaxX;
-  let maxY = bgNodeMaxY;
+  let y = bgNodeR.maxY + BG_NODE_GAP;
+  let maxX = bgNodeR.maxX;
+  let maxY = bgNodeR.maxY;
 
   for (const child of bgNode.children) {
-    const result = drawBgSubtree(
+    const childR = drawBgSubtree(
       [x, y],
       bgLyr,
       fgLyr,
       child,
       fgNodesBelow,
       morph,
-      newFgNodeCentersAbove,
+      bgNodeR.fgNodeCentersAbove,
       thisBgNodeCenter,
     );
 
-    x = result.maxX + BG_NODE_GAP;
-    maxX = Math.max(maxX, result.maxX);
-    maxY = Math.max(maxY, result.maxY);
+    x = childR.maxX + BG_NODE_GAP;
+    maxX = Math.max(maxX, childR.maxX);
+    maxY = Math.max(maxY, childR.maxY);
   }
 
   return { maxX, maxY };
@@ -253,12 +248,7 @@ function drawBgNodeWithDomainStuffInside(
   const fgNodesBelow: TreeNode[] = [];
 
   for (const fgNode of fgNodesHere) {
-    const {
-      maxX: childMaxX,
-      maxY: childMaxY,
-      newFgNodeCentersAbove: childFgNodeCentersAbove,
-      fgNodesBelow: childFgNodesBelow,
-    } = drawFgSubtreeInBgNode(
+    const r = drawFgSubtreeInBgNode(
       fgLyr,
       fgNode,
       bgNode.id,
@@ -267,12 +257,12 @@ function drawBgNodeWithDomainStuffInside(
       fgNodeCentersAbove,
     );
 
-    x = Math.max(x, childMaxX + FG_NODE_GAP);
-    maxX = Math.max(maxX, childMaxX);
-    maxY = Math.max(maxY, childMaxY);
+    x = Math.max(x, r.maxX + FG_NODE_GAP);
+    maxX = Math.max(maxX, r.maxX);
+    maxY = Math.max(maxY, r.maxY);
 
-    Object.assign(newFgNodeCentersAbove, childFgNodeCentersAbove);
-    fgNodesBelow.push(...childFgNodesBelow);
+    Object.assign(newFgNodeCentersAbove, r.newFgNodeCentersAbove);
+    fgNodesBelow.push(...r.fgNodesBelow);
   }
 
   maxX += BG_NODE_PADDING;
@@ -341,12 +331,7 @@ function drawFgSubtreeInBgNode(
 
   for (const child of fgNode.children) {
     if (morph[child.id] === bgNodeId) {
-      const {
-        newFgNodeCentersAbove: childNewFgNodeCentersAbove,
-        fgNodesBelow: childFgNodesBelow,
-        maxX: childMaxX,
-        maxY: childMaxY,
-      } = drawFgSubtreeInBgNode(
+      const r = drawFgSubtreeInBgNode(
         fgLyr,
         child,
         bgNodeId,
@@ -354,11 +339,11 @@ function drawFgSubtreeInBgNode(
         v(x, y),
         newFgNodeCentersAbove,
       );
-      Object.assign(newFgNodeCentersAbove, childNewFgNodeCentersAbove);
-      fgNodesBelow.push(...childFgNodesBelow);
-      x = childMaxX + FG_NODE_GAP;
-      maxX = Math.max(maxX, childMaxX);
-      maxY = Math.max(maxY, childMaxY);
+      Object.assign(newFgNodeCentersAbove, r.newFgNodeCentersAbove);
+      fgNodesBelow.push(...r.fgNodesBelow);
+      x = r.maxX + FG_NODE_GAP;
+      maxX = Math.max(maxX, r.maxX);
+      maxY = Math.max(maxY, r.maxY);
     } else {
       fgNodesBelow.push(child);
     }
