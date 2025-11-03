@@ -1,3 +1,5 @@
+import { v, Vec2 } from "./vec2";
+
 /**
  * Properties that return (or directly are) values that don't depend
  * on context state. These can safely be proxied immediately to the
@@ -38,6 +40,7 @@ class LayerImpl {
   constructor(
     private ctx: CanvasRenderingContext2D,
     private drawable: boolean,
+    private localTranslation: Vec2 | null = null,
   ) {
     this.thisProxy = new Proxy<any>(this, {
       get: (target, prop) => {
@@ -63,7 +66,12 @@ class LayerImpl {
         };
       },
 
-      set: (_target, prop, value) => {
+      set: (target, prop, value) => {
+        if (prop in target) {
+          (target as any)[prop] = value;
+          return true;
+        }
+
         // Capture property assignments
         this.commands.push((ctx) => {
           // @ts-ignore
@@ -77,7 +85,14 @@ class LayerImpl {
   private _draw(): void {
     for (const command of this.commands) {
       if (command instanceof LayerImpl) {
-        command._draw();
+        if (command.localTranslation === null) {
+          command._draw();
+        } else {
+          this.ctx.save();
+          this.ctx.translate(...command.localTranslation);
+          command._draw();
+          this.ctx.restore();
+        }
       } else {
         command(this.ctx);
       }
@@ -93,7 +108,8 @@ class LayerImpl {
     }
   }
 
-  place(child: Layer): void {
+  place(child: Layer, localTranslation = v(0)): void {
+    child.localTranslation = localTranslation;
     child.drawable = false;
     this.commands.push(child);
   }

@@ -157,14 +157,8 @@ function drawBgSubtree(
     fgNodesHere,
     fgNodeCentersAbove,
   );
-  bgLyr.do(() => {
-    bgLyr.translate(0, 0);
-    bgLyr.place(bgNodeR.bgLyr);
-  });
-  fgLyr.do(() => {
-    fgLyr.translate(0, 0);
-    fgLyr.place(bgNodeR.fgLyr);
-  });
+  bgLyr.place(bgNodeR.bgLyr);
+  fgLyr.place(bgNodeR.fgLyr);
 
   fgNodesBelow.push(...bgNodeR.fgNodesBelow);
 
@@ -205,14 +199,9 @@ function drawBgSubtree(
       bgNodeR.fgNodeCentersAbove,
       thisBgNodeCenter,
     );
-    bgLyr.do(() => {
-      bgLyr.translate(x, y);
-      bgLyr.place(childR.bgLyr);
-    });
-    fgLyr.do(() => {
-      fgLyr.translate(x, y);
-      fgLyr.place(childR.fgLyr);
-    });
+
+    bgLyr.place(childR.bgLyr, v(x, y));
+    fgLyr.place(childR.fgLyr, v(x, y));
 
     x += childR.w + BG_NODE_GAP;
     maxX = Math.max(maxX, x - BG_NODE_GAP);
@@ -264,10 +253,7 @@ function drawBgNodeWithDomainStuffInside(
       morph,
       fgNodeCentersAbove,
     );
-    fgLyr.do(() => {
-      fgLyr.translate(x, y);
-      fgLyr.place(r.fgLyr);
-    });
+    fgLyr.place(r.fgLyr, v(x, y));
 
     x += r.w + FG_NODE_GAP;
     maxX = Math.max(maxX, x - FG_NODE_GAP);
@@ -397,14 +383,8 @@ function draw() {
 
   for (const morph of testMorphs) {
     const r = drawBgSubtree(codomainTree, [domainTree], morph, {});
-    bgLyr.do(() => {
-      bgLyr.translate(curX, curY);
-      bgLyr.place(r.bgLyr);
-    });
-    fgLyr.do(() => {
-      fgLyr.translate(curX, curY);
-      fgLyr.place(r.fgLyr);
-    });
+    bgLyr.place(r.bgLyr, v(curX, curY));
+    fgLyr.place(r.fgLyr, v(curX, curY));
     curY += r.h + BG_NODE_GAP;
   }
 
@@ -441,7 +421,7 @@ function drawLoop() {
 }
 
 // Start the render loop
-if (true) {
+if (false) {
   drawLoop();
 } else {
   draw();
