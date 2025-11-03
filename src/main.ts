@@ -1,13 +1,7 @@
 import _ from "lodash";
 import { layer, PointOnLayer, type Layer } from "./layer";
-import {
-  codomainTree,
-  domainTree,
-  testMorphs,
-  TreeMorph,
-  TreeNode,
-} from "./trees";
-import { add, distance, v, type Vec2 } from "./vec2";
+import { addParents, allMorphs, TreeMorph, TreeNode } from "./trees";
+import { add, distance, length, sub, v, type Vec2 } from "./vec2";
 import { inXYWH, type XYWH } from "./xywh";
 
 // Canvas setup
@@ -163,7 +157,7 @@ function drawBgSubtree(
   let maxX = bgNodeR.w;
   let maxY = bgNodeR.h;
 
-  const childRootCenters: PointOnLayer[] = [];
+  const childRootCenters: Vec2[] = [];
 
   for (const child of bgNode.children) {
     const childR = drawBgSubtree(child, fgNodesBelow, morph, fgNodeCenters);
@@ -175,20 +169,28 @@ function drawBgSubtree(
     maxX = Math.max(maxX, x - BG_NODE_GAP);
     maxY = Math.max(maxY, y + childR.h);
 
-    childRootCenters.push(childR.rootCenter);
+    childRootCenters.push(bgLyr.resolvePoint(childR.rootCenter));
   }
 
-  const bgNodeOffset = v((maxX - bgNodeR.w) / 2, 0);
+  const bgNodeOffset = v(
+    childRootCenters.length > 0
+      ? (childRootCenters[0][0] +
+          childRootCenters[childRootCenters.length - 1][0]) /
+          2 -
+          bgNodeR.w / 2
+      : (maxX - bgNodeR.w) / 2,
+    0,
+  );
   bgLyr.place(bgNodeR.bgLyr, bgNodeOffset);
   fgLyr.place(bgNodeR.fgLyr, bgNodeOffset);
 
   for (const childRootCenter of childRootCenters) {
     bgLyr.do(() => {
       bgLyr.strokeStyle = "lightgray";
-      bgLyr.lineWidth = 4;
+      bgLyr.lineWidth = 8;
       bgLyr.beginPath();
       bgLyr.moveTo(...bgLyr.resolvePoint(bgNodeR.rootCenter));
-      bgLyr.lineTo(...bgLyr.resolvePoint(childRootCenter));
+      bgLyr.lineTo(...childRootCenter);
       bgLyr.stroke();
     });
   }
@@ -216,8 +218,8 @@ function drawBgNodeWithFgNodesInside(
   fgNodesBelow: TreeNode[];
   rootCenter: PointOnLayer;
 } {
-  const bgLyr = layer(ctx);
-  const fgLyr = layer(ctx);
+  const bgLyrInRect = layer(ctx);
+  const fgLyrInRect = layer(ctx);
 
   let x = BG_NODE_PADDING;
   let y = BG_NODE_PADDING;
@@ -229,7 +231,7 @@ function drawBgNodeWithFgNodesInside(
 
   for (const fgNode of fgNodesHere) {
     const r = drawFgSubtreeInBgNode(fgNode, bgNode.id, morph, fgNodeCenters);
-    fgLyr.place(r.fgLyr, v(x, y));
+    fgLyrInRect.place(r.fgLyr, v(x, y));
 
     x += r.w + FG_NODE_GAP;
     maxX = Math.max(maxX, x - FG_NODE_GAP);
@@ -241,20 +243,30 @@ function drawBgNodeWithFgNodesInside(
   maxX += BG_NODE_PADDING;
   maxY += BG_NODE_PADDING;
 
-  // draw rect background
+  const nodeCenterInRect = v(maxX / 2, maxY / 2);
+  const circleRadius = length(nodeCenterInRect);
+  const nodeCenterInCircle = v(circleRadius, circleRadius);
+  const offset = sub(nodeCenterInCircle, nodeCenterInRect);
+
+  const bgLyr = layer(ctx);
+  const fgLyr = layer(ctx);
+  bgLyr.place(bgLyrInRect, offset);
+  fgLyr.place(fgLyrInRect, offset);
+
   bgLyr.do(() => {
     bgLyr.fillStyle = "lightgray";
-    bgLyr.rect(0, 0, maxX, maxY);
+    bgLyr.beginPath();
+    bgLyr.arc(...nodeCenterInCircle, circleRadius, 0, Math.PI * 2);
     bgLyr.fill();
   });
 
   return {
     bgLyr,
     fgLyr,
-    w: maxX,
-    h: maxY,
+    w: 2 * circleRadius,
+    h: 2 * circleRadius,
     fgNodesBelow,
-    rootCenter: bgLyr.point([maxX / 2, maxY / 2]),
+    rootCenter: bgLyr.point(nodeCenterInCircle),
   };
 }
 
@@ -346,21 +358,54 @@ function draw() {
   lyr.fillStyle = "white";
   lyr.fillRect(0, 0, c.width, c.height);
 
-  let curX = pan[0] + 20;
-  let curY = pan[1] + 20;
+  let curX = 20;
+  let curY = 20;
 
   const bgLyr = layer(ctx);
-  lyr.place(bgLyr);
+  lyr.place(bgLyr, pan);
   const fgLyr = layer(ctx);
-  lyr.place(fgLyr);
+  lyr.place(fgLyr, pan);
 
-  for (const morph of testMorphs) {
+  const simpleTree = addParents({
+    id: "root",
+    children: [
+      { id: "a", children: [] },
+      { id: "b", children: [] },
+    ],
+  });
+  const linearTree = addParents({
+    id: "root",
+    children: [
+      {
+        id: "a",
+        children: [
+          {
+            id: "b",
+            children: [],
+          },
+        ],
+      },
+    ],
+  });
+  const codomainTree = simpleTree;
+  const domainTree = simpleTree;
+  const morphs = allMorphs(domainTree, codomainTree);
+
+  for (const morph of morphs) {
+    let maxH = 0;
     const fgNodeCenters: Record<string, PointOnLayer> = {};
     const r = drawBgSubtree(codomainTree, [domainTree], morph, fgNodeCenters);
     bgLyr.place(r.bgLyr, v(curX, curY));
     fgLyr.place(r.fgLyr, v(curX, curY));
     drawFgNodeEdges(fgLyr, domainTree, fgNodeCenters);
-    curY += r.h + BG_NODE_GAP;
+    // curY += r.h + BG_NODE_GAP;
+    curX += r.w + BG_NODE_GAP;
+    maxH = Math.max(maxH, r.h);
+    if (curX > 500) {
+      curX = 20;
+      curY += maxH + BG_NODE_GAP;
+      maxH = 0;
+    }
   }
 
   // Clickables debug
@@ -396,7 +441,7 @@ function drawLoop() {
 }
 
 // Start the render loop
-if (false) {
+if (true) {
   drawLoop();
 } else {
   draw();

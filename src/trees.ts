@@ -99,3 +99,93 @@ export const testMorphs: TreeMorph[] = [
   // Starting lower
   { d0: "a", d1: "a1", d2: "a1" },
 ];
+
+/**
+ * Find all morphisms from domain tree to codomain tree.
+ * A morphism is a map that preserves the ancestor-descendant partial order:
+ * if x is an ancestor of y in domain, then f(x) must be an ancestor of f(y) in codomain.
+ */
+export function allMorphs(domain: TreeNode, codomain: TreeNode): TreeMorph[] {
+  const domainNodes = nodesInTree(domain);
+  const codomainNodes = nodesInTree(codomain);
+
+  // Build ancestor relationships for both trees
+  const isAncestorInDomain = buildAncestorMap(domain);
+  const isAncestorInCodomain = buildAncestorMap(codomain);
+
+  const results: TreeMorph[] = [];
+  const currentMorph: TreeMorph = {};
+
+  function backtrack(nodeIndex: number) {
+    if (nodeIndex === domainNodes.length) {
+      // We've assigned all domain nodes, save this morphism
+      results.push({ ...currentMorph });
+      return;
+    }
+
+    const domainNode = domainNodes[nodeIndex];
+
+    // Try assigning this domain node to each codomain node
+    for (const codomainNode of codomainNodes) {
+      // Check if this assignment is valid
+      if (isValidAssignment(domainNode, codomainNode)) {
+        currentMorph[domainNode.id] = codomainNode.id;
+        backtrack(nodeIndex + 1);
+        delete currentMorph[domainNode.id];
+      }
+    }
+  }
+
+  function isValidAssignment(domainNode: TreeNode, codomainNode: TreeNode): boolean {
+    // Check against all previously assigned nodes
+    for (const [assignedDomainId, assignedCodomainId] of Object.entries(currentMorph)) {
+      const assignedDomainNode = domainNodes.find(n => n.id === assignedDomainId)!;
+      const assignedCodomainNode = codomainNodes.find(n => n.id === assignedCodomainId)!;
+
+      // If assignedDomainNode is an ancestor of domainNode in domain,
+      // then assignedCodomainNode must be an ancestor of codomainNode in codomain
+      if (isAncestorInDomain(assignedDomainNode, domainNode)) {
+        if (!isAncestorInCodomain(assignedCodomainNode, codomainNode)) {
+          return false;
+        }
+      }
+
+      // If domainNode is an ancestor of assignedDomainNode in domain,
+      // then codomainNode must be an ancestor of assignedCodomainNode in codomain
+      if (isAncestorInDomain(domainNode, assignedDomainNode)) {
+        if (!isAncestorInCodomain(codomainNode, assignedCodomainNode)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  backtrack(0);
+  return results;
+}
+
+/**
+ * Build a function that checks if node1 is an ancestor of node2 (or equal to node2)
+ */
+function buildAncestorMap(root: TreeNode): (ancestor: TreeNode, descendant: TreeNode) => boolean {
+  const ancestorMap = new Map<string, Set<string>>();
+
+  function visit(node: TreeNode, ancestors: string[]) {
+    // A node is its own ancestor (reflexive)
+    const nodeAncestors = new Set([...ancestors, node.id]);
+    ancestorMap.set(node.id, nodeAncestors);
+
+    for (const child of node.children) {
+      visit(child, [...ancestors, node.id]);
+    }
+  }
+
+  visit(root, []);
+
+  return (ancestor: TreeNode, descendant: TreeNode) => {
+    const ancestors = ancestorMap.get(descendant.id);
+    return ancestors ? ancestors.has(ancestor.id) : false;
+  };
+}
