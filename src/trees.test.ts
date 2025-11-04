@@ -1,5 +1,14 @@
-import { expect, it, describe } from "vitest";
-import { addParents, allMorphs, domainTree, codomainTree, testMorphs, covers, buildHasseDiagram, toDot, layoutHasse } from "./trees";
+import { describe, expect, it } from "vitest";
+import {
+  addParents,
+  allMorphs,
+  buildHasseDiagram,
+  codomainTree,
+  covers,
+  domainTree,
+  layoutHasse,
+  testMorphs,
+} from "./trees";
 
 describe("allMorphs", () => {
   it("works on Elliot's example", () => {
@@ -54,8 +63,8 @@ describe("allMorphs", () => {
     const allValidMorphs = allMorphs(domainTree, codomainTree);
 
     for (const testMorph of testMorphs) {
-      const isValid = allValidMorphs.some(m =>
-        JSON.stringify(m) === JSON.stringify(testMorph)
+      const isValid = allValidMorphs.some(
+        (m) => JSON.stringify(m) === JSON.stringify(testMorph),
       );
       expect(isValid).toBe(true);
     }
@@ -64,10 +73,12 @@ describe("allMorphs", () => {
   it("three-node chain to two-node chain has valid morphisms", () => {
     const largeChain = addParents({
       id: "a",
-      children: [{
-        id: "b",
-        children: [{ id: "c", children: [] }],
-      }],
+      children: [
+        {
+          id: "b",
+          children: [{ id: "c", children: [] }],
+        },
+      ],
     });
     const smallerTree = addParents({
       id: "x",
@@ -182,10 +193,12 @@ describe("covers", () => {
   it("works with deeper tree", () => {
     const deepTree = addParents({
       id: "root",
-      children: [{
-        id: "a",
-        children: [{ id: "a1", children: [] }],
-      }],
+      children: [
+        {
+          id: "a",
+          children: [{ id: "a1", children: [] }],
+        },
+      ],
     });
 
     const f = { x: "a", y: "a1" };
@@ -215,8 +228,8 @@ describe("buildHasseDiagram", () => {
     expect(diagram.edges).toHaveLength(1);
 
     // Find which index is which
-    const pMorphIndex = diagram.nodes.findIndex(m => m.x === "p");
-    const cMorphIndex = diagram.nodes.findIndex(m => m.x === "c");
+    const pMorphIndex = diagram.nodes.findIndex((m) => m.x === "p");
+    const cMorphIndex = diagram.nodes.findIndex((m) => m.x === "c");
 
     expect(diagram.edges[0]).toEqual([pMorphIndex, cMorphIndex]);
   });
@@ -242,21 +255,6 @@ describe("buildHasseDiagram", () => {
     }
   });
 
-  it("produces valid DOT output", () => {
-    const tree = addParents({
-      id: "root",
-      children: [{ id: "a", children: [] }],
-    });
-
-    const diagram = buildHasseDiagram(tree, tree);
-    const dot = toDot(diagram);
-
-    expect(dot).toContain("digraph HasseDiagram");
-    expect(dot).toContain("rankdir=BT");
-    expect(dot).toContain("->"); // Has edges
-    expect(dot).toContain("root→"); // Has morphism labels
-  });
-
   it("debug: inspect layout structure", () => {
     const tree = addParents({
       id: "r",
@@ -270,37 +268,21 @@ describe("buildHasseDiagram", () => {
     const layout = layoutHasse(diagram);
 
     console.log("\n=== Dagre Layout Debug ===");
-    console.log(`Layout dimensions: ${layout.width.toFixed(1)} x ${layout.height.toFixed(1)}`);
+    console.log(
+      `Layout dimensions: ${layout.width.toFixed(1)} x ${layout.height.toFixed(1)}`,
+    );
 
     // Sort by y position to see layers
-    const byY = Array.from(layout.positions.entries()).sort((a, b) => a[1].y - b[1].y);
+    const byY = Array.from(layout.positions.entries()).sort(
+      (a, b) => a[1].y - b[1].y,
+    );
 
     for (const [morphIdx, pos] of byY) {
       const morph = diagram.nodes[morphIdx];
-      console.log(`  ${morphIdx} @ (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}): ${JSON.stringify(morph)}`);
+      console.log(
+        `  ${morphIdx} @ (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}): ${JSON.stringify(morph)}`,
+      );
     }
-  });
-
-  it("example: log DOT output for manual inspection", () => {
-    const tree = addParents({
-      id: "r",
-      children: [
-        { id: "a", children: [] },
-        { id: "b", children: [] },
-      ],
-    });
-
-    const diagram = buildHasseDiagram(tree, tree);
-    const dot = toDot(diagram);
-
-    console.log("\n=== Hasse Diagram for tree->tree morphisms ===");
-    console.log(`Morphisms: ${diagram.nodes.length}`);
-    console.log(`Edges: ${diagram.edges.length}`);
-    console.log("\n=== DOT format ===");
-    console.log(dot);
-    console.log("\nYou can visualize this with: echo '<dot>' | dot -Tpng > hasse.png");
-
-    expect(diagram.nodes.length).toBe(11);
   });
 });
 
@@ -319,8 +301,8 @@ describe("layoutHasse", () => {
     expect(layout.positions.size).toBe(2);
 
     // Find which is which
-    const cMorphIdx = diagram.nodes.findIndex(m => m.x === "c");
-    const pMorphIdx = diagram.nodes.findIndex(m => m.x === "p");
+    const cMorphIdx = diagram.nodes.findIndex((m) => m.x === "c");
+    const pMorphIdx = diagram.nodes.findIndex((m) => m.x === "p");
 
     // p morphism should be higher up (smaller y in TB layout with dagre)
     const cPos = layout.positions.get(cMorphIdx)!;

@@ -138,11 +138,20 @@ export function allMorphs(domain: TreeNode, codomain: TreeNode): TreeMorph[] {
     }
   }
 
-  function isValidAssignment(domainNode: TreeNode, codomainNode: TreeNode): boolean {
+  function isValidAssignment(
+    domainNode: TreeNode,
+    codomainNode: TreeNode,
+  ): boolean {
     // Check against all previously assigned nodes
-    for (const [assignedDomainId, assignedCodomainId] of Object.entries(currentMorph)) {
-      const assignedDomainNode = domainNodes.find(n => n.id === assignedDomainId)!;
-      const assignedCodomainNode = codomainNodes.find(n => n.id === assignedCodomainId)!;
+    for (const [assignedDomainId, assignedCodomainId] of Object.entries(
+      currentMorph,
+    )) {
+      const assignedDomainNode = domainNodes.find(
+        (n) => n.id === assignedDomainId,
+      )!;
+      const assignedCodomainNode = codomainNodes.find(
+        (n) => n.id === assignedCodomainId,
+      )!;
 
       // If assignedDomainNode is an ancestor of domainNode in domain,
       // then assignedCodomainNode must be an ancestor of codomainNode in codomain
@@ -171,7 +180,9 @@ export function allMorphs(domain: TreeNode, codomain: TreeNode): TreeMorph[] {
 /**
  * Build a function that checks if node1 is an ancestor of node2 (or equal to node2)
  */
-function buildAncestorMap(root: TreeNode): (ancestor: TreeNode, descendant: TreeNode) => boolean {
+function buildAncestorMap(
+  root: TreeNode,
+): (ancestor: TreeNode, descendant: TreeNode) => boolean {
   const ancestorMap = new Map<string, Set<string>>();
 
   function visit(node: TreeNode, ancestors: string[]) {
@@ -198,9 +209,13 @@ function buildAncestorMap(root: TreeNode): (ancestor: TreeNode, descendant: Tree
  * - They differ at exactly one domain node
  * - At that node, f maps to the parent of where g maps
  */
-export function covers(f: TreeMorph, g: TreeMorph, codomain: TreeNode): boolean {
+export function covers(
+  f: TreeMorph,
+  g: TreeMorph,
+  codomain: TreeNode,
+): string | null {
   const codomainNodes = nodesInTree(codomain);
-  const nodeById = new Map(codomainNodes.map(n => [n.id, n]));
+  const nodeById = new Map(codomainNodes.map((n) => [n.id, n]));
 
   // Find all differences
   const differences: string[] = [];
@@ -212,7 +227,7 @@ export function covers(f: TreeMorph, g: TreeMorph, codomain: TreeNode): boolean 
 
   // Must differ at exactly one node
   if (differences.length !== 1) {
-    return false;
+    return null;
   }
 
   const differingKey = differences[0];
@@ -220,16 +235,19 @@ export function covers(f: TreeMorph, g: TreeMorph, codomain: TreeNode): boolean 
   const gTarget = nodeById.get(g[differingKey]);
 
   if (!fTarget || !gTarget) {
-    return false;
+    return null;
   }
 
-  // f must map to the parent of where g maps
-  return fTarget.id === gTarget.parentId;
+  if (fTarget.id !== gTarget.parentId) {
+    return null;
+  }
+
+  return differingKey;
 }
 
 export type HasseDiagram = {
   nodes: TreeMorph[];
-  edges: [number, number][]; // [from, to] where indices refer to nodes array
+  edges: [number, number, string][]; // [from, to] where indices refer to nodes array
 };
 
 /**
@@ -241,43 +259,21 @@ export function buildHasseDiagram(
   codomain: TreeNode,
 ): HasseDiagram {
   const morphs = allMorphs(domain, codomain);
-  const edges: [number, number][] = [];
+  const edges: [number, number, string][] = [];
 
   // Check all pairs of morphisms for covering relation
   for (let i = 0; i < morphs.length; i++) {
     for (let j = 0; j < morphs.length; j++) {
-      if (i !== j && covers(morphs[i], morphs[j], codomain)) {
-        edges.push([i, j]); // i covers j
+      if (i !== j) {
+        const differingKey = covers(morphs[i], morphs[j], codomain);
+        if (differingKey !== null) {
+          edges.push([i, j, differingKey]); // i covers j
+        }
       }
     }
   }
 
   return { nodes: morphs, edges };
-}
-
-/**
- * Convert a Hasse diagram to Graphviz DOT format.
- * Useful for visualization.
- */
-export function toDot(diagram: HasseDiagram): string {
-  const lines: string[] = ["digraph HasseDiagram {", "  rankdir=BT;"];
-
-  // Add nodes with labels
-  for (let i = 0; i < diagram.nodes.length; i++) {
-    const morph = diagram.nodes[i];
-    const label = Object.entries(morph)
-      .map(([k, v]) => `${k}→${v}`)
-      .join("\\n");
-    lines.push(`  n${i} [label="${label}"];`);
-  }
-
-  // Add edges
-  for (const [from, to] of diagram.edges) {
-    lines.push(`  n${to} -> n${from};`); // to -> from because edges go up in Hasse
-  }
-
-  lines.push("}");
-  return lines.join("\n");
 }
 
 export type HasseLayout = {
@@ -298,8 +294,8 @@ export function layoutHasse(diagram: HasseDiagram): HasseLayout {
   // Configure graph layout
   g.setGraph({
     rankdir: "TB", // Top to bottom (maximal morphisms at top)
-    nodesep: 100,  // Horizontal separation between nodes
-    ranksep: 150,  // Vertical separation between ranks
+    nodesep: 100, // Horizontal separation between nodes
+    ranksep: 150, // Vertical separation between ranks
   });
 
   // Default to set node labels
@@ -320,8 +316,10 @@ export function layoutHasse(diagram: HasseDiagram): HasseLayout {
 
   // Extract positions
   const positions = new Map<number, { x: number; y: number }>();
-  let minX = Infinity, maxX = -Infinity;
-  let minY = Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    maxX = -Infinity;
+  let minY = Infinity,
+    maxY = -Infinity;
 
   for (let i = 0; i < diagram.nodes.length; i++) {
     const node = g.node(i.toString());
