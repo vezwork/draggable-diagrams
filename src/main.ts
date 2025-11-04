@@ -8,8 +8,8 @@ import {
   TreeMorph,
   TreeNode,
 } from "./trees";
-import { assertNever } from "./utils";
-import { add, distance, length, sub, v, type Vec2 } from "./vec2";
+import { assertNever, clamp } from "./utils";
+import { add, dot, length, normalize, sub, v, type Vec2 } from "./vec2";
 import { inXYWH, type XYWH } from "./xywh";
 
 // # Shape system
@@ -286,22 +286,13 @@ const cContainer = document.getElementById("c-container") as HTMLDivElement;
 const ctx = c.getContext("2d")!;
 
 // Pan state
-let pan: Vec2 = [40, 40];
+let pan: Vec2 = [80, 80];
 
 // Debug state
 let showClickablesDebug = false;
 
 // Interaction state machine
-type InteractionState =
-  | { type: "not-dragging" }
-  // if we're dragging, the drag may be "unconfirmed" – not sure if
-  // it's a drag or a click (save the click callback for later)
-  | {
-      type: "unconfirmed";
-      startPos: Vec2;
-      callback: (() => void) | undefined;
-    }
-  | { type: "confirmed"; isPan: boolean; pointerType: string };
+type InteractionState = { type: "not-dragging" } | { type: "dragging" };
 
 let ix: InteractionState = { type: "not-dragging" };
 
@@ -312,18 +303,21 @@ let pointerType: string = "mouse";
 
 const updateMouse = (e: PointerEvent) => {
   // clientX/Y works better than offsetX/Y for Chrome/Safari compatibility.
-  const dragOffset =
-    ix.type === "confirmed" && pointerType === "touch" ? 50 : 0;
+  // const dragOffset =
+  //   ix.type === "confirmed" && pointerType === "touch" ? 50 : 0;
   mouseX = e.clientX;
-  mouseY = e.clientY - dragOffset;
+  // mouseY = e.clientY - dragOffset;
+  mouseY = e.clientY;
   pointerType = e.pointerType;
 };
 
 // Clickable tracking (for future use)
 let _clickables: {
   xywh: XYWH;
-  callback: () => void;
+  onClick: () => void;
 }[] = [];
+
+let _onPointerUps: (() => void)[] = [];
 
 const hoveredClickable = () => {
   return _clickables.find(({ xywh }) => inXYWH(mouseX, mouseY, xywh));
@@ -344,59 +338,70 @@ window.addEventListener("keydown", (e) => {
 c.addEventListener("pointermove", (e) => {
   updateMouse(e);
 
-  if (ix.type === "unconfirmed") {
-    if (distance(ix.startPos, [e.clientX, e.clientY]) > 4) {
-      if (ix.callback) {
-        ix.callback();
-        ix = { type: "confirmed", isPan: false, pointerType };
-      } else {
-        ix = { type: "confirmed", isPan: true, pointerType };
-      }
-    }
-  }
+  // if (ix.type === "unconfirmed") {
+  //   if (distance(ix.startPos, [e.clientX, e.clientY]) > 4) {
+  //     if (ix.callback) {
+  //       ix.callback();
+  //       ix = { type: "confirmed", isPan: false, pointerType };
+  //     } else {
+  //       ix = { type: "confirmed", isPan: true, pointerType };
+  //     }
+  //   }
+  // }
 
-  if (ix.type === "confirmed" && ix.isPan) {
-    pan = add(pan, [e.movementX, e.movementY]);
-  }
+  // if (ix.type === "confirmed" && ix.isPan) {
+  //   pan = add(pan, [e.movementX, e.movementY]);
+  // }
 });
 
 c.addEventListener("pointerdown", (e) => {
   updateMouse(e);
 
-  const callback = hoveredClickable()?.callback;
-  ix = { type: "unconfirmed", startPos: [mouseX, mouseY], callback };
+  const clickable = hoveredClickable();
+  if (clickable) {
+    clickable.onClick();
+    ix = { type: "dragging" };
+  }
+  // const callback = hoveredClickable()?.callback;
+  // ix = { type: "unconfirmed", startPos: [mouseX, mouseY], callback };
 });
 
 c.addEventListener("pointerup", (e) => {
   updateMouse(e);
 
-  if (ix.type === "unconfirmed") {
-    // a click!
-    if (ix.callback) {
-      ix.callback();
-    }
-  } else if (ix.type === "confirmed") {
-    if (!ix.isPan) {
-      // a drag!
-      const callback = hoveredClickable()?.callback;
-      if (callback) {
-        callback();
-      }
-    }
-    // end of a pan or drag; it's all good
-  }
+  // if (ix.type === "unconfirmed") {
+  //   // a click!
+  //   if (ix.callback) {
+  //     ix.callback();
+  //   }
+  // } else if (ix.type === "confirmed") {
+  //   if (!ix.isPan) {
+  //     // a drag!
+  //     const callback = hoveredClickable()?.callback;
+  //     if (callback) {
+  //       callback();
+  //     }
+  //   }
+  //   // end of a pan or drag; it's all good
+  // }
+
+  _onPointerUps.forEach((f) => f());
+
   ix = { type: "not-dragging" };
 });
 
 // Helper to add clickable region
-const addClickHandler = (xywh: XYWH, callback: () => void) => {
-  _clickables.push({ xywh, callback });
+const addClickHandler = (xywh: XYWH, onClick: () => void) => {
+  _clickables.push({ xywh, onClick });
+};
+const addPointerUpHandler = (onUp: () => void) => {
+  _onPointerUps.push(onUp);
 };
 
-const BG_NODE_PADDING = 5;
-const BG_NODE_GAP = 20;
-const FG_NODE_SIZE = 20;
-const FG_NODE_GAP = 10;
+const BG_NODE_PADDING = 10;
+const BG_NODE_GAP = 40;
+const FG_NODE_SIZE = 40;
+const FG_NODE_GAP = 20;
 
 function drawBgTree(
   /** The background (codomain) node to draw */
@@ -419,7 +424,7 @@ function drawBgSubtree(
   /** The background (codomain) node to draw */
   bgNode: TreeNode,
   /** All foreground (domain) nodes that are still looking for a
-   * home, here or elsewhere */
+   * home, here or elsewhere, TODO: in left-to-right order */
   fgNodes: TreeNode[],
   morph: TreeMorph,
   /** An mutable record of where foreground nodes centers */
@@ -759,6 +764,7 @@ let selectedNodeId: string | null = null;
 function draw() {
   // Reset clickables at the start of each frame
   _clickables = [];
+  _onPointerUps = [];
 
   // Create main layer
   const lyr = layer(ctx);
@@ -779,8 +785,6 @@ function draw() {
   // const aBefore = getNode(rBefore.fgGrp, nodeId).center;
   // const aAfter = getNode(rAfter.fgGrp, nodeId).center;
 
-  // const mouseInLyrPan = sub(v(mouseX, mouseY), pan);
-
   // // now t goes from 0 to 1 as mouseInLyrPan goes from aBefore to aAfter
   // // (clamped, using a dot product)
   // const totalVec = sub(aAfter, aBefore);
@@ -800,32 +804,16 @@ function draw() {
   // drawShape(lyrPan, bgGrpLerp);
   // drawShape(lyrPan, fgGrpLerp);
 
-  const drawnTree = drawnTrees[curMorphIdx];
-  drawShape(lyrPan, drawnTree.bgGrp);
-  drawShape(lyrPan, drawnTree.fgGrp);
+  const curDrawnTree = drawnTrees[curMorphIdx];
 
-  for (const node of nodesInTree(codomainTree)) {
-    const fgNode = getNode(drawnTree.fgGrp, node.id);
-    const bbox: XYWH = [
-      ...sub(add(pan, fgNode.center), v(FG_NODE_SIZE / 2)),
-      FG_NODE_SIZE,
-      FG_NODE_SIZE,
-    ];
-    if (node.id === selectedNodeId || inXYWH(mouseX, mouseY, bbox)) {
-      lyrPan.do(() => {
-        lyrPan.beginPath();
-        lyrPan.arc(...fgNode.center, FG_NODE_SIZE / 2, 0, Math.PI * 2);
-        lyrPan.fillStyle = "rgba(128,128,255)";
-        lyrPan.fill();
-      });
-    }
-    addClickHandler(bbox, () => {
-      selectedNodeId = node.id;
-    });
-  }
+  const mouseInLyrPan = sub(v(mouseX, mouseY), pan);
 
+  let drewSomething = false;
   if (selectedNodeId) {
-    const selectedNode = getNode(drawnTree.fgGrp, selectedNodeId);
+    addPointerUpHandler(() => {
+      selectedNodeId = null;
+    });
+    const selectedNode = getNode(curDrawnTree.fgGrp, selectedNodeId);
     const adjMorphIdxes = [
       ...hasseDiagram.edges
         .filter(
@@ -840,26 +828,100 @@ function draw() {
         )
         .map(([from]) => from),
     ];
-    for (const adjMorphIdx of adjMorphIdxes) {
+    const toMouse = normalize(sub(mouseInLyrPan, selectedNode.center));
+    // which adjacent morphism maximizes the dot product with toMouse?
+    const adjMorphDots = adjMorphIdxes.map((adjMorphIdx) => {
       const adjDrawn = drawnTrees[adjMorphIdx];
-      const fgNode = getNode(adjDrawn.fgGrp, selectedNodeId);
-      lyrPan.do(() => {
-        lyrPan.beginPath();
-        lyrPan.arc(...fgNode.center, FG_NODE_SIZE / 2, 0, Math.PI * 2);
-        lyrPan.strokeStyle = "rgba(128,128,255)";
-        lyrPan.lineWidth = 2;
-        lyrPan.moveTo(...selectedNode.center);
-        lyrPan.lineTo(...fgNode.center);
-        lyrPan.stroke();
-      });
+      const adjNode = getNode(adjDrawn.fgGrp, selectedNodeId!);
+      const toAdjNode = normalize(sub(adjNode.center, selectedNode.center));
+      return {
+        adjMorphIdx,
+        dot: dot(toMouse, toAdjNode),
+      };
+    });
+    const bestAdjMorphIdx = _.maxBy(
+      adjMorphDots.filter(({ dot }) => dot > 0.5),
+      "dot",
+    )?.adjMorphIdx;
+
+    if (bestAdjMorphIdx !== undefined) {
+      const adjDrawn = drawnTrees[bestAdjMorphIdx];
+      const adjNode = getNode(adjDrawn.fgGrp, selectedNodeId);
+      const totalVec = sub(adjNode.center, selectedNode.center);
+      const mouseVec = sub(mouseInLyrPan, selectedNode.center);
+      let t = clamp(0, 1, dot(mouseVec, totalVec) / dot(totalVec, totalVec));
+
+      const targetDrawnTree = drawnTrees[bestAdjMorphIdx];
+
+      const bgGrpLerp = lerpShapes(
+        curDrawnTree.bgGrp,
+        targetDrawnTree.bgGrp,
+        t,
+      );
+      const fgGrpLerp = lerpShapes(
+        curDrawnTree.fgGrp,
+        targetDrawnTree.fgGrp,
+        t,
+      );
+      drawShape(lyrPan, bgGrpLerp);
+      drawShape(lyrPan, fgGrpLerp);
+      drewSomething = true;
+
+      if (t === 1) {
+        curMorphIdx = bestAdjMorphIdx;
+      }
+
+      if (t > 0.5) {
+        addPointerUpHandler(() => {
+          console.log("pointer up with t =", t);
+
+          curMorphIdx = bestAdjMorphIdx;
+        });
+      }
+
+      // lyrPan.do(() => {
+      //   lyrPan.beginPath();
+      //   lyrPan.arc(...fgNode.center, FG_NODE_SIZE / 2, 0, Math.PI * 2);
+      //   lyrPan.strokeStyle = "rgba(128,128,255)";
+      //   lyrPan.lineWidth = 2;
+      //   lyrPan.moveTo(...selectedNode.center);
+      //   lyrPan.lineTo(...fgNode.center);
+      //   lyrPan.stroke();
+      // });
+      // const bbox: XYWH = [
+      //   ...sub(add(pan, fgNode.center), v(FG_NODE_SIZE / 2)),
+      //   FG_NODE_SIZE,
+      //   FG_NODE_SIZE,
+      // ];
+
+      // addClickHandler(bbox, () => {
+      //   curMorphIdx = adjMorphIdx;
+      //   selectedNodeId = null;
+      // });
+    }
+  }
+
+  if (!drewSomething) {
+    drawShape(lyrPan, curDrawnTree.bgGrp);
+    drawShape(lyrPan, curDrawnTree.fgGrp);
+
+    for (const node of nodesInTree(codomainTree)) {
+      const fgNode = getNode(curDrawnTree.fgGrp, node.id);
       const bbox: XYWH = [
         ...sub(add(pan, fgNode.center), v(FG_NODE_SIZE / 2)),
         FG_NODE_SIZE,
         FG_NODE_SIZE,
       ];
+      // if (node.id === selectedNodeId || inXYWH(mouseX, mouseY, bbox)) {
+      //   lyrPan.do(() => {
+      //     lyrPan.beginPath();
+      //     lyrPan.arc(...fgNode.center, FG_NODE_SIZE / 2, 0, Math.PI * 2);
+      //     lyrPan.fillStyle = "rgba(128,128,255)";
+      //     lyrPan.fill();
+      //   });
+      // }
       addClickHandler(bbox, () => {
-        curMorphIdx = adjMorphIdx;
-        selectedNodeId = null;
+        selectedNodeId = node.id;
       });
     }
   }
