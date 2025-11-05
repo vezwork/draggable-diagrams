@@ -738,6 +738,8 @@ function draw() {
   _clickables = [];
   _onPointerUps = [];
 
+  c.style.cursor = "default";
+
   // Create main layer
   const lyr = layer(ctx);
 
@@ -782,6 +784,7 @@ function draw() {
 
   let drewSomething = false;
   if (selectedNodeId) {
+    c.style.cursor = "grabbing";
     addPointerUpHandler(() => {
       selectedNodeId = null;
     });
@@ -851,26 +854,6 @@ function draw() {
           curMorphIdx = bestAdjMorphIdx;
         });
       }
-
-      // lyrPan.do(() => {
-      //   lyrPan.beginPath();
-      //   lyrPan.arc(...fgNode.center, FG_NODE_SIZE / 2, 0, Math.PI * 2);
-      //   lyrPan.strokeStyle = "rgba(128,128,255)";
-      //   lyrPan.lineWidth = 2;
-      //   lyrPan.moveTo(...selectedNode.center);
-      //   lyrPan.lineTo(...fgNode.center);
-      //   lyrPan.stroke();
-      // });
-      // const bbox: XYWH = [
-      //   ...sub(add(pan, fgNode.center), v(FG_NODE_SIZE / 2)),
-      //   FG_NODE_SIZE,
-      //   FG_NODE_SIZE,
-      // ];
-
-      // addClickHandler(bbox, () => {
-      //   curMorphIdx = adjMorphIdx;
-      //   selectedNodeId = null;
-      // });
     }
   }
 
@@ -878,24 +861,21 @@ function draw() {
     drawShape(lyrPan, curDrawnTree.bgGrp);
     drawShape(lyrPan, curDrawnTree.fgGrp);
 
-    for (const node of nodesInTree(codomainTree)) {
-      const fgNode = getNode(curDrawnTree.fgGrp, node.id);
-      const bbox: XYWH = [
-        ...sub(add(pan, fgNode.center), v(FG_NODE_SIZE / 2)),
-        FG_NODE_SIZE,
-        FG_NODE_SIZE,
-      ];
-      // if (node.id === selectedNodeId || inXYWH(mouseX, mouseY, bbox)) {
-      //   lyrPan.do(() => {
-      //     lyrPan.beginPath();
-      //     lyrPan.arc(...fgNode.center, FG_NODE_SIZE / 2, 0, Math.PI * 2);
-      //     lyrPan.fillStyle = "rgba(128,128,255)";
-      //     lyrPan.fill();
-      //   });
-      // }
-      addClickHandler(bbox, () => {
-        selectedNodeId = node.id;
-      });
+    if (!selectedNodeId) {
+      for (const node of nodesInTree(codomainTree)) {
+        const fgNode = getNode(curDrawnTree.fgGrp, node.id);
+        const bbox: XYWH = [
+          ...sub(add(pan, fgNode.center), v(FG_NODE_SIZE / 2)),
+          FG_NODE_SIZE,
+          FG_NODE_SIZE,
+        ];
+        if (inXYWH(mouseX, mouseY, bbox)) {
+          c.style.cursor = "grab";
+        }
+        addClickHandler(bbox, () => {
+          selectedNodeId = node.id;
+        });
+      }
     }
   }
 
