@@ -9,7 +9,7 @@ import {
   TreeNode,
 } from "./trees";
 import { assertNever, clamp } from "./utils";
-import { add, dot, length, normalize, sub, v, type Vec2 } from "./vec2";
+import { add, dot, length, mul, normalize, sub, v, type Vec2 } from "./vec2";
 import { inXYWH, type XYWH } from "./xywh";
 
 // # Shape system
@@ -806,9 +806,7 @@ function draw() {
   }
 
   if (!drewSomething) {
-    drawShape(lyrPan, curDrawnTree.bgGrp);
-    drawShape(lyrPan, curDrawnTree.fgGrp);
-
+    let cleanup = () => {};
     if (!selectedNodeId) {
       for (const node of nodesInTree(codomainTree)) {
         const fgNode = getNode(curDrawnTree.fgGrp, node.id);
@@ -826,7 +824,29 @@ function draw() {
           dragOffset = sub(pointerInLyrPan, fgNode.center);
         });
       }
+    } else {
+      const fgNode = getNode(curDrawnTree.fgGrp, selectedNodeId!);
+      const originalCenter = fgNode.center;
+      cleanup = () => (fgNode.center = originalCenter);
+
+      const pointerInLyrPan = sub(dragPointer!, pan);
+      const desiredCenter = sub(pointerInLyrPan, dragOffset!);
+      const desireVector = sub(desiredCenter, fgNode.center);
+      const maxMoveDistance = FG_NODE_SIZE / 8;
+      const desireVectorForVis =
+        length(desireVector) === 0
+          ? v(0, 0)
+          : mul(
+              maxMoveDistance *
+                Math.tanh((0.05 * length(desireVector)) / maxMoveDistance),
+              normalize(desireVector),
+            );
+      const desiredCenterForVis = add(fgNode.center, desireVectorForVis);
+      fgNode.center = desiredCenterForVis;
     }
+    drawShape(lyrPan, curDrawnTree.bgGrp);
+    drawShape(lyrPan, curDrawnTree.fgGrp);
+    cleanup();
   }
 
   // // Build Hasse diagram and layout
