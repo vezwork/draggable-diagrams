@@ -331,6 +331,7 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.key === "Escape") {
     selectedNodeId = null;
+    dragOffset = null;
   }
 });
 
@@ -731,6 +732,7 @@ const drawnTrees = hasseDiagram.nodes.map((morph) =>
 
 let curMorphIdx = 0;
 let selectedNodeId: string | null = null;
+let dragOffset: Vec2 | null = null;
 
 // Drawing function
 function draw() {
@@ -787,6 +789,7 @@ function draw() {
     c.style.cursor = "grabbing";
     addPointerUpHandler(() => {
       selectedNodeId = null;
+      dragOffset = null;
     });
     const selectedNode = getNode(curDrawnTree.fgGrp, selectedNodeId);
     const adjMorphIdxes = [
@@ -824,7 +827,10 @@ function draw() {
       const adjDrawn = drawnTrees[bestAdjMorphIdx];
       const adjNode = getNode(adjDrawn.fgGrp, selectedNodeId);
       const totalVec = sub(adjNode.center, selectedNode.center);
-      const mouseVec = sub(mouseInLyrPan, selectedNode.center);
+      const mouseVec = sub(
+        sub(mouseInLyrPan, selectedNode.center),
+        dragOffset!,
+      );
       let t = clamp(0, 1, dot(mouseVec, totalVec) / dot(totalVec, totalVec));
 
       const targetDrawnTree = drawnTrees[bestAdjMorphIdx];
@@ -874,6 +880,7 @@ function draw() {
         }
         addClickHandler(bbox, () => {
           selectedNodeId = node.id;
+          dragOffset = sub(mouseInLyrPan, fgNode.center);
         });
       }
     }
