@@ -9,7 +9,7 @@ import {
   TreeNode,
 } from "./trees";
 import { assertNever, clamp } from "./utils";
-import { add, dot, length, mul, normalize, sub, v, type Vec2 } from "./vec2";
+import { lerp, Vec2 } from "./vec2";
 import { inXYWH, type XYWH } from "./xywh";
 
 // # Shape system
@@ -92,7 +92,7 @@ export function resolvePointInGroup(target: Group, pig: PointInGroup): Vec2 {
       return point;
     }
     if (group.offset) {
-      point = add(point, group.offset);
+      point = point.add(group.offset);
     }
     if (!group.parent) {
       throw new Error("Point's group is not a descendant of target group");
@@ -107,15 +107,15 @@ export function drawShape(lyr: Layer, shape: Shape): void {
       case "circle":
         lyr.fillStyle = shape.fillStyle;
         lyr.beginPath();
-        lyr.arc(...shape.center, shape.radius, 0, Math.PI * 2);
+        lyr.arc(...shape.center.arr(), shape.radius, 0, Math.PI * 2);
         lyr.fill();
         break;
       case "line":
         lyr.strokeStyle = shape.strokeStyle;
         lyr.lineWidth = shape.lineWidth;
         lyr.beginPath();
-        lyr.moveTo(...shape.from);
-        lyr.lineTo(...shape.to);
+        lyr.moveTo(...shape.from.arr());
+        lyr.lineTo(...shape.to.arr());
         lyr.stroke();
         break;
       case "curve":
@@ -125,7 +125,7 @@ export function drawShape(lyr: Layer, shape: Shape): void {
         lyr.beginPath();
         curve.lineStart();
         for (const pt of shape.points) {
-          curve.point(...pt);
+          curve.point(...pt.arr());
         }
         curve.lineEnd();
         lyr.stroke();
@@ -133,7 +133,7 @@ export function drawShape(lyr: Layer, shape: Shape): void {
       case "group":
         lyr.do(() => {
           if (shape.offset) {
-            lyr.translate(...shape.offset);
+            lyr.translate(...shape.offset.arr());
           }
 
           for (const child of shape.shapes) {
@@ -144,7 +144,7 @@ export function drawShape(lyr: Layer, shape: Shape): void {
       case "keyed-group":
         lyr.do(() => {
           if (shape.offset) {
-            lyr.translate(...shape.offset);
+            lyr.translate(...shape.offset.arr());
           }
 
           for (const key of Object.keys(shape.shapes)) {
@@ -176,14 +176,6 @@ export function stripParents(shape: Shape): Shape {
     };
   }
   return shape;
-}
-
-export function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-export function lerpVec2(a: Vec2, b: Vec2, t: number): Vec2 {
-  return [lerp(a[0], b[0], t), lerp(a[1], b[1], t)];
 }
 
 export function resolveLazy(shape: Shape): Shape {
@@ -218,7 +210,7 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
         throw new Error("Cannot interpolate shapes with different styles");
       return {
         type: "circle",
-        center: lerpVec2(a.center, b.center, t),
+        center: a.center.lerp(b.center, t),
         radius: lerp(a.radius, b.radius, t),
         fillStyle: a.fillStyle,
         nodeId: a.nodeId,
@@ -229,8 +221,8 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
         throw new Error("Cannot interpolate shapes with different styles");
       return {
         type: "line",
-        from: lerpVec2(a.from, b.from, t),
-        to: lerpVec2(a.to, b.to, t),
+        from: a.from.lerp(b.from, t),
+        to: a.to.lerp(b.to, t),
         strokeStyle: a.strokeStyle,
         lineWidth: lerp(a.lineWidth, b.lineWidth, t),
       };
@@ -244,7 +236,7 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
         );
       return {
         type: "curve",
-        points: a.points.map((ap, i) => lerpVec2(ap, b.points[i], t)),
+        points: a.points.map((ap, i) => ap.lerp(b.points[i], t)),
         strokeStyle: a.strokeStyle,
         lineWidth: lerp(a.lineWidth, b.lineWidth, t),
       };
@@ -257,7 +249,7 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
       return {
         type: "group",
         shapes: a.shapes.map((as, i) => lerpShapes(as, b.shapes[i], t)),
-        offset: lerpVec2(a.offset ?? v(0), b.offset ?? v(0), t),
+        offset: (a.offset ?? Vec2(0)).lerp(b.offset ?? Vec2(0), t),
       };
     case "keyed-group":
       assertSameType(a, b);
@@ -271,7 +263,7 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
         shapes: _.mapValues(a.shapes, (as, k) =>
           lerpShapes(as, b.shapes[k], t),
         ),
-        offset: lerpVec2(a.offset ?? v(0), b.offset ?? v(0), t),
+        offset: (a.offset ?? Vec2(0)).lerp(b.offset ?? Vec2(0), t),
       };
     case "lazy":
       throw new Error("Cannot interpolate lazy shapes");
@@ -286,19 +278,19 @@ const cContainer = document.getElementById("c-container") as HTMLDivElement;
 const ctx = c.getContext("2d")!;
 
 // Pan state
-let pan: Vec2 = [80, 80];
+let pan = Vec2(80, 80);
 
 // Debug state
 let showClickablesDebug = false;
 
 // Pointer tracking
 let isDragging = false;
-let hoverPointer: Vec2 = v(0, 0);
+let hoverPointer = Vec2(0);
 let dragPointer: Vec2 | null = null;
 
 const updatePointer = (e: PointerEvent) => {
   // clientX/Y works better than offsetX/Y for Chrome/Safari compatibility.
-  hoverPointer = v(e.clientX, e.clientY);
+  hoverPointer = Vec2(e.clientX, e.clientY);
   dragPointer = isDragging ? hoverPointer : null;
 };
 
@@ -313,7 +305,7 @@ let _onPointerUps: (() => void)[] = [];
 const hoveredClickable = () => {
   return (
     hoverPointer &&
-    _clickables.find(({ xywh }) => inXYWH(...hoverPointer!, xywh))
+    _clickables.find(({ xywh }) => inXYWH(...hoverPointer!.arr(), xywh))
   );
 };
 
@@ -432,8 +424,8 @@ function drawBgSubtree(
       fgKeyedGroup,
     );
 
-    placeGroup(bgGrp, childR.bgGrp, v(x, y));
-    placeGroup(fgGrp, childR.fgGrp, v(x, y));
+    placeGroup(bgGrp, childR.bgGrp, Vec2(x, y));
+    placeGroup(fgGrp, childR.fgGrp, Vec2(x, y));
 
     x += childR.w + BG_NODE_GAP;
     maxX = Math.max(maxX, x - BG_NODE_GAP);
@@ -442,10 +434,10 @@ function drawBgSubtree(
     childRootCenters.push(resolvePointInGroup(bgGrp, childR.rootCenter));
   }
 
-  const bgNodeOffset = v(
+  const bgNodeOffset = Vec2(
     childRootCenters.length > 0
-      ? (childRootCenters[0][0] +
-          childRootCenters[childRootCenters.length - 1][0]) /
+      ? (childRootCenters[0].x +
+          childRootCenters[childRootCenters.length - 1].x) /
           2 -
           bgNodeR.w / 2
       : (maxX - bgNodeR.w) / 2,
@@ -513,7 +505,7 @@ function drawBgNodeWithFgNodesInside(
       fgNodeCenters,
       fgKeyedGroup,
     );
-    placeGroup(fgGrpInRect, r.fgGrp, v(x, y));
+    placeGroup(fgGrpInRect, r.fgGrp, Vec2(x, y));
 
     x += r.w + FG_NODE_GAP;
     maxX = Math.max(maxX, x - FG_NODE_GAP);
@@ -525,10 +517,10 @@ function drawBgNodeWithFgNodesInside(
   maxX += BG_NODE_PADDING;
   maxY += BG_NODE_PADDING;
 
-  const nodeCenterInRect = v(maxX / 2, maxY / 2);
-  const circleRadius = length(nodeCenterInRect);
-  const nodeCenterInCircle = v(circleRadius, circleRadius);
-  const offset = sub(nodeCenterInCircle, nodeCenterInRect);
+  const nodeCenterInRect = Vec2(maxX / 2, maxY / 2);
+  const circleRadius = nodeCenterInRect.len();
+  const nodeCenterInCircle = Vec2(circleRadius);
+  const offset = nodeCenterInCircle.sub(nodeCenterInRect);
 
   const bgGrp = group();
   const fgGrp = group();
@@ -582,7 +574,7 @@ function drawFgSubtreeInBgNode(
         fgNodeCenters,
         fgKeyedGroup,
       );
-      placeGroup(fgGrpChildren, r.fgGrp, v(childrenX, 0));
+      placeGroup(fgGrpChildren, r.fgGrp, Vec2(childrenX, 0));
       fgNodesBelow.push(...r.fgNodesBelow);
       childrenX += r.w;
       childrenMaxH = Math.max(childrenMaxH, r.h);
@@ -616,7 +608,7 @@ function drawFgSubtreeInBgNode(
           const myCenter = fgNodeCenters[fgNode.id];
           const intermediate = pointInGroup(
             fgGrpChildren,
-            v(childrenXBefore, 0),
+            Vec2(childrenXBefore, 0),
           );
           const childCenter = fgNodeCenters[child.id];
           return {
@@ -641,14 +633,14 @@ function drawFgSubtreeInBgNode(
     placeGroup(
       fgGrp,
       fgGrpChildren,
-      v((FG_NODE_SIZE - childrenX) / 2, FG_NODE_SIZE + FG_NODE_GAP),
+      Vec2((FG_NODE_SIZE - childrenX) / 2, FG_NODE_SIZE + FG_NODE_GAP),
     );
   } else {
     nodeX = childrenX / 2;
-    placeGroup(fgGrp, fgGrpChildren, v(0, FG_NODE_SIZE + FG_NODE_GAP));
+    placeGroup(fgGrp, fgGrpChildren, Vec2(0, FG_NODE_SIZE + FG_NODE_GAP));
   }
 
-  const nodeCenter = v(nodeX, FG_NODE_SIZE / 2);
+  const nodeCenter = Vec2(nodeX, FG_NODE_SIZE / 2);
   fgNodeCenters[fgNode.id] = pointInGroup(fgGrp, nodeCenter);
   fgKeyedGroup.shapes[fgNode.id] = {
     type: "lazy",
@@ -721,8 +713,13 @@ function draw() {
   const curDrawnTree = drawnTrees[curMorphIdx];
 
   let drewSomething = false;
+  let adjMorphDots: {
+    adjMorphIdx: number;
+    circle: Shape & { type: "circle" };
+    dot: number;
+  }[] = [];
   if (selectedNodeId) {
-    const pointerInLyrPan = sub(dragPointer!, pan);
+    const pointerInLyrPan = dragPointer!.sub(pan);
 
     c.style.cursor = "grabbing";
     addPointerUpHandler(() => {
@@ -745,17 +742,16 @@ function draw() {
         .map(([from]) => from),
     ];
     // const adjMorphIdxes = _.range(hasseDiagram.nodes.length);
-    const toPointer = normalize(sub(pointerInLyrPan, selectedCircle.center));
+    const toPointer = pointerInLyrPan.sub(selectedCircle.center).norm();
     // which adjacent morphism maximizes the dot product with toPointer?
-    const adjMorphDots = adjMorphIdxes.map((adjMorphIdx) => {
+    adjMorphDots = adjMorphIdxes.map((adjMorphIdx) => {
       const adjDrawn = drawnTrees[adjMorphIdx];
       const adjCircle = getCircle(adjDrawn.fgGrp, selectedNodeId!);
-      const toAdjCircle = normalize(
-        sub(adjCircle.center, selectedCircle.center),
-      );
+      const toAdjCircle = adjCircle.center.sub(selectedCircle.center).norm();
       return {
         adjMorphIdx,
-        dot: dot(toPointer, toAdjCircle),
+        circle: adjCircle,
+        dot: toPointer.dot(toAdjCircle),
       };
     });
     const bestAdjMorphIdx = _.maxBy(
@@ -766,16 +762,11 @@ function draw() {
     if (bestAdjMorphIdx !== undefined) {
       const adjDrawn = drawnTrees[bestAdjMorphIdx];
       const adjCircle = getCircle(adjDrawn.fgGrp, selectedNodeId);
-      const totalVec = sub(adjCircle.center, selectedCircle.center);
-      const pointerVec = sub(
-        sub(pointerInLyrPan, selectedCircle.center),
-        dragOffset!,
-      );
-      const t = clamp(
-        0,
-        1,
-        dot(pointerVec, totalVec) / dot(totalVec, totalVec),
-      );
+      const totalVec = adjCircle.center.sub(selectedCircle.center);
+      const pointerVec = pointerInLyrPan
+        .sub(selectedCircle.center)
+        .sub(dragOffset!);
+      const t = clamp(0, 1, pointerVec.dot(totalVec) / totalVec.dot(totalVec));
 
       const targetDrawnTree = drawnTrees[bestAdjMorphIdx];
 
@@ -813,17 +804,20 @@ function draw() {
       for (const node of nodesInTree(codomainTree)) {
         const fgNode = getCircle(curDrawnTree.fgGrp, node.id);
         const bbox: XYWH = [
-          ...sub(add(pan, fgNode.center), v(FG_NODE_SIZE / 2)),
+          ...pan
+            .add(fgNode.center)
+            .sub(Vec2(FG_NODE_SIZE / 2))
+            .arr(),
           FG_NODE_SIZE,
           FG_NODE_SIZE,
         ];
-        if (inXYWH(...hoverPointer, bbox)) {
+        if (inXYWH(...hoverPointer.arr(), bbox)) {
           c.style.cursor = "grab";
         }
         addClickHandler(bbox, () => {
-          const pointerInLyrPan = sub(dragPointer!, pan);
+          const pointerInLyrPan = dragPointer!.sub(pan);
           selectedNodeId = node.id;
-          dragOffset = sub(pointerInLyrPan, fgNode.center);
+          dragOffset = pointerInLyrPan.sub(fgNode.center);
         });
       }
     } else {
@@ -831,24 +825,38 @@ function draw() {
       const originalCenter = fgNode.center;
       cleanup = () => (fgNode.center = originalCenter);
 
-      const pointerInLyrPan = sub(dragPointer!, pan);
-      const desiredCenter = sub(pointerInLyrPan, dragOffset!);
-      const desireVector = sub(desiredCenter, fgNode.center);
+      const pointerInLyrPan = dragPointer!.sub(pan);
+      const desiredCenter = pointerInLyrPan.sub(dragOffset!);
+      const desireVector = desiredCenter.sub(fgNode.center);
       const maxMoveDistance = FG_NODE_SIZE / 8;
       const desireVectorForVis =
-        length(desireVector) === 0
-          ? v(0, 0)
-          : mul(
-              maxMoveDistance *
-                Math.tanh((0.05 * length(desireVector)) / maxMoveDistance),
-              normalize(desireVector),
-            );
-      const desiredCenterForVis = add(fgNode.center, desireVectorForVis);
+        desireVector.len() === 0
+          ? Vec2(0)
+          : desireVector
+              .norm()
+              .mul(
+                maxMoveDistance *
+                  Math.tanh((0.05 * desireVector.len()) / maxMoveDistance),
+              );
+      const desiredCenterForVis = fgNode.center.add(desireVectorForVis);
       fgNode.center = desiredCenterForVis;
     }
     drawShape(lyrPan, curDrawnTree.bgGrp);
     drawShape(lyrPan, curDrawnTree.fgGrp);
     cleanup();
+  }
+
+  if (false) {
+    for (const { circle } of adjMorphDots) {
+      // draw dashed circle at adjCircle.center for debugging
+      lyrPan.do(() => {
+        lyrPan.strokeStyle = "red";
+        lyrPan.setLineDash([5, 5]);
+        lyrPan.beginPath();
+        lyrPan.arc(...circle.center.arr(), circle.radius, 0, 2 * Math.PI);
+        lyrPan.stroke();
+      });
+    }
   }
 
   // // Build Hasse diagram and layout

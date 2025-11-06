@@ -1,4 +1,4 @@
-import { add, v, Vec2 } from "./vec2";
+import { Vec2 } from "./vec2";
 
 /**
  * Properties that return (or directly are) values that don't depend
@@ -91,7 +91,7 @@ class LayerImpl {
           command._draw();
         } else {
           this.ctx.save();
-          this.ctx.translate(...command.localTranslation);
+          this.ctx.translate(...command.localTranslation.arr());
           command._draw();
           this.ctx.restore();
         }
@@ -110,7 +110,7 @@ class LayerImpl {
     }
   }
 
-  place(child: Layer, localTranslation = v(0)): void {
+  place(child: Layer, localTranslation = Vec2(0)): void {
     child.localTranslation = localTranslation;
     child.parentLayer = this;
     child.drawable = false;
@@ -156,7 +156,7 @@ class LayerImpl {
         return point;
       }
       if (layer.localTranslation !== null) {
-        point = add(point, layer.localTranslation);
+        point = point.add(layer.localTranslation);
       }
       if (layer.parentLayer === null) {
         throw new Error("Point's layer is not a descendant of this layer");
