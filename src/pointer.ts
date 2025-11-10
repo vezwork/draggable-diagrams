@@ -29,8 +29,9 @@ export class PointerManager implements IPointerManager {
 
   constructor(private canvas: HTMLCanvasElement) {
     const updatePointer = (e: PointerEvent) => {
-      // clientX/Y works better than offsetX/Y for Chrome/Safari compatibility.
-      this.hoverPointer = Vec2(e.clientX, e.clientY);
+      // Convert clientX/Y to canvas-relative coordinates
+      const rect = this.canvas.getBoundingClientRect();
+      this.hoverPointer = Vec2(e.clientX - rect.left, e.clientY - rect.top);
       this.dragPointer = this.isDragging ? this.hoverPointer : null;
     };
 
