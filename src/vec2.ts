@@ -93,6 +93,12 @@ class Vec2Class {
     v = Vec2(v);
     return Vec2(lerp(this.x, v.x, t), lerp(this.y, v.y, t));
   }
+
+  projOnto(v: Vec2able): Vec2 {
+    v = Vec2(v);
+    const scalar = this.dot(v) / v.len2();
+    return v.mul(scalar);
+  }
 }
 
 export function lerp(a: number, b: number, t: number): number {

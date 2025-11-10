@@ -15,3 +15,15 @@ export function assert(condition: boolean, msg?: string): asserts condition {
 export function clamp(a: number, b: number, c: number): number {
   return a + b + c - Math.max(a, b, c) - Math.min(a, b, c);
 }
+
+export function insert<T>(arr: T[], idx: number, val: T): T[] {
+  const newArr = arr.slice();
+  newArr.splice(idx, 0, val);
+  return newArr;
+}
+
+export function remove<T>(arr: T[], idx: number): T[] {
+  const newArr = arr.slice();
+  newArr.splice(idx, 1);
+  return newArr;
+}

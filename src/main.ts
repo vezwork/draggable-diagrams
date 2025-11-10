@@ -93,39 +93,45 @@ const drawerTiles = new ManipulableDrawer(manipulableTiles, {
   ],
 });
 
-const drawerGridPoly = new ManipulableDrawer(manipulableGridPoly, {
-  w: 6,
-  h: 6,
-  points: [
-    { x: 1, y: 1 },
-    { x: 2, y: 2 },
-    { x: 3, y: 3 },
-    { x: 4, y: 4 },
-  ],
-});
+const drawerGridPoly = new ManipulableDrawer(
+  manipulableGridPoly,
+  {
+    w: 6,
+    h: 6,
+    points: [
+      { x: 1, y: 1 },
+      { x: 2, y: 2 },
+      { x: 3, y: 3 },
+      { x: 4, y: 4 },
+    ],
+  },
+  { snapRadius: 10 },
+);
 
-const drawerPerm = new ManipulableDrawer(manipulablePerm, {
-  perm: [2, 0, 1, 4, 3],
-});
+const drawerPerm = new ManipulableDrawer(
+  manipulablePerm,
+  {
+    perm: ["A", "B", "C", "D", "E"],
+  },
+  { snapRadius: 10 },
+);
 
-const drawerPermDouble = new ManipulableDrawer(manipulablePermDouble, {
-  rows: [
-    [
-      [0, 0],
-      [1, 0],
-      [2, 0],
+const drawerPermDouble = new ManipulableDrawer(
+  manipulablePermDouble,
+  {
+    rows: [
+      ["A1", "B1", "C1"],
+      ["A2", "B2", "C2"],
+      ["A3", "B3", "C3"],
     ],
-    [
-      [0, 1],
-      [1, 1],
-      [2, 1],
-    ],
-    [
-      [0, 2],
-      [1, 2],
-      [2, 2],
-    ],
-  ],
+  },
+  { snapRadius: 10 },
+);
+
+const drawerTilesTiny = new ManipulableDrawer(manipulableTiles, {
+  w: 2,
+  h: 1,
+  tiles: [{ key: "A", x: 0, y: 0 }],
 });
 
 // Drawing function
@@ -141,39 +147,59 @@ function draw() {
   lyr.fillStyle = "white";
   lyr.fillRect(0, 0, c.width, c.height);
 
-  const posTiles = Vec2(50, 50);
-  const lyrTiles = layer(ctx);
-  lyr.place(lyrTiles, posTiles);
-  drawerTiles.draw(lyrTiles, pointerManagerWithOffset(pointer, posTiles));
+  if (window.location.hash === "#perm") {
+    const posPerm = Vec2(50, 50);
+    const lyrPerm = layer(ctx);
+    lyr.place(lyrPerm, posPerm);
+    drawerPerm.draw(lyrPerm, pointerManagerWithOffset(pointer, posPerm));
+  } else if (window.location.hash === "#tiles-tiny") {
+    const posTiles = Vec2(50, 50);
+    const lyrTiles = layer(ctx);
+    lyr.place(lyrTiles, posTiles);
+    drawerTilesTiny.draw(lyrTiles, pointerManagerWithOffset(pointer, posTiles));
+  } else if (window.location.hash === "#perm-double") {
+    const posPermDouble = Vec2(50, 50);
+    const lyrPermDouble = layer(ctx);
+    lyr.place(lyrPermDouble, posPermDouble);
+    drawerPermDouble.draw(
+      lyrPermDouble,
+      pointerManagerWithOffset(pointer, posPermDouble),
+    );
+  } else {
+    const posTiles = Vec2(50, 50);
+    const lyrTiles = layer(ctx);
+    lyr.place(lyrTiles, posTiles);
+    drawerTiles.draw(lyrTiles, pointerManagerWithOffset(pointer, posTiles));
 
-  const posOrderPreserving = Vec2(400, 50);
-  const lyrOrderPreserving = layer(ctx);
-  lyr.place(lyrOrderPreserving, posOrderPreserving);
-  drawerOrderPreserving.draw(
-    lyrOrderPreserving,
-    pointerManagerWithOffset(pointer, posOrderPreserving),
-  );
+    const posOrderPreserving = Vec2(400, 50);
+    const lyrOrderPreserving = layer(ctx);
+    lyr.place(lyrOrderPreserving, posOrderPreserving);
+    drawerOrderPreserving.draw(
+      lyrOrderPreserving,
+      pointerManagerWithOffset(pointer, posOrderPreserving),
+    );
 
-  const posGridPoly = Vec2(50, 400);
-  const lyrGridPoly = layer(ctx);
-  lyr.place(lyrGridPoly, posGridPoly);
-  drawerGridPoly.draw(
-    lyrGridPoly,
-    pointerManagerWithOffset(pointer, posGridPoly),
-  );
+    const posGridPoly = Vec2(50, 400);
+    const lyrGridPoly = layer(ctx);
+    lyr.place(lyrGridPoly, posGridPoly);
+    drawerGridPoly.draw(
+      lyrGridPoly,
+      pointerManagerWithOffset(pointer, posGridPoly),
+    );
 
-  const posPerm = Vec2(700, 50);
-  const lyrPerm = layer(ctx);
-  lyr.place(lyrPerm, posPerm);
-  drawerPerm.draw(lyrPerm, pointerManagerWithOffset(pointer, posPerm));
+    const posPerm = Vec2(700, 50);
+    const lyrPerm = layer(ctx);
+    lyr.place(lyrPerm, posPerm);
+    drawerPerm.draw(lyrPerm, pointerManagerWithOffset(pointer, posPerm));
 
-  const posPermDouble = Vec2(700, 400);
-  const lyrPermDouble = layer(ctx);
-  lyr.place(lyrPermDouble, posPermDouble);
-  drawerPermDouble.draw(
-    lyrPermDouble,
-    pointerManagerWithOffset(pointer, posPermDouble),
-  );
+    const posPermDouble = Vec2(700, 400);
+    const lyrPermDouble = layer(ctx);
+    lyr.place(lyrPermDouble, posPermDouble);
+    drawerPermDouble.draw(
+      lyrPermDouble,
+      pointerManagerWithOffset(pointer, posPermDouble),
+    );
+  }
 
   // function getCircle(grp: Shape, id: string): Shape & { type: "circle" } {
   //   return (grp as KeyedGroup).shapes[id] as Shape & {

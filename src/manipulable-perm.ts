@@ -1,10 +1,12 @@
+import _ from "lodash";
 import { Manipulable } from "./manipulable";
 import { group, keyed, transform } from "./shape";
+import { insert, remove } from "./utils";
 import { Vec2 } from "./vec2";
 import { XYWH } from "./xywh";
 
 type PermState = {
-  perm: number[];
+  perm: string[];
 };
 
 export const manipulablePerm: Manipulable<PermState> = {
@@ -29,25 +31,11 @@ export const manipulablePerm: Manipulable<PermState> = {
   },
 
   accessibleFrom(state, draggableKey) {
-    const p = parseInt(draggableKey, 10);
-    if (!isNaN(p)) {
-      const nextStates: PermState[] = [];
-      const idx = state.perm.indexOf(p);
-      for (let swapIdx = 0; swapIdx < state.perm.length; swapIdx++) {
-        if (swapIdx !== idx) {
-          const newPerm = state.perm.slice();
-          // swap idx and swapIdx
-          const temp = newPerm[idx];
-          newPerm[idx] = newPerm[swapIdx];
-          newPerm[swapIdx] = temp;
-          nextStates.push({
-            perm: newPerm,
-          });
-        }
-      }
-      return nextStates;
-    } else {
-      return [];
-    }
+    const draggedIdx = state.perm.indexOf(draggableKey);
+    const permWithoutDragged = remove(state.perm, draggedIdx);
+
+    return _.range(permWithoutDragged.length + 1).map((idx) => ({
+      perm: insert(permWithoutDragged, idx, draggableKey),
+    }));
   },
 };

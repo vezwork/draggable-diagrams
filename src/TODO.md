@@ -1,0 +1,6 @@
+- more manipulables
+  - various types of ASTs with rewrite rules
+  - counting rods
+  - diagrams of functions: drag arrowheads
+  - dragging things IN
+  - dragging things OUT
