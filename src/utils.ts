@@ -27,3 +27,9 @@ export function remove<T>(arr: T[], idx: number): T[] {
   newArr.splice(idx, 1);
   return newArr;
 }
+
+export function set<T>(arr: T[], idx: number, val: T): T[] {
+  const newArr = arr.slice();
+  newArr[idx] = val;
+  return newArr;
+}

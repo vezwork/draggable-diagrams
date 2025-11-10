@@ -4,3 +4,7 @@
   - diagrams of functions: drag arrowheads
   - dragging things IN
   - dragging things OUT
+- when drag starts, disable snapping on origin until you move out of the snap radius
+- do "smooth snapping" (spatially)
+- do "smooth snapping" (animated)
+- do "clone draggable" thing

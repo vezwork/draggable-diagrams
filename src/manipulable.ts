@@ -9,6 +9,7 @@ import {
   Shape,
   shapeByKey,
 } from "./shape";
+import { assert, clamp } from "./utils";
 import { Vec2 } from "./vec2";
 
 /** A manipulable is a way of visualizing and interacting with data
@@ -32,18 +33,24 @@ export class ManipulableDrawer<T> {
         tInfos: {
           t: T;
           interpolatableShape: Shape;
-          draggable: Shape;
           offset: Vec2;
         }[];
+        tDeletion: {
+          t: T;
+          interpolatableShape: Shape;
+        } | null;
         delaunay: Delaunay<Delaunay.Point>;
       };
+
+  public config: { snapRadius: number; debugView: boolean };
 
   constructor(
     public manipulable: Manipulable<T>,
     t: T,
-    public config: { snapRadius: number } = { snapRadius: 20 },
+    config: Partial<typeof this.config> = {},
   ) {
     this.state = { type: "idle", t };
+    this.config = { snapRadius: 20, debugView: false, ...config };
   }
 
   draw(lyr: Layer, pointer: IPointerManager): void {
@@ -51,160 +58,156 @@ export class ManipulableDrawer<T> {
     const lyrDebug = layer(lyr);
 
     if (state.type === "dragging") {
-      let toDraw: Shape | null = null;
       pointer.setCursor("grabbing");
 
-      const draggableDestPtMaybeOutside = pointer.dragPointer!.sub(
-        state.pointerOffset,
-      );
-      const prelimTriIdx = findTriangle(
-        state.delaunay,
-        draggableDestPtMaybeOutside,
-      );
-      const draggableDestPt =
-        prelimTriIdx === -1
-          ? projectOntoConvexHull(state.delaunay, draggableDestPtMaybeOutside)
-              .projectedPt
-          : draggableDestPtMaybeOutside;
-      const closestTInfo = _.minBy(state.tInfos, (tInfo) =>
-        draggableDestPt.dist(tInfo.offset),
-      );
-      pointer.addPointerUpHandler(() => {
-        this.state = { type: "idle", t: closestTInfo!.t };
-      });
+      const { toDraw, newT } = ((): { toDraw: Shape; newT: T } => {
+        const draggableDestPt = pointer.dragPointer!.sub(state.pointerOffset);
 
-      // if (draggableDestPt.dist(closestTInfo!.offset) < this.config.snapRadius) {
-      if (false) {
-        toDraw = closestTInfo!.interpolatableShape;
-        // TODO: we used to let you snap through different sets of
-        // accessible states, but I think this is a bad idea... gotta
-        // update some manipulables tho
+        const closestTInfo = _.minBy(state.tInfos, (tInfo) =>
+          draggableDestPt.dist(tInfo.offset),
+        );
 
-        // this.enterDraggingMode(
-        //   closestTInfo!.t, state.draggableKey,
-        //   state.pointerOffset, );
-      } else {
+        // where is it in the triangulation?
         const triIdx = findTriangle(state.delaunay, draggableDestPt);
 
-        if (triIdx === -1) {
-          throw new Error("outside convex hull... shouldn't happen?");
-          // // outside convex hull - project onto hull
-          // const projection = projectOntoConvexHull(
-          //   state.delaunay,
-          //   draggableDestPt,
-          // );
-          // // console.log("outside convex hull, projection", projection);
+        // project if it's outside the convex hull (or collinear)
+        let projected =
+          triIdx === -1 || (state.delaunay as any).collinear
+            ? projectOntoConvexHull(state.delaunay, draggableDestPt)
+            : null;
+        const projectedDestPt = projected?.projectedPt ?? draggableDestPt;
 
-          // if (projection.type === "vertex") {
-          //   toDraw = state.tInfos[projection.vertexIdx].interpolatableShape;
-          // } else {
-          //   // interpolate along edge
-          //   const { edgeIdx0, edgeIdx1, t } = projection;
-          //   toDraw = lerpShapes(
-          //     state.tInfos[edgeIdx0].interpolatableShape,
-          //     state.tInfos[edgeIdx1].interpolatableShape,
-          //     t,
-          //   );
-          // }
-        } else {
-          // console.log("found triangle", triIdx);
-          const ptIdx0 = state.delaunay.triangles[3 * triIdx + 0];
-          const ptIdx1 = state.delaunay.triangles[3 * triIdx + 1];
-          const ptIdx2 = state.delaunay.triangles[3 * triIdx + 2];
-          const ptIdxSet = new Set([ptIdx0, ptIdx1, ptIdx2]);
-          if (ptIdxSet.size === 2) {
-            // interpolate draggableDestPt along edge
-            const [ptIdxA, ptIdxB] = Array.from(ptIdxSet);
-            // console.log("degenerate edge", ptIdxA, ptIdxB);
-            const [ptA, ptB] = [
-              state.tInfos[ptIdxA].offset,
-              state.tInfos[ptIdxB].offset,
-            ];
-            const t =
-              draggableDestPt.sub(ptA).projOnto(ptB.sub(ptA)).len() /
-              ptB.sub(ptA).len();
-            // console.log("t along edge", t);
-            toDraw = lerpShapes(
-              state.tInfos[ptIdxA].interpolatableShape,
-              state.tInfos[ptIdxB].interpolatableShape,
-              t,
-            );
-          } else {
-            // console.log("triangle", ptIdx0, ptIdx1, ptIdx2);
-            // console.log(
-            //   "triangle pts",
-            //   state.tInfos[ptIdx0].offset,
-            //   state.tInfos[ptIdx1].offset,
-            //   state.tInfos[ptIdx2].offset,
-            // );
-            const bary = barycentric(
-              draggableDestPt,
-              state.tInfos[ptIdx0].offset,
-              state.tInfos[ptIdx1].offset,
-              state.tInfos[ptIdx2].offset,
-            );
-            // console.log(bary);
-            toDraw = lerpShapes3(
-              state.tInfos[ptIdx0].interpolatableShape,
-              state.tInfos[ptIdx1].interpolatableShape,
-              state.tInfos[ptIdx2].interpolatableShape,
-              bary,
-            );
+        // debug view
+        if (this.config.debugView) {
+          for (const { offset } of state.tInfos) {
+            lyrDebug.do(() => {
+              lyrDebug.beginPath();
+              lyrDebug.arc(
+                ...offset.arr(),
+                this.config.snapRadius,
+                0,
+                2 * Math.PI,
+              );
+              lyrDebug.fillStyle = "red";
+              lyrDebug.fill();
+            });
           }
-        }
-      }
-      // console.log("toDraw", toDraw);
-      drawInterpolatable(lyr, toDraw);
-      if (false) {
-        lyr.do(() => {
-          lyr.globalAlpha = 0.5;
-          drawInterpolatable(lyr, closestTInfo!.interpolatableShape);
-        });
-      }
 
-      if (true) {
-        for (const { offset } of state.tInfos) {
           lyrDebug.do(() => {
+            lyrDebug.strokeStyle = "red";
+            lyrDebug.lineWidth = 2;
+            const { triangles, points } = state.delaunay;
+            for (let i = 0; i < triangles.length; i += 3) {
+              const ax = points[2 * triangles[i]];
+              const ay = points[2 * triangles[i] + 1];
+              const bx = points[2 * triangles[i + 1]];
+              const by = points[2 * triangles[i + 1] + 1];
+              const cx = points[2 * triangles[i + 2]];
+              const cy = points[2 * triangles[i + 2] + 1];
+              lyrDebug.beginPath();
+              lyrDebug.moveTo(ax, ay);
+              lyrDebug.lineTo(bx, by);
+              lyrDebug.lineTo(cx, cy);
+              lyrDebug.lineTo(ax, ay);
+              lyrDebug.stroke();
+            }
+          });
+
+          lyrDebug.do(() => {
+            lyrDebug.strokeStyle = "blue";
+            lyrDebug.lineWidth = 2;
             lyrDebug.beginPath();
-            lyrDebug.arc(...offset.arr(), 5, 0, 2 * Math.PI);
-            lyrDebug.fillStyle = "red";
-            lyrDebug.fill();
+            lyrDebug.arc(...projectedDestPt.arr(), 10, 0, 2 * Math.PI);
+            lyrDebug.stroke();
+            // draw line to projection
+            lyrDebug.beginPath();
+            lyrDebug.moveTo(...draggableDestPt.arr());
+            lyrDebug.lineTo(...projectedDestPt.arr());
+            lyrDebug.stroke();
           });
         }
 
-        lyrDebug.do(() => {
-          lyrDebug.strokeStyle = "red";
-          lyrDebug.lineWidth = 2;
-          const { triangles, points } = state.delaunay;
-          for (let i = 0; i < triangles.length; i += 3) {
-            const ax = points[2 * triangles[i]];
-            const ay = points[2 * triangles[i] + 1];
-            const bx = points[2 * triangles[i + 1]];
-            const by = points[2 * triangles[i + 1] + 1];
-            const cx = points[2 * triangles[i + 2]];
-            const cy = points[2 * triangles[i + 2] + 1];
-            lyrDebug.beginPath();
-            lyrDebug.moveTo(ax, ay);
-            lyrDebug.lineTo(bx, by);
-            lyrDebug.lineTo(cx, cy);
-            lyrDebug.lineTo(ax, ay);
-            lyrDebug.stroke();
+        // check if it's time to delete
+        if (state.tDeletion) {
+          const deletionDist = projectedDestPt.dist(draggableDestPt);
+          // console.log("deletionDist", deletionDist);
+          if (deletionDist > 40) {
+            const t = clamp((deletionDist - 40) / 20, 0, 1);
+            return {
+              toDraw: lerpShapes(
+                closestTInfo!.interpolatableShape,
+                state.tDeletion.interpolatableShape,
+                t,
+              ),
+              newT: t > 0.5 ? state.tDeletion.t : closestTInfo!.t,
+            };
           }
-        });
+        }
 
-        lyrDebug.do(() => {
-          lyrDebug.strokeStyle = "blue";
-          lyrDebug.lineWidth = 2;
-          lyrDebug.beginPath();
-          lyrDebug.arc(...draggableDestPt.arr(), 10, 0, 2 * Math.PI);
-          lyrDebug.stroke();
-          // draw line to projection
-          lyrDebug.beginPath();
-          lyrDebug.moveTo(...draggableDestPtMaybeOutside.arr());
-          lyrDebug.lineTo(...draggableDestPt.arr());
-          lyrDebug.stroke();
-        });
-      }
+        const newT = closestTInfo!.t;
+
+        // check if it's time to snap
+        if (
+          projectedDestPt.dist(closestTInfo!.offset) < this.config.snapRadius
+        ) {
+          return { toDraw: closestTInfo!.interpolatableShape, newT };
+        }
+
+        if (projected) {
+          // we handle this as a special case directly rather than
+          // working with projectedDestPt
+          if (projected.type === "vertex") {
+            return {
+              toDraw: state.tInfos[projected.vertexIdx].interpolatableShape,
+              newT,
+            };
+          } else {
+            // interpolate along edge
+            const { edgeIdx0, edgeIdx1, t } = projected;
+            return {
+              toDraw: lerpShapes(
+                state.tInfos[edgeIdx0].interpolatableShape,
+                state.tInfos[edgeIdx1].interpolatableShape,
+                t,
+              ),
+              newT,
+            };
+          }
+        }
+
+        const ptIdx0 = state.delaunay.triangles[3 * triIdx + 0];
+        const ptIdx1 = state.delaunay.triangles[3 * triIdx + 1];
+        const ptIdx2 = state.delaunay.triangles[3 * triIdx + 2];
+        const ptIdxSet = new Set([ptIdx0, ptIdx1, ptIdx2]);
+        assert(ptIdxSet.size === 3);
+        const bary = barycentric(
+          draggableDestPt,
+          state.tInfos[ptIdx0].offset,
+          state.tInfos[ptIdx1].offset,
+          state.tInfos[ptIdx2].offset,
+        );
+        // console.log(bary);
+        return {
+          toDraw: lerpShapes3(
+            state.tInfos[ptIdx0].interpolatableShape,
+            state.tInfos[ptIdx1].interpolatableShape,
+            state.tInfos[ptIdx2].interpolatableShape,
+            bary,
+          ),
+          newT,
+        };
+      })();
+      drawInterpolatable(lyr, toDraw);
+      pointer.addPointerUpHandler(() => {
+        this.state = { type: "idle", t: newT };
+      });
+
+      // if (false) {
+      //   lyr.do(() => {
+      //     lyr.globalAlpha = 0.5;
+      //     drawInterpolatable(lyr, closestTInfo!.interpolatableShape);
+      //   });
+      // }
     } else if (state.type === "idle") {
       pointer.setCursor("default");
 
@@ -223,26 +226,34 @@ export class ManipulableDrawer<T> {
   }
 
   private enterDraggingMode(t: T, draggableKey: string, pointerOffset: Vec2) {
-    const states = [t, ...this.manipulable.accessibleFrom(t, draggableKey)];
-    console.log("enterDraggingMode states", states);
-    const tInfos = states.map((t) => {
+    // const states = [t, ...this.manipulable.accessibleFrom(t, draggableKey)];
+    // TODO: update manipulables to return all accessible states
+    const states = this.manipulable.accessibleFrom(t, draggableKey);
+    // console.log("enterDraggingMode states", states);
+    let tDeletion: { t: T; interpolatableShape: Shape } | null = null;
+    const tInfos = states.flatMap((t) => {
       const interpolatableShape = origToInterpolatable(
         this.manipulable.render(t),
       );
-      const { shape: draggable, offset } = shapeByKey(
-        interpolatableShape,
-        draggableKey,
-      );
-      return { t, interpolatableShape, draggable, offset };
+      const foundShape = shapeByKey(interpolatableShape, draggableKey);
+      if (foundShape) {
+        const { shape, offset } = foundShape;
+        return { t, interpolatableShape, draggable: shape, offset };
+      } else {
+        assert(!tDeletion, "Multiple deletions found");
+        tDeletion = { t, interpolatableShape };
+        return [];
+      }
     });
     const delaunay = Delaunay.from(tInfos.map((tInfo) => tInfo.offset.arr()));
-    console.log("delaunay", delaunay);
+    // console.log("delaunay", delaunay);
     this.state = {
       type: "dragging",
       draggableKey,
       pointerOffset,
       prevT: t,
       tInfos,
+      tDeletion,
       delaunay,
     };
   }
@@ -341,6 +352,10 @@ function lerpShapes3(
   return lerpShapes(ab, c, l2);
 }
 
+function delaunayCollinearIdxs(delaunay: Delaunay<Delaunay.Point>): number[] {
+  return (delaunay as any).collinear;
+}
+
 function projectOntoConvexHull(
   delaunay: Delaunay<Delaunay.Point>,
   pt: Vec2,
@@ -353,8 +368,16 @@ function projectOntoConvexHull(
       t: number;
       projectedPt: Vec2;
     } {
-  // Get convex hull edges
-  const hull = delaunay.hull;
+  // Special case: If the points are collinear, delaunay.hull isn't a
+  // hull in cyclic order. We use an undocumented d3-delaunay
+  // property to make our own hull.
+  const collinearIdxs = delaunayCollinearIdxs(delaunay);
+  const hull = collinearIdxs
+    ? [
+        ...collinearIdxs,
+        ..._.reverse(collinearIdxs.slice(1, collinearIdxs.length - 1)),
+      ]
+    : delaunay.hull;
   const points = delaunay.points;
 
   let minDist = Infinity;

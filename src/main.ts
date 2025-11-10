@@ -1,6 +1,7 @@
 import { layer } from "./layer";
 import { ManipulableDrawer } from "./manipulable";
 import { manipulableGridPoly } from "./manipulable-grid-poly";
+import { manipulableInsertAndRemove } from "./manipulable-insert-and-remove";
 import { manipulableOrderPreserving } from "./manipulable-order-preserving";
 import { manipulablePerm } from "./manipulable-perm";
 import { manipulablePermDouble } from "./manipulable-perm-double";
@@ -93,39 +94,43 @@ const drawerTiles = new ManipulableDrawer(manipulableTiles, {
   ],
 });
 
-const drawerGridPoly = new ManipulableDrawer(
-  manipulableGridPoly,
+const drawerGridPoly = new ManipulableDrawer(manipulableGridPoly, {
+  w: 6,
+  h: 6,
+  points: [
+    { x: 1, y: 1 },
+    { x: 2, y: 2 },
+    { x: 3, y: 3 },
+    { x: 4, y: 4 },
+  ],
+});
+
+const drawerPerm = new ManipulableDrawer(manipulablePerm, {
+  perm: ["A", "B", "C", "D", "E"],
+});
+
+const drawerPermDouble = new ManipulableDrawer(manipulablePermDouble, {
+  rows: [
+    ["A1", "B1", "C1"],
+    ["A2", "B2", "C2"],
+    ["A3", "B3", "C3"],
+  ],
+});
+
+const drawerInsertAndRemove = new ManipulableDrawer(
+  manipulableInsertAndRemove,
   {
-    w: 6,
-    h: 6,
-    points: [
-      { x: 1, y: 1 },
-      { x: 2, y: 2 },
-      { x: 3, y: 3 },
-      { x: 4, y: 4 },
+    store: [
+      { key: "D", label: "🍎" },
+      { key: "E", label: "🍌" },
+      { key: "F", label: "🍇" },
+    ],
+    items: [
+      { key: "A", label: "🍎" },
+      { key: "B", label: "🍎" },
+      { key: "C", label: "🍌" },
     ],
   },
-  { snapRadius: 10 },
-);
-
-const drawerPerm = new ManipulableDrawer(
-  manipulablePerm,
-  {
-    perm: ["A", "B", "C", "D", "E"],
-  },
-  { snapRadius: 10 },
-);
-
-const drawerPermDouble = new ManipulableDrawer(
-  manipulablePermDouble,
-  {
-    rows: [
-      ["A1", "B1", "C1"],
-      ["A2", "B2", "C2"],
-      ["A3", "B3", "C3"],
-    ],
-  },
-  { snapRadius: 10 },
 );
 
 const drawerTilesTiny = new ManipulableDrawer(manipulableTiles, {
@@ -133,6 +138,13 @@ const drawerTilesTiny = new ManipulableDrawer(manipulableTiles, {
   h: 1,
   tiles: [{ key: "A", x: 0, y: 0 }],
 });
+
+const inputDebugView = document.getElementById(
+  "debug-view",
+) as HTMLInputElement;
+const inputSnapRadius = document.getElementById(
+  "snap-radius",
+) as HTMLInputElement;
 
 // Drawing function
 function draw() {
@@ -146,6 +158,18 @@ function draw() {
   // Clear canvas with white background
   lyr.fillStyle = "white";
   lyr.fillRect(0, 0, c.width, c.height);
+
+  for (const drawer of [
+    drawerTiles,
+    drawerOrderPreserving,
+    drawerGridPoly,
+    drawerPerm,
+    drawerPermDouble,
+    drawerInsertAndRemove,
+  ]) {
+    drawer.config.debugView = inputDebugView.checked;
+    drawer.config.snapRadius = Number(inputSnapRadius.value);
+  }
 
   if (window.location.hash === "#perm") {
     const posPerm = Vec2(50, 50);
@@ -192,14 +216,22 @@ function draw() {
     lyr.place(lyrPerm, posPerm);
     drawerPerm.draw(lyrPerm, pointerManagerWithOffset(pointer, posPerm));
 
-    const posPermDouble = Vec2(700, 400);
-    const lyrPermDouble = layer(ctx);
-    lyr.place(lyrPermDouble, posPermDouble);
-    drawerPermDouble.draw(
-      lyrPermDouble,
-      pointerManagerWithOffset(pointer, posPermDouble),
+    const posInsertAndRemove = Vec2(750, 250);
+    const lyrInsertAndRemove = layer(ctx);
+    lyr.place(lyrInsertAndRemove, posInsertAndRemove);
+    drawerInsertAndRemove.draw(
+      lyrInsertAndRemove,
+      pointerManagerWithOffset(pointer, posInsertAndRemove),
     );
   }
+
+  const posPermDouble = Vec2(700, 500);
+  const lyrPermDouble = layer(ctx);
+  lyr.place(lyrPermDouble, posPermDouble);
+  drawerPermDouble.draw(
+    lyrPermDouble,
+    pointerManagerWithOffset(pointer, posPermDouble),
+  );
 
   // function getCircle(grp: Shape, id: string): Shape & { type: "circle" } {
   //   return (grp as KeyedGroup).shapes[id] as Shape & {

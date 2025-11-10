@@ -46,6 +46,7 @@ export const manipulableTiles: Manipulable<TilesState> = {
   accessibleFrom(state, draggableKey) {
     const curLoc = state.tiles.find((t) => t.key === draggableKey)!;
     const nextStates: TilesState[] = [];
+    nextStates.push(state); // can stay in place
     const deltas = [
       { dx: -1, dy: 0 },
       { dx: 1, dy: 0 },

@@ -758,15 +758,28 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
       };
     case "keyed-group":
       assertSameType(a, b);
-      assert(
-        Object.keys(a.shapes).length === Object.keys(b.shapes).length &&
-          Object.keys(a.shapes).every((k) => k in b.shapes),
-      );
+      // TODO: creating / removing objects requires changing number of keys
+      // assert(
+      //   Object.keys(a.shapes).length === Object.keys(b.shapes).length &&
+      //     Object.keys(a.shapes).every((k) => k in b.shapes),
+      // );
+      const allKeys = _.union(Object.keys(a.shapes), Object.keys(b.shapes));
       return {
         type: "keyed-group",
-        shapes: _.mapValues(a.shapes, (as, k) =>
-          lerpShapes(as, b.shapes[k], t),
+        shapes: Object.fromEntries(
+          allKeys.map((k) => {
+            const as = a.shapes[k];
+            const bs = b.shapes[k];
+            if (as && bs) {
+              return [k, lerpShapes(as, bs, t)];
+            } else {
+              return [k, as || bs];
+            }
+          }),
         ),
+        // shapes: _.mapValues(a.shapes, (as, k) =>
+        //   lerpShapes(as, b.shapes[k], t),
+        // ),
       };
     case "transform":
       assertSameType(a, b);
@@ -810,11 +823,7 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
 }
 
 export function shapeByKey(shape: Shape, key: string) {
-  const result = shapeByKeyHelper(shape, key, Vec2(0));
-  if (!result) {
-    throw new Error(`No shape with key ${key} found in shape`);
-  }
-  return result;
+  return shapeByKeyHelper(shape, key, Vec2(0));
 }
 function shapeByKeyHelper(
   shape: Shape,
