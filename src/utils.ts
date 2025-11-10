@@ -4,6 +4,12 @@ export function assertNever(_never: never, message?: string): never {
   );
 }
 
+export function assert(condition: boolean, msg?: string): asserts condition {
+  if (!condition) {
+    throw new Error(msg ?? "Assertion failed");
+  }
+}
+
 // it's too easy to call clamp with arguments in the wrong order, so
 // this one is symmetric
 export function clamp(a: number, b: number, c: number): number {

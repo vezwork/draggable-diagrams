@@ -44,6 +44,9 @@ class LayerImpl {
     private ctx: CanvasRenderingContext2D,
     private drawable: boolean,
   ) {
+    if (ctx instanceof LayerImpl) {
+      ctx = ctx.ctx;
+    }
     this.thisProxy = new Proxy<any>(this, {
       get: (target, prop) => {
         if (prop in target) {

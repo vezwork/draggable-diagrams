@@ -58,6 +58,11 @@ class Vec2Class {
     return this.x * v.x + this.y * v.y;
   }
 
+  cross(v: Vec2able): number {
+    v = Vec2(v);
+    return this.x * v.y - this.y * v.x;
+  }
+
   len2(): number {
     return this.dot(this);
   }

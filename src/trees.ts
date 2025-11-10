@@ -1,20 +1,28 @@
 import dagre from "dagre";
 
-export const simpleTree = addParents({
+export const tree1 = addParents({
+  id: "root",
+  children: [],
+});
+export const tree2 = addParents({
+  id: "root",
+  children: [{ id: "a", children: [] }],
+});
+export const tree3 = addParents({
   id: "root",
   children: [
     { id: "a", children: [] },
     { id: "b", children: [] },
   ],
 });
-export const biggerTree = addParents({
+export const tree4 = addParents({
   id: "root",
   children: [
     { id: "a", children: [{ id: "a1", children: [] }] },
     { id: "b", children: [] },
   ],
 });
-export const megaTree = addParents({
+export const tree7 = addParents({
   id: "root",
   children: [
     {
