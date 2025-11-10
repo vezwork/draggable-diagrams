@@ -28,31 +28,13 @@ export const manipulableOrderPreserving: Manipulable<OrderPreservingState> = {
         const morph = hasseDiagram.nodes[nodeIdx];
         // all the mappings in morph must agree with those in the current morph,
         // except for the one with id draggableKey
-        for (const [domainElem, codomainElem] of Object.entries(curMorph)) {
-          if (domainElem === draggableKey) {
-            continue;
-          }
-          if (morph[domainElem] !== codomainElem) {
-            return false;
-          }
-        }
-        return true;
+        return Object.entries(morph).every(
+          ([domainElem, codomainElem]) =>
+            domainElem === draggableKey ||
+            curMorph[domainElem] === codomainElem,
+        );
       },
     );
-    // const adjMorphIdxes = [
-    //   ...hasseDiagram.edges
-    //     .filter(
-    //       ([from, _to, nodeId]) =>
-    //         from === curMorphIdx && nodeId === draggableKey,
-    //     )
-    //     .map(([, to]) => to),
-    //   ...hasseDiagram.edges
-    //     .filter(
-    //       ([_from, to, nodeId]) =>
-    //         to === curMorphIdx && nodeId === draggableKey,
-    //     )
-    //     .map(([from]) => from),
-    // ];
     return adjMorphIdxes.map((idx) => ({
       ...state,
       curMorphIdx: idx,
