@@ -7,36 +7,31 @@ import { XYWH } from "./xywh";
 type TilesState = {
   w: number;
   h: number;
-  tiles: {
-    key: string;
-    x: number;
-    y: number;
-  }[];
+  tiles: { [key: string]: { x: number; y: number } };
 };
 
 export const manipulableTiles: Manipulable<TilesState> = {
   render(state) {
-    // draw grid as rectangles
     const TILE_SIZE = 50;
     return group(`tiles`, [
       ..._.range(state.w).flatMap((x) =>
-        _.range(state.h).flatMap((y) => ({
+        _.range(state.h).map((y) => ({
           type: "rectangle" as const,
           xywh: XYWH(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE),
           strokeStyle: "gray",
           lineWidth: 1,
         })),
       ),
-      ...state.tiles.map((tile) =>
+      ...Object.entries(state.tiles).map(([key, tile]) =>
         transform(
           Vec2(tile.x * TILE_SIZE, tile.y * TILE_SIZE),
-          keyed(`${tile.key}`, true, {
+          keyed(`${key}`, true, {
             type: "rectangle" as const,
             xywh: XYWH(0, 0, TILE_SIZE, TILE_SIZE),
             fillStyle: "#eee",
             strokeStyle: "black",
             lineWidth: 2,
-            label: tile.key,
+            label: key,
           }),
         ),
       ),
@@ -44,33 +39,25 @@ export const manipulableTiles: Manipulable<TilesState> = {
   },
 
   accessibleFrom(state, draggableKey) {
-    const curLoc = state.tiles.find((t) => t.key === draggableKey)!;
-    const nextStates: TilesState[] = [];
-    nextStates.push(state); // can stay in place
-    const deltas = [
-      { dx: -1, dy: 0 },
-      { dx: 1, dy: 0 },
-      { dx: 0, dy: -1 },
-      { dx: 0, dy: 1 },
+    const curLoc = state.tiles[draggableKey];
+    return [
+      state,
+      ...[
+        { dx: -1, dy: 0 },
+        { dx: 1, dy: 0 },
+        { dx: 0, dy: -1 },
+        { dx: 0, dy: 1 },
+      ].flatMap(({ dx, dy }) => {
+        const x = curLoc.x + dx;
+        const y = curLoc.y + dy;
+        if (x < 0 || x >= state.w || y < 0 || y >= state.h) return [];
+        if (Object.values(state.tiles).some((t) => t.x === x && t.y === y))
+          return [];
+        return {
+          ...state,
+          tiles: { ...state.tiles, [draggableKey]: { x, y } },
+        };
+      }),
     ];
-    for (const { dx, dy } of deltas) {
-      const x = curLoc.x + dx;
-      const y = curLoc.y + dy;
-      // check bounds
-      if (x < 0 || x >= state.w || y < 0 || y >= state.h) {
-        continue;
-      }
-      // check collision
-      if (state.tiles.some((t) => t.x === x && t.y === y)) {
-        continue;
-      }
-      nextStates.push({
-        ...state,
-        tiles: state.tiles.map((t) =>
-          t.key === draggableKey ? { ...t, x, y } : t,
-        ),
-      });
-    }
-    return nextStates;
   },
 };
