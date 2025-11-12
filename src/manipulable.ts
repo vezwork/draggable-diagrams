@@ -4,6 +4,7 @@ import { layer, Layer } from "./layer";
 import { IPointerManager } from "./pointer";
 import {
   drawInterpolatable,
+  InterpolatableShape,
   lerpShapes,
   origToInterpolatable,
   Shape,
@@ -12,32 +13,32 @@ import {
 import { assert, clamp } from "./utils";
 import { Vec2 } from "./vec2";
 
-/** A manipulable is a way of visualizing and interacting with data
- * (of some type T). */
+/** A manipulable is a way of visualizing and interacting with
+ * "state" (of some type T). */
 export type Manipulable<T> = {
-  render(t: T): Shape;
-  accessibleFrom(t: T, draggableKey: string): T[];
+  render(state: T): Shape;
+  accessibleFrom(state: T, draggableKey: string): T[];
 };
 
 export class ManipulableDrawer<T> {
   private state:
     | {
         type: "idle";
-        t: T;
+        state: T;
       }
     | {
         type: "dragging";
         draggableKey: string;
         pointerOffset: Vec2;
-        prevT: T;
-        tInfos: {
-          t: T;
-          interpolatableShape: Shape;
+        prevState: T;
+        accessibleStateInfos: {
+          state: T;
+          shape: InterpolatableShape;
           offset: Vec2;
         }[];
-        tDeletion: {
-          t: T;
-          interpolatableShape: Shape;
+        accessibleDeletionInfo: {
+          state: T;
+          shape: InterpolatableShape;
         } | null;
         delaunay: Delaunay<Delaunay.Point>;
       };
@@ -46,10 +47,10 @@ export class ManipulableDrawer<T> {
 
   constructor(
     public manipulable: Manipulable<T>,
-    t: T,
+    state: T,
     config: Partial<typeof this.config> = {},
   ) {
-    this.state = { type: "idle", t };
+    this.state = { type: "idle", state };
     this.config = { snapRadius: 20, debugView: false, ...config };
   }
 
@@ -60,11 +61,14 @@ export class ManipulableDrawer<T> {
     if (state.type === "dragging") {
       pointer.setCursor("grabbing");
 
-      const { toDraw, newT } = ((): { toDraw: Shape; newT: T } => {
+      const { shapeToDraw, newState } = ((): {
+        shapeToDraw: InterpolatableShape;
+        newState: T;
+      } => {
         const draggableDestPt = pointer.dragPointer!.sub(state.pointerOffset);
 
-        const closestTInfo = _.minBy(state.tInfos, (tInfo) =>
-          draggableDestPt.dist(tInfo.offset),
+        const closestStateInfo = _.minBy(state.accessibleStateInfos, (info) =>
+          draggableDestPt.dist(info.offset),
         );
 
         // where is it in the triangulation?
@@ -79,7 +83,7 @@ export class ManipulableDrawer<T> {
 
         // debug view
         if (this.config.debugView) {
-          for (const { offset } of state.tInfos) {
+          for (const { offset } of state.accessibleStateInfos) {
             lyrDebug.do(() => {
               lyrDebug.beginPath();
               lyrDebug.arc(
@@ -129,31 +133,39 @@ export class ManipulableDrawer<T> {
 
         // check if it's time to delete
         // TODO: make this work better lol
-        if (state.tDeletion) {
+        if (state.accessibleDeletionInfo) {
           const deletionDist = projectedDestPt.dist(draggableDestPt);
           // console.log("deletionDist", deletionDist);
           if (deletionDist > 40) {
             const t = clamp((deletionDist - 40) / 20, 0, 1);
             return {
-              toDraw: lerpShapes(
-                closestTInfo!.interpolatableShape,
-                state.tDeletion.interpolatableShape,
+              shapeToDraw: lerpShapes(
+                closestStateInfo!.shape,
+                state.accessibleDeletionInfo.shape,
                 t,
               ),
-              newT: t > 0.5 ? state.tDeletion.t : closestTInfo!.t,
+              newState:
+                t > 0.5
+                  ? state.accessibleDeletionInfo.state
+                  : closestStateInfo!.state,
             };
           }
         }
 
-        const newT = closestTInfo!.t;
+        const newState = closestStateInfo!.state;
 
         // check if it's time to snap
         if (
-          projectedDestPt.dist(closestTInfo!.offset) < this.config.snapRadius
+          projectedDestPt.dist(closestStateInfo!.offset) <
+          this.config.snapRadius
         ) {
           // TODO: maybe this should be optional?
-          this.enterDraggingMode(newT, state.draggableKey, state.pointerOffset);
-          return { toDraw: closestTInfo!.interpolatableShape, newT };
+          this.enterDraggingMode(
+            newState,
+            state.draggableKey,
+            state.pointerOffset,
+          );
+          return { shapeToDraw: closestStateInfo!.shape, newState };
         }
 
         if (projected) {
@@ -161,19 +173,20 @@ export class ManipulableDrawer<T> {
           // working with projectedDestPt
           if (projected.type === "vertex") {
             return {
-              toDraw: state.tInfos[projected.vertexIdx].interpolatableShape,
-              newT,
+              shapeToDraw:
+                state.accessibleStateInfos[projected.vertexIdx].shape,
+              newState,
             };
           } else {
             // interpolate along edge
             const { edgeIdx0, edgeIdx1, t } = projected;
             return {
-              toDraw: lerpShapes(
-                state.tInfos[edgeIdx0].interpolatableShape,
-                state.tInfos[edgeIdx1].interpolatableShape,
+              shapeToDraw: lerpShapes(
+                state.accessibleStateInfos[edgeIdx0].shape,
+                state.accessibleStateInfos[edgeIdx1].shape,
                 t,
               ),
-              newT,
+              newState,
             };
           }
         }
@@ -187,8 +200,8 @@ export class ManipulableDrawer<T> {
           // I think this only happens when there are only two points
           // total, like for the 15 puzzle. IDK why it happens at all.
           const [idxA, idxB] = Array.from(ptIdxSet);
-          const a = state.tInfos[idxA];
-          const b = state.tInfos[idxB];
+          const a = state.accessibleStateInfos[idxA];
+          const b = state.accessibleStateInfos[idxB];
           const edge = b.offset.sub(a.offset);
           const edgeLen2 = edge.len2();
           assert(edgeLen2 > 0);
@@ -198,42 +211,42 @@ export class ManipulableDrawer<T> {
             1,
           );
           return {
-            toDraw: lerpShapes(a.interpolatableShape, b.interpolatableShape, t),
-            newT,
+            shapeToDraw: lerpShapes(a.shape, b.shape, t),
+            newState,
           };
         } else {
           const bary = barycentric(
             draggableDestPt,
-            state.tInfos[ptIdx0].offset,
-            state.tInfos[ptIdx1].offset,
-            state.tInfos[ptIdx2].offset,
+            state.accessibleStateInfos[ptIdx0].offset,
+            state.accessibleStateInfos[ptIdx1].offset,
+            state.accessibleStateInfos[ptIdx2].offset,
           );
           // console.log(bary);
           return {
-            toDraw: lerpShapes3(
-              state.tInfos[ptIdx0].interpolatableShape,
-              state.tInfos[ptIdx1].interpolatableShape,
-              state.tInfos[ptIdx2].interpolatableShape,
+            shapeToDraw: lerpShapes3(
+              state.accessibleStateInfos[ptIdx0].shape,
+              state.accessibleStateInfos[ptIdx1].shape,
+              state.accessibleStateInfos[ptIdx2].shape,
               bary,
             ),
-            newT,
+            newState,
           };
         }
       })();
-      drawInterpolatable(lyr, toDraw);
+      drawInterpolatable(lyr, shapeToDraw);
       pointer.addPointerUpHandler(() => {
-        this.state = { type: "idle", t: newT };
+        this.state = { type: "idle", state: newState };
       });
     } else if (state.type === "idle") {
       pointer.setCursor("default");
 
-      const orig = this.manipulable.render(state.t);
+      const orig = this.manipulable.render(state.state);
       const interpolatable = origToInterpolatable(orig);
       // console.log("interpol", interpolatable);
       drawInterpolatable(lyr, interpolatable, {
         pointer: pointer,
         onDragStart: (key, pointerOffset) => {
-          this.enterDraggingMode(state.t, key, pointerOffset);
+          this.enterDraggingMode(state.state, key, pointerOffset);
         },
       });
     }
@@ -241,35 +254,42 @@ export class ManipulableDrawer<T> {
     lyr.place(lyrDebug);
   }
 
-  private enterDraggingMode(t: T, draggableKey: string, pointerOffset: Vec2) {
-    // const states = [t, ...this.manipulable.accessibleFrom(t, draggableKey)];
-    // TODO: update manipulables to return all accessible states
-    const states = this.manipulable.accessibleFrom(t, draggableKey);
+  private enterDraggingMode(
+    state: T,
+    draggableKey: string,
+    pointerOffset: Vec2,
+  ) {
+    const states = this.manipulable.accessibleFrom(state, draggableKey);
     // console.log("enterDraggingMode states", states);
-    let tDeletion: { t: T; interpolatableShape: Shape } | null = null;
-    const tInfos = states.flatMap((t) => {
-      const interpolatableShape = origToInterpolatable(
-        this.manipulable.render(t),
-      );
-      const foundShape = shapeByKey(interpolatableShape, draggableKey);
+    let accessibleDeletionInfo: {
+      state: T;
+      interpolatableShape: Shape;
+    } | null = null;
+    const accessibleStateInfos = states.flatMap((state) => {
+      const shape = origToInterpolatable(this.manipulable.render(state));
+      const foundShape = shapeByKey(shape, draggableKey);
       if (foundShape) {
-        const { shape, offset } = foundShape;
-        return { t, interpolatableShape, draggable: shape, offset };
+        return { state, shape, offset: foundShape.offset } satisfies Extract<
+          typeof this.state,
+          { type: "dragging" }
+        >["accessibleStateInfos"][0];
       } else {
-        assert(!tDeletion, "Multiple deletions found");
-        tDeletion = { t, interpolatableShape };
+        assert(!accessibleDeletionInfo, "Multiple deletions found");
+        accessibleDeletionInfo = { state, interpolatableShape: shape };
         return [];
       }
     });
-    const delaunay = Delaunay.from(tInfos.map((tInfo) => tInfo.offset.arr()));
+    const delaunay = Delaunay.from(
+      accessibleStateInfos.map((info) => info.offset.arr()),
+    );
     // console.log("delaunay", delaunay);
     this.state = {
       type: "dragging",
       draggableKey,
       pointerOffset,
-      prevT: t,
-      tInfos,
-      tDeletion,
+      prevState: state,
+      accessibleStateInfos,
+      accessibleDeletionInfo: accessibleDeletionInfo,
       delaunay,
     };
   }
@@ -356,9 +376,9 @@ function barycentric(pt: Vec2, p0: Vec2, p1: Vec2, p2: Vec2) {
 }
 
 function lerpShapes3(
-  a: Shape,
-  b: Shape,
-  c: Shape,
+  a: InterpolatableShape,
+  b: InterpolatableShape,
+  c: InterpolatableShape,
   { l0, l1, l2 }: { l0: number; l1: number; l2: number },
 ) {
   if (l0 + l1 < 1e-6) {

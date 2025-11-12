@@ -106,6 +106,10 @@ export function zIndex(zIndex: number, shape: Shape): ZIndex {
   return { type: "z-index", shape, zIndex };
 }
 
+// this is just a way of tagging that we've run the shape through
+// origToInterpolatable
+export type InterpolatableShape = Shape & { interpolatable: true };
+
 /** Returns all children of a shape. */
 export function shapeChildren(
   shape: Shape,
@@ -654,20 +658,21 @@ export function pruneEmptyGroups(shape: Shape): Shape | null {
   }
 }
 
-export function origToInterpolatable(shape: Shape): Shape {
+export function origToInterpolatable(shape: Shape): InterpolatableShape {
   // const parentMap = makeParentMap(shape);
   const offsetMap = makeOffsetMap(shape, Vec2(0));
   // console.log("r.shape", r.shape);
   // console.log("parentMap", parentMap);
   const shape2 = runLazyShapes(shape, offsetMap);
   const shape3 = pullOutKeyedShapes(shape2);
-  const shape4 = pruneEmptyGroups(shape3);
-  return shape4 ?? group();
+  const shape4 = pruneEmptyGroups(shape3) ?? group();
+  // TODO: should we be scared of losing identity here?
+  return { ...shape4, interpolatable: true };
 }
 
 export function drawInterpolatable(
   lyr: Layer,
-  shape: Shape,
+  shape: InterpolatableShape,
   ctx?: DrawShapeContext,
 ): void {
   const flatShapes = flattenShape(shape, Vec2(0), 0).flatShapes;
@@ -692,7 +697,15 @@ export function drawInterpolatable(
 //   return shape;
 // }
 
-export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
+export function lerpShapes(
+  a: InterpolatableShape,
+  b: InterpolatableShape,
+  t: number,
+): InterpolatableShape {
+  return { ...lerpShapesImpl(a, b, t), interpolatable: true };
+}
+
+function lerpShapesImpl(a: Shape, b: Shape, t: number): Shape {
   function assertSameType<T extends Shape>(a: T, b: Shape): asserts b is T {
     assert(a.type === b.type);
   }
@@ -754,7 +767,7 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
       assert(a.shapes.length === b.shapes.length);
       return {
         type: "group",
-        shapes: a.shapes.map((as, i) => lerpShapes(as, b.shapes[i], t)),
+        shapes: a.shapes.map((as, i) => lerpShapesImpl(as, b.shapes[i], t)),
       };
     case "keyed-group":
       assertSameType(a, b);
@@ -771,7 +784,7 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
             const as = a.shapes[k];
             const bs = b.shapes[k];
             if (as && bs) {
-              return [k, lerpShapes(as, bs, t)];
+              return [k, lerpShapesImpl(as, bs, t)];
             } else {
               return [k, as || bs];
             }
@@ -785,7 +798,7 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
       assertSameType(a, b);
       return {
         type: "transform",
-        shape: lerpShapes(a.shape, b.shape, t),
+        shape: lerpShapesImpl(a.shape, b.shape, t),
         offset: a.offset.lerp(b.offset, t),
       };
     case "z-index":
@@ -793,7 +806,7 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
       assert(a.zIndex === b.zIndex);
       return {
         type: "z-index",
-        shape: lerpShapes(a.shape, b.shape, t),
+        shape: lerpShapesImpl(a.shape, b.shape, t),
         zIndex: a.zIndex,
       };
     case "lazy":
@@ -804,7 +817,7 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
         type: "lazy",
         state: {
           hasRun: true,
-          shape: lerpShapes(a.state.shape, b.state.shape, t),
+          shape: lerpShapesImpl(a.state.shape, b.state.shape, t),
         },
       };
     case "keyed":
@@ -815,7 +828,7 @@ export function lerpShapes(a: Shape, b: Shape, t: number): Shape {
         type: "keyed",
         key: a.key,
         isDraggable: a.isDraggable,
-        shape: lerpShapes(a.shape, b.shape, t),
+        shape: lerpShapesImpl(a.shape, b.shape, t),
       };
     default:
       return assertNever(a);
