@@ -1,5 +1,6 @@
 import { useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useDemoContext } from "../DemoContext";
 import { layer } from "../layer";
 import { ManipulableDrawer } from "../manipulable";
 import { PointerManager, pointerManagerWithOffset } from "../pointer";
@@ -12,8 +13,6 @@ interface DemoProps {
   drawer: ManipulableDrawer<any>;
   height: number;
   padding?: number;
-  debugView: boolean;
-  snapRadius: number;
 }
 
 export function Demo({
@@ -22,9 +21,8 @@ export function Demo({
   drawer,
   height,
   padding = 0,
-  debugView,
-  snapRadius,
 }: DemoProps) {
+  const { debugView, snapRadius } = useDemoContext();
   const pointerRef = useRef<PointerManager | null>(null);
 
   // Memoize the draw callback to prevent unnecessary re-renders
