@@ -3,6 +3,7 @@ import { keyed, transform } from "./shape";
 import { XYWH } from "./xywh";
 
 export const manipulableSimplest: Manipulable<boolean> = {
+  sourceFile: "manipulable-simplest.ts",
   render(state) {
     return transform(
       [state ? 100 : 0, 0],
@@ -18,3 +19,5 @@ export const manipulableSimplest: Manipulable<boolean> = {
     return [false, true];
   },
 };
+
+export const stateSimplest1 = true;

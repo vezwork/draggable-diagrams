@@ -12,6 +12,7 @@ type TilesState = {
 };
 
 export const manipulableTiles: Manipulable<TilesState> = {
+  sourceFile: "manipulable-tiles.ts",
   render(state) {
     const TILE_SIZE = 50;
     return group(`tiles`, [
@@ -65,5 +66,35 @@ export const manipulableTiles: Manipulable<TilesState> = {
         },
       ),
     };
+  },
+};
+
+export const stateTiles15Puzzle: TilesState = {
+  w: 4,
+  h: 4,
+  tiles: {
+    "12": { x: 0, y: 0 },
+    "1": { x: 1, y: 0 },
+    "2": { x: 2, y: 0 },
+    "15": { x: 3, y: 0 },
+    "11": { x: 0, y: 1 },
+    "6": { x: 1, y: 1 },
+    "5": { x: 2, y: 1 },
+    "8": { x: 3, y: 1 },
+    "7": { x: 0, y: 2 },
+    "10": { x: 1, y: 2 },
+    "9": { x: 2, y: 2 },
+    "4": { x: 3, y: 2 },
+    "13": { x: 1, y: 3 },
+    "14": { x: 2, y: 3 },
+    "3": { x: 3, y: 3 },
+  },
+};
+
+export const stateTilesLonely: TilesState = {
+  w: 5,
+  h: 5,
+  tiles: {
+    A: { x: 2, y: 2 },
   },
 };

@@ -1,7 +1,13 @@
 import _ from "lodash";
 import { Manipulable } from "./manipulable";
 import { drawBgTree } from "./order-preserving";
-import { HasseDiagram, TreeNode } from "./trees";
+import {
+  buildHasseDiagram,
+  HasseDiagram,
+  tree3,
+  tree7,
+  TreeNode,
+} from "./trees";
 
 type OrderPreservingState = {
   domainTree: TreeNode;
@@ -11,6 +17,7 @@ type OrderPreservingState = {
 };
 
 export const manipulableOrderPreserving: Manipulable<OrderPreservingState> = {
+  sourceFile: "manipulable-order-preserving.ts",
   render(state) {
     const r = drawBgTree(
       state.codomainTree,
@@ -40,4 +47,18 @@ export const manipulableOrderPreserving: Manipulable<OrderPreservingState> = {
       curMorphIdx: idx,
     }));
   },
+};
+
+export const stateOrderPreserving1: OrderPreservingState = {
+  domainTree: tree3,
+  codomainTree: tree3,
+  hasseDiagram: buildHasseDiagram(tree3, tree3),
+  curMorphIdx: 0,
+};
+
+export const stateOrderPreserving2: OrderPreservingState = {
+  domainTree: tree7,
+  codomainTree: tree7,
+  hasseDiagram: buildHasseDiagram(tree7, tree7),
+  curMorphIdx: 0,
 };

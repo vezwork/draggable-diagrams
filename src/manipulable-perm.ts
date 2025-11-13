@@ -10,6 +10,7 @@ type PermState = {
 };
 
 export const manipulablePerm: Manipulable<PermState> = {
+  sourceFile: "manipulable-perm.ts",
   render(state) {
     // draw grid as rectangles
     const TILE_SIZE = 50;
@@ -39,4 +40,8 @@ export const manipulablePerm: Manipulable<PermState> = {
       perm: insert(permWithoutDragged, idx, draggableKey),
     }));
   },
+};
+
+export const statePerm1: PermState = {
+  perm: ["A", "B", "C", "D", "E"],
 };

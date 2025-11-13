@@ -14,34 +14,8 @@ type SokobanState = {
   boxes: [number, number, string][];
 };
 
-export function makeSokobanState(board: string): SokobanState {
-  const lines = board.split("\n");
-  const h = lines.length;
-  const w = Math.max(...lines.map((l) => l.length));
-  const walls: [number, number][] = [];
-  const goals: [number, number][] = [];
-  let player: [number, number] = [0, 0];
-  const boxes: [number, number, string][] = [];
-  lines.forEach((line, y) => {
-    line.split("").forEach((ch, x) => {
-      if (ch === "#") {
-        walls.push([x, y]);
-      } else if (ch === "g") {
-        goals.push([x, y]);
-      } else if (ch === "p") {
-        player = [x, y];
-      } else if (ch === "b") {
-        boxes.push([x, y, `box-${x}-${y}`]);
-      } else if (ch === "B") {
-        boxes.push([x, y, `box-${x}-${y}`]);
-        goals.push([x, y]);
-      }
-    });
-  });
-  return { w, h, walls, goals, player, boxes };
-}
-
 export const manipulableSokoban: Manipulable<SokobanState> = {
+  sourceFile: "manipulable-sokoban.ts",
   render(state) {
     const TILE_SIZE = 50;
     return group(`tiles`, [
@@ -158,3 +132,40 @@ export const manipulableSokoban: Manipulable<SokobanState> = {
     };
   },
 };
+
+export function makeSokobanState(board: string): SokobanState {
+  const lines = board.split("\n");
+  const h = lines.length;
+  const w = Math.max(...lines.map((l) => l.length));
+  const walls: [number, number][] = [];
+  const goals: [number, number][] = [];
+  let player: [number, number] = [0, 0];
+  const boxes: [number, number, string][] = [];
+  lines.forEach((line, y) => {
+    line.split("").forEach((ch, x) => {
+      if (ch === "#") {
+        walls.push([x, y]);
+      } else if (ch === "g") {
+        goals.push([x, y]);
+      } else if (ch === "p") {
+        player = [x, y];
+      } else if (ch === "b") {
+        boxes.push([x, y, `box-${x}-${y}`]);
+      } else if (ch === "B") {
+        boxes.push([x, y, `box-${x}-${y}`]);
+        goals.push([x, y]);
+      }
+    });
+  });
+  return { w, h, walls, goals, player, boxes };
+}
+
+export const stateSokoban1 = makeSokobanState(`  #####
+###   #
+#gpb  #
+### bg#
+#g##b #
+# # g ##
+#b Bbbg#
+#   g  #
+########`);

@@ -20,6 +20,7 @@ import { Vec2 } from "./vec2";
 export type Manipulable<T> = {
   render(state: T): Shape;
   accessibleFrom(state: T, draggableKey: string): AccessibleFromReturn<T>;
+  sourceFile?: string;
 };
 
 // TODO: think about this API

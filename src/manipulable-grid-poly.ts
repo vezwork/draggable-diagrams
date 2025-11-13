@@ -14,6 +14,7 @@ type GridPolyState = {
 };
 
 export const manipulableGridPoly: Manipulable<GridPolyState> = {
+  sourceFile: "manipulable-grid-poly.ts",
   render(state) {
     // draw grid as rectangles
     const TILE_SIZE = 50;
@@ -72,4 +73,15 @@ export const manipulableGridPoly: Manipulable<GridPolyState> = {
       return [];
     }
   },
+};
+
+export const stateGridPoly1: GridPolyState = {
+  w: 6,
+  h: 6,
+  points: [
+    { x: 1, y: 1 },
+    { x: 4, y: 2 },
+    { x: 3, y: 5 },
+    { x: 1, y: 4 },
+  ],
 };

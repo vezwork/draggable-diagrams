@@ -15,13 +15,7 @@ interface DemoProps {
   padding?: number;
 }
 
-export function Demo({
-  id,
-  title,
-  drawer,
-  height,
-  padding = 0,
-}: DemoProps) {
+export function Demo({ id, title, drawer, height, padding = 0 }: DemoProps) {
   const { debugView, snapRadius } = useDemoContext();
   const pointerRef = useRef<PointerManager | null>(null);
 
@@ -61,14 +55,26 @@ export function Demo({
 
   return (
     <div className="bg-white rounded-lg p-5 shadow-sm" id={id}>
-      <h2 className="text-xl font-semibold text-gray-900 mb-4 m-0">
-        <Link
-          to={`/${id}`}
-          className="no-underline text-gray-900 hover:text-gray-700 transition-colors"
-        >
-          {title}
-        </Link>
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-gray-900 m-0">
+          <Link
+            to={`/${id}`}
+            className="no-underline text-gray-900 hover:text-gray-700 transition-colors"
+          >
+            {title}
+          </Link>
+        </h2>
+        {drawer.manipulable.sourceFile && (
+          <a
+            href={`https://github.com/joshuahhh/draggable-diagrams/blob/main/src/${drawer.manipulable.sourceFile}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-gray-500 hover:text-gray-700 no-underline"
+          >
+            source
+          </a>
+        )}
+      </div>
       <Canvas height={height + padding * 2} draw={draw} />
     </div>
   );

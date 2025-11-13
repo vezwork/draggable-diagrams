@@ -10,6 +10,7 @@ type PermDoubleState = {
 };
 
 export const manipulablePermDouble: Manipulable<PermDoubleState> = {
+  sourceFile: "manipulable-perm-double.ts",
   render(state) {
     // draw grid as rectangles
     const TILE_SIZE = 50;
@@ -59,4 +60,12 @@ export const manipulablePermDouble: Manipulable<PermDoubleState> = {
       }));
     });
   },
+};
+
+export const statePermDouble1: PermDoubleState = {
+  rows: [
+    ["A1", "B1", "C1"],
+    ["A2", "B2", "C2"],
+    ["A3", "B3", "C3"],
+  ],
 };

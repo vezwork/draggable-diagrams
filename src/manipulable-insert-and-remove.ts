@@ -11,6 +11,7 @@ type PermState = {
 };
 
 export const manipulableInsertAndRemove: Manipulable<PermState> = {
+  sourceFile: "manipulable-insert-and-remove.ts",
   render(state) {
     // draw grid as rectangles
     const TILE_SIZE = 50;
@@ -79,4 +80,17 @@ export const manipulableInsertAndRemove: Manipulable<PermState> = {
       ];
     }
   },
+};
+
+export const stateInsertAndRemove1: PermState = {
+  store: [
+    { key: "D", label: "🍎" },
+    { key: "E", label: "🍌" },
+    { key: "F", label: "🍇" },
+  ],
+  items: [
+    { key: "A", label: "🍎" },
+    { key: "B", label: "🍎" },
+    { key: "C", label: "🍌" },
+  ],
 };
