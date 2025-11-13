@@ -13,8 +13,25 @@ export function assert(
       console.group("Assertion failed; debug info:");
       msg();
       console.groupEnd();
+      throw new Error("Assertion failed");
+    } else {
+      throw new Error(msg ?? "Assertion failed");
     }
-    throw new Error(typeof msg === "string" ? msg : "Assertion failed");
+  }
+}
+
+export function assertWarning(
+  condition: boolean,
+  msg?: string | (() => void),
+): void {
+  if (!condition) {
+    if (typeof msg === "function") {
+      console.group("Warning assertion failed; debug info:");
+      msg();
+      console.groupEnd();
+    } else {
+      console.warn("Warning assertion failed:", msg || "");
+    }
   }
 }
 

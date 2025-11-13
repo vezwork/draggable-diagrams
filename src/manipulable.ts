@@ -149,11 +149,6 @@ export class ManipulableDrawer<T> {
           };
         } else if (bestManifoldProjection.type === "edge") {
           const { ptIdx0, ptIdx1, t } = bestManifoldProjection;
-          console.log(
-            "yo",
-            bestManifoldProjection.manifold.points[ptIdx0].shape,
-            bestManifoldProjection.manifold.points[ptIdx1].shape,
-          );
           return {
             shapeToDraw: lerpShapes(
               bestManifoldProjection.manifold.points[ptIdx0].shape,
