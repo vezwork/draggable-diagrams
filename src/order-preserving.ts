@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { overlapIntervals } from "./layout";
 import {
   PointInShape,
   Shape,
@@ -58,20 +59,48 @@ function drawBgSubtree(
 
   fgNodesBelow.push(...bgNodeR.fgNodesBelow);
 
-  let x = 0;
+  if (bgNode.children.length === 0) {
+    return {
+      shape: bgNodeR.shape,
+      w: bgNodeR.w,
+      h: bgNodeR.h,
+      rootCenter: bgNodeR.rootCenter,
+    };
+  }
+
+  const childRs = bgNode.children.map((child) =>
+    drawBgSubtree(child, fgNodesBelow, morph, fgNodeCenters),
+  );
+
+  const childrenWidth =
+    _.sumBy(childRs, (r) => r.w) + BG_NODE_GAP * (childRs.length - 1);
+
+  const firstChildX = childRs[0].rootCenter.__point.x;
+  const lastChildX =
+    childrenWidth -
+    (childRs[childRs.length - 1].w -
+      childRs[childRs.length - 1].rootCenter.__point.x);
+
+  const params = {
+    aLength: bgNodeR.w,
+    aAnchor: bgNodeR.w / 2,
+    bLength: childrenWidth,
+    bAnchor: (firstChildX + lastChildX) / 2,
+  };
+  const { aOffset, bOffset, length: width } = overlapIntervals(params);
+
+  console.log(params, { aOffset, bOffset, width });
+
+  shape.shapes.push(transform(Vec2(aOffset, 0), bgNodeR.shape));
+
+  let x = bOffset;
   let y = bgNodeR.h + BG_NODE_GAP;
-  let maxX = bgNodeR.w;
   let maxY = bgNodeR.h;
 
-  const childRootCenters: Vec2[] = [];
-
-  for (const child of bgNode.children) {
-    const childR = drawBgSubtree(child, fgNodesBelow, morph, fgNodeCenters);
-
+  for (const childR of childRs) {
     shape.shapes.push(transform(Vec2(x, y), childR.shape));
 
     x += childR.w + BG_NODE_GAP;
-    maxX = Math.max(maxX, x - BG_NODE_GAP);
     maxY = Math.max(maxY, y + childR.h);
 
     shape.shapes.push(
@@ -85,20 +114,9 @@ function drawBgSubtree(
     );
   }
 
-  const bgNodeOffset = Vec2(
-    childRootCenters.length > 0
-      ? (childRootCenters[0].x +
-          childRootCenters[childRootCenters.length - 1].x) /
-          2 -
-          bgNodeR.w / 2
-      : (maxX - bgNodeR.w) / 2,
-    0,
-  );
-  shape.shapes.push(transform(bgNodeOffset, bgNodeR.shape));
-
   return {
     shape,
-    w: maxX,
+    w: width,
     h: maxY,
     rootCenter: bgNodeR.rootCenter,
   };

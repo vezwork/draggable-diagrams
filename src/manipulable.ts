@@ -73,7 +73,7 @@ export class ManipulableDrawer<T> {
       pointer.setCursor("grabbing");
 
       const { shapeToDraw, newState } = ((): {
-        shapeToDraw: InterpolatableShape;
+        shapeToDraw?: InterpolatableShape;
         newState: T;
       } => {
         const draggableDestPt = pointer.dragPointer!.sub(state.pointerOffset);
@@ -172,7 +172,7 @@ export class ManipulableDrawer<T> {
           };
         }
       })();
-      drawInterpolatable(lyr, shapeToDraw);
+      if (shapeToDraw) drawInterpolatable(lyr, shapeToDraw);
       pointer.addPointerUpHandler(() => {
         this.state = { type: "idle", state: newState };
       });

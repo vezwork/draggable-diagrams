@@ -8,8 +8,16 @@ import { manipulablePermDouble } from "./manipulable-perm-double";
 import { manipulableRushHour } from "./manipulable-rush-hour";
 import { manipulableTiles } from "./manipulable-tiles";
 import { PointerManager, pointerManagerWithOffset } from "./pointer";
-import { buildHasseDiagram, tree4, tree7 } from "./trees";
+import { buildHasseDiagram, tree3, tree7 } from "./trees";
 import { Vec2 } from "./vec2";
+
+// Helper to create a demo ID from title
+function createDemoId(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 // Helper to create a demo canvas
 function createDemoCanvas(
@@ -24,9 +32,23 @@ function createDemoCanvas(
 
   const demoItem = document.createElement("div");
   demoItem.className = "demo-item";
+  const demoId = createDemoId(title);
+  demoItem.id = demoId;
 
   const heading = document.createElement("h2");
-  heading.textContent = title;
+  const link = document.createElement("a");
+  link.href = `${window.location.pathname}#${demoId}`;
+  link.textContent = title;
+  link.style.textDecoration = "none";
+  link.style.color = "inherit";
+  link.style.cursor = "pointer";
+  link.addEventListener("click", (e) => {
+    e.preventDefault();
+    const newUrl = `${window.location.pathname}#${demoId}`;
+    window.history.pushState(null, "", newUrl);
+    window.location.reload();
+  });
+  heading.appendChild(link);
   demoItem.appendChild(heading);
 
   const canvas = document.createElement("canvas");
@@ -59,12 +81,6 @@ function createDemoCanvas(
 
   return { canvas, ctx, container: demoItem };
 }
-
-const domainTree = tree4;
-const codomainTree = tree4;
-
-const hasseDiagram = buildHasseDiagram(domainTree, codomainTree);
-console.log("Hasse diagram contains:", hasseDiagram.nodes.length);
 
 // Debug controls
 const inputDebugView = document.getElementById(
@@ -121,133 +137,186 @@ function createDemo(
   drawLoop();
 }
 
-createDemo(
-  "Rush Hour",
-  new ManipulableDrawer(manipulableRushHour, {
-    w: 6,
-    h: 6,
-    tiles: {
-      A: { x: 0, y: 0, w: 2, h: 1, dir: "h", color: "lightgreen" },
-      B: { x: 0, y: 1, w: 1, h: 3, dir: "v", color: "purple" },
-      C: { x: 1, y: 2, w: 2, h: 1, dir: "h", color: "red" },
-      D: { x: 0, y: 4, w: 1, h: 2, dir: "v", color: "orange" },
-      E: { x: 3, y: 1, w: 1, h: 3, dir: "v", color: "blue" },
-      F: { x: 5, y: 0, w: 1, h: 3, dir: "v", color: "yellow" },
-      G: { x: 4, y: 4, w: 2, h: 1, dir: "h", color: "lightblue" },
-      H: { x: 2, y: 5, w: 3, h: 1, dir: "h", color: "green" },
-    },
-  }),
-  { height: 300, padding: 20 },
-);
+// Define all demos upfront (without creating them yet)
+const allDemos: Array<{
+  title: string;
+  createDrawer: () => ManipulableDrawer<any>;
+  config: { height: number; padding?: number };
+}> = [
+  {
+    title: "Rush Hour",
+    createDrawer: () =>
+      new ManipulableDrawer(manipulableRushHour, {
+        w: 6,
+        h: 6,
+        tiles: {
+          A: { x: 0, y: 0, w: 2, h: 1, dir: "h", color: "lightgreen" },
+          B: { x: 0, y: 1, w: 1, h: 3, dir: "v", color: "purple" },
+          C: { x: 1, y: 2, w: 2, h: 1, dir: "h", color: "red" },
+          D: { x: 0, y: 4, w: 1, h: 2, dir: "v", color: "orange" },
+          E: { x: 3, y: 1, w: 1, h: 3, dir: "v", color: "blue" },
+          F: { x: 5, y: 0, w: 1, h: 3, dir: "v", color: "yellow" },
+          G: { x: 4, y: 4, w: 2, h: 1, dir: "h", color: "lightblue" },
+          H: { x: 2, y: 5, w: 3, h: 1, dir: "h", color: "green" },
+        },
+      }),
+    config: { height: 300, padding: 20 },
+  },
+  {
+    title: "15 puzzle",
+    createDrawer: () =>
+      new ManipulableDrawer(manipulableTiles, {
+        w: 4,
+        h: 4,
+        tiles: {
+          "12": { x: 0, y: 0 },
+          "1": { x: 1, y: 0 },
+          "2": { x: 2, y: 0 },
+          "15": { x: 3, y: 0 },
+          "11": { x: 0, y: 1 },
+          "6": { x: 1, y: 1 },
+          "5": { x: 2, y: 1 },
+          "8": { x: 3, y: 1 },
+          "7": { x: 0, y: 2 },
+          "10": { x: 1, y: 2 },
+          "9": { x: 2, y: 2 },
+          "4": { x: 3, y: 2 },
+          "13": { x: 1, y: 3 },
+          "14": { x: 2, y: 3 },
+          "3": { x: 3, y: 3 },
+        },
+      }),
+    config: { height: 200, padding: 20 },
+  },
+  {
+    title: "Lonely tile on a grid; goal is for it to only slide orthogonally",
+    createDrawer: () =>
+      new ManipulableDrawer(manipulableTiles, {
+        w: 5,
+        h: 5,
+        tiles: {
+          A: { x: 2, y: 2 },
+        },
+      }),
+    config: { height: 300, padding: 20 },
+  },
+  {
+    title: "Order preserving map",
+    createDrawer: () =>
+      new ManipulableDrawer(manipulableOrderPreserving, {
+        domainTree: tree3,
+        codomainTree: tree3,
+        hasseDiagram: buildHasseDiagram(tree3, tree3),
+        curMorphIdx: 0,
+      }),
+    config: { height: 260, padding: 20 },
+  },
+  {
+    title: "Order preserving map (big)",
+    createDrawer: () =>
+      new ManipulableDrawer(manipulableOrderPreserving, {
+        domainTree: tree7,
+        codomainTree: tree7,
+        hasseDiagram: buildHasseDiagram(tree7, tree7),
+        curMorphIdx: 0,
+      }),
+    config: { height: 500, padding: 20 },
+  },
+  {
+    title: "Grid polygon",
+    createDrawer: () =>
+      new ManipulableDrawer(manipulableGridPoly, {
+        w: 6,
+        h: 6,
+        points: [
+          { x: 1, y: 1 },
+          { x: 2, y: 2 },
+          { x: 3, y: 3 },
+          { x: 4, y: 4 },
+        ],
+      }),
+    config: { height: 250, padding: 20 },
+  },
+  {
+    title: "Permutation",
+    createDrawer: () =>
+      new ManipulableDrawer(manipulablePerm, {
+        perm: ["A", "B", "C", "D", "E"],
+      }),
+    config: { height: 50, padding: 10 },
+  },
+  {
+    title: "Permutation of permutations",
+    createDrawer: () =>
+      new ManipulableDrawer(manipulablePermDouble, {
+        rows: [
+          ["A1", "B1", "C1"],
+          ["A2", "B2", "C2"],
+          ["A3", "B3", "C3"],
+        ],
+      }),
+    config: { height: 200 },
+  },
+  {
+    title: "Inserting & removing items (wip)",
+    createDrawer: () =>
+      new ManipulableDrawer(manipulableInsertAndRemove, {
+        store: [
+          { key: "D", label: "🍎" },
+          { key: "E", label: "🍌" },
+          { key: "F", label: "🍇" },
+        ],
+        items: [
+          { key: "A", label: "🍎" },
+          { key: "B", label: "🍎" },
+          { key: "C", label: "🍌" },
+        ],
+      }),
+    config: { height: 150, padding: 10 },
+  },
+];
 
-createDemo(
-  "15 puzzle",
-  new ManipulableDrawer(manipulableTiles, {
-    w: 4,
-    h: 4,
-    tiles: {
-      "12": { x: 0, y: 0 },
-      "1": { x: 1, y: 0 },
-      "2": { x: 2, y: 0 },
-      "15": { x: 3, y: 0 },
-      "11": { x: 0, y: 1 },
-      "6": { x: 1, y: 1 },
-      "5": { x: 2, y: 1 },
-      "8": { x: 3, y: 1 },
-      "7": { x: 0, y: 2 },
-      "10": { x: 1, y: 2 },
-      "9": { x: 2, y: 2 },
-      "4": { x: 3, y: 2 },
-      "13": { x: 1, y: 3 },
-      "14": { x: 2, y: 3 },
-      "3": { x: 3, y: 3 },
-    },
-  }),
-  { height: 200, padding: 20 },
-);
+// Determine which demos to create based on the URL hash
+const hash = window.location.hash.slice(1);
+const demosToCreate = hash
+  ? allDemos.filter((demo) => createDemoId(demo.title) === hash)
+  : allDemos;
 
-createDemo(
-  "Lonely tile on a grid; goal is for it to only slide orthogonally",
-  new ManipulableDrawer(manipulableTiles, {
-    w: 5,
-    h: 5,
-    tiles: {
-      A: { x: 2, y: 2 },
-    },
-  }),
-  { height: 300, padding: 20 },
-);
+// Only create the demos that should be displayed
+demosToCreate.forEach((demo) => {
+  createDemo(demo.title, demo.createDrawer(), demo.config);
+});
 
-createDemo(
-  "Order preserving map",
-  new ManipulableDrawer(manipulableOrderPreserving, {
-    domainTree,
-    codomainTree,
-    hasseDiagram,
-    curMorphIdx: 0,
-  }),
-  { height: 400, padding: 20 },
-);
+// If viewing a single demo, add a back link
+if (hash && demosToCreate.length > 0) {
+  const pageHeader = document.getElementById("page-header")!;
+  const demosContainer = document.getElementById("demos-container")!;
 
-createDemo(
-  "Order preserving map (big)",
-  new ManipulableDrawer(manipulableOrderPreserving, {
-    domainTree: tree7,
-    codomainTree: tree7,
-    hasseDiagram: buildHasseDiagram(tree7, tree7),
-    curMorphIdx: 0,
-  }),
-  { height: 500, padding: 20 },
-);
+  const backLink = document.createElement("div");
+  backLink.id = "back-link";
+  backLink.style.textAlign = "center";
+  backLink.style.padding = "10px 20px";
+  backLink.style.maxWidth = "1200px";
+  backLink.style.margin = "0 auto";
 
-createDemo(
-  "Grid polygon",
-  new ManipulableDrawer(manipulableGridPoly, {
-    w: 6,
-    h: 6,
-    points: [
-      { x: 1, y: 1 },
-      { x: 2, y: 2 },
-      { x: 3, y: 3 },
-      { x: 4, y: 4 },
-    ],
-  }),
-  { height: 250, padding: 20 },
-);
+  const link = document.createElement("a");
+  link.href = window.location.pathname; // Link back without hash
+  link.textContent = "← Back to all demos";
+  link.style.textDecoration = "none";
+  link.style.color = "#0066cc";
+  link.style.fontSize = "14px";
+  link.style.cursor = "pointer";
+  link.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.history.pushState(null, "", window.location.pathname);
+    window.location.reload();
+  });
 
-createDemo(
-  "Permutation",
-  new ManipulableDrawer(manipulablePerm, {
-    perm: ["A", "B", "C", "D", "E"],
-  }),
-  { height: 50, padding: 10 },
-);
+  backLink.appendChild(link);
+  pageHeader.parentNode!.insertBefore(backLink, demosContainer);
+}
 
-createDemo(
-  "Permutation of permutations",
-  new ManipulableDrawer(manipulablePermDouble, {
-    rows: [
-      ["A1", "B1", "C1"],
-      ["A2", "B2", "C2"],
-      ["A3", "B3", "C3"],
-    ],
-  }),
-  { height: 200 },
-);
-
-createDemo(
-  "Inserting & removing items (wip)",
-  new ManipulableDrawer(manipulableInsertAndRemove, {
-    store: [
-      { key: "D", label: "🍎" },
-      { key: "E", label: "🍌" },
-      { key: "F", label: "🍇" },
-    ],
-    items: [
-      { key: "A", label: "🍎" },
-      { key: "B", label: "🍎" },
-      { key: "C", label: "🍌" },
-    ],
-  }),
-  { height: 150, padding: 10 },
-);
+// Listen for browser back/forward button
+window.addEventListener("popstate", () => {
+  window.location.reload();
+});
