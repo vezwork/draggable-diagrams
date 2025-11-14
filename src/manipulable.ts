@@ -145,10 +145,7 @@ export class ManipulableDrawer<T, Config = unknown> {
     if (state.type === "dragging") {
       pointer.setCursor("grabbing");
 
-      const { shapeToDraw, newState } = ((): {
-        shapeToDraw?: InterpolatableShape;
-        newState: T;
-      } => {
+      const { shapeToDraw, newState } = pipe(null, () => {
         const draggableDestPt = pointer.dragPointer!.sub(state.pointerOffset);
 
         const manifoldProjections = state.manifolds.map((manifold) => {
@@ -244,7 +241,7 @@ export class ManipulableDrawer<T, Config = unknown> {
             newState,
           };
         }
-      })();
+      });
       if (shapeToDraw) drawInterpolatable(lyr, shapeToDraw);
       pointer.addPointerUpHandler(() => {
         if (shapeToDraw) {
