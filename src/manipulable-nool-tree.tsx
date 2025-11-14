@@ -90,23 +90,8 @@ type NoolTreeConfig = {
   pullDownTail: boolean;
 };
 
-export const manipulableNoolTree: Manipulable<NoolTree> & {
-  config: NoolTreeConfig;
-  defaultConfig: NoolTreeConfig;
-  renderConfig: (
-    config: NoolTreeConfig,
-    setConfig: (config: NoolTreeConfig) => void,
-  ) => React.ReactNode;
-} = {
+export const manipulableNoolTree: Manipulable<NoolTree, NoolTreeConfig> = {
   sourceFile: "manipulable-nool-tree.tsx",
-
-  config: {
-    commutativity: true,
-    pullUpOp: false,
-    pullDownOp: false,
-    pullUpTail: true,
-    pullDownTail: true,
-  },
 
   defaultConfig: {
     commutativity: true,
@@ -217,8 +202,8 @@ export const manipulableNoolTree: Manipulable<NoolTree> & {
     return renderNoolTree(state).shape;
   },
 
-  accessibleFrom(state, draggableKey) {
-    const config = this.config;
+  accessibleFrom(state, draggableKey, configParam) {
+    const config = configParam || this.defaultConfig!;
     const manifolds: NoolTree[][] = [[state]];
     // walk the tree
     function walk(tree: NoolTree, replaceNode: (newNode: NoolTree) => void) {

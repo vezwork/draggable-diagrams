@@ -16,12 +16,52 @@ import { assert, clamp } from "./utils";
 import { Vec2 } from "./vec2";
 
 /** A manipulable is a way of visualizing and interacting with
- * "state" (of some type T). */
-export type Manipulable<T> = {
-  render(state: T): Shape;
-  accessibleFrom(state: T, draggableKey: string): AccessibleFromReturn<T>;
+ * "state" (of some type T).
+ *
+ * I'm sorry for the type-tomfoolery here. ManipulableBase is the
+ * real spiritual core of the whole thing. Then there are some
+ * shenanigans for config-dependence that should get cleverly
+ * simplified someday.
+ */
+export type Manipulable<T, ManipulableConfig = undefined> = [
+  ManipulableConfig,
+] extends [undefined]
+  ? ManipulableBase<T, ManipulableConfig>
+  : ManipulableWithConfig<T, ManipulableConfig>;
+
+export type ManipulableBase<T, ManipulableConfig> = {
+  render(state: T, config: ManipulableConfig): Shape;
+  accessibleFrom(
+    state: T,
+    draggableKey: string,
+    config: ManipulableConfig,
+  ): AccessibleFromReturn<T>;
   sourceFile?: string;
 };
+
+export type ManipulableWithConfig<T, ManipulableConfig> = ManipulableBase<
+  T,
+  ManipulableConfig
+> & {
+  defaultConfig: ManipulableConfig;
+  renderConfig: (
+    config: ManipulableConfig,
+    setConfig: (config: ManipulableConfig) => void,
+  ) => React.ReactNode;
+};
+
+export function hasConfig<T, ManipulableConfig>(
+  manipulable: Manipulable<T, ManipulableConfig>,
+): manipulable is ManipulableWithConfig<T, ManipulableConfig> {
+  return (manipulable as any).defaultConfig !== undefined;
+}
+
+export function manipulableDefaultConfig<T, ManipulableConfig>(
+  manipulable: Manipulable<T, ManipulableConfig>,
+): ManipulableConfig {
+  // this is totally well-typed I swear
+  return (manipulable as any).defaultConfig;
+}
 
 // TODO: think about this API
 export type AccessibleFromReturn<T> = T[] | { manifolds: T[][] };
@@ -37,7 +77,7 @@ export type Manifold<T> = {
   delaunay: Delaunay<Delaunay.Point>;
 };
 
-export class ManipulableDrawer<T> {
+export class ManipulableDrawer<T, Config = unknown> {
   private state:
     | {
         type: "idle";
@@ -55,27 +95,23 @@ export class ManipulableDrawer<T> {
         } | null;
       };
 
-  public config: {
-    snapRadius: number;
-    debugView: boolean;
-    transitionWhileDragging: boolean;
-  };
-
   constructor(
-    public manipulable: Manipulable<T>,
+    public manipulable: Manipulable<T, Config>,
     state: T,
-    config: Partial<typeof this.config> = {},
   ) {
     this.state = { type: "idle", state };
-    this.config = {
-      snapRadius: 20,
-      debugView: false,
-      transitionWhileDragging: true,
-      ...config,
-    };
   }
 
-  draw(lyr: Layer, pointer: IPointerManager): void {
+  draw(
+    lyr: Layer,
+    pointer: IPointerManager,
+    drawerConfig: {
+      snapRadius: number;
+      debugView: boolean;
+      transitionWhileDragging: boolean;
+    },
+    manipulableConfig: Config,
+  ): void {
     const state = this.state;
     const lyrDebug = layer(lyr);
 
@@ -95,13 +131,13 @@ export class ManipulableDrawer<T> {
           };
         });
         manifoldProjections.forEach((proj) => {
-          if (this.config.debugView) {
+          if (drawerConfig.debugView) {
             drawManifoldDebug(
               lyrDebug,
               proj.manifold,
               draggableDestPt,
               proj.projectedPt,
-              this.config.snapRadius,
+              drawerConfig.snapRadius,
             );
           }
         });
@@ -139,15 +175,15 @@ export class ManipulableDrawer<T> {
 
         // check if it's time to snap
         if (
-          this.config.transitionWhileDragging &&
+          drawerConfig.transitionWhileDragging &&
           bestManifoldProjection.projectedPt.dist(closestManifoldPt!.offset) <
-            this.config.snapRadius
+            drawerConfig.snapRadius
         ) {
-          // TODO: maybe this should be optional?
           this.enterDraggingMode(
             newState,
             state.draggableKey,
             state.pointerOffset,
+            manipulableConfig,
           );
           return { shapeToDraw: closestManifoldPt!.shape, newState };
         }
@@ -189,12 +225,17 @@ export class ManipulableDrawer<T> {
     } else if (state.type === "idle") {
       pointer.setCursor("default");
 
-      const orig = this.manipulable.render(state.state);
+      const orig = this.manipulable.render(state.state, manipulableConfig);
       const interpolatable = origToInterpolatable(orig);
       drawInterpolatable(lyr, interpolatable, {
         pointer: pointer,
         onDragStart: (key, pointerOffset) => {
-          this.enterDraggingMode(state.state, key, pointerOffset);
+          this.enterDraggingMode(
+            state.state,
+            key,
+            pointerOffset,
+            manipulableConfig,
+          );
         },
       });
     }
@@ -206,8 +247,13 @@ export class ManipulableDrawer<T> {
     state: T,
     draggableKey: string,
     pointerOffset: Vec2,
+    manipulableConfig: Config,
   ) {
-    const result = this.manipulable.accessibleFrom(state, draggableKey);
+    const result = this.manipulable.accessibleFrom(
+      state,
+      draggableKey,
+      manipulableConfig,
+    );
     const statesForManifolds = Array.isArray(result)
       ? [result]
       : result.manifolds;
@@ -218,7 +264,9 @@ export class ManipulableDrawer<T> {
     } | null = null;
     const manifolds = statesForManifolds.flatMap((statesForManifold) => {
       const points: ManifoldPoint<T>[] = statesForManifold.flatMap((state) => {
-        const shape = origToInterpolatable(this.manipulable.render(state));
+        const shape = origToInterpolatable(
+          this.manipulable.render(state, manipulableConfig),
+        );
         const foundShape = shapeByKey(shape, draggableKey);
         if (foundShape) {
           return { state, shape, offset: foundShape.offset };

@@ -2,7 +2,11 @@ import { useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDemoContext } from "../DemoContext";
 import { layer } from "../layer";
-import { ManipulableDrawer } from "../manipulable";
+import {
+  hasConfig,
+  manipulableDefaultConfig,
+  ManipulableDrawer,
+} from "../manipulable";
 import { PointerManager, pointerManagerWithOffset } from "../pointer";
 import { Vec2 } from "../vec2";
 import { Canvas } from "./Canvas";
@@ -10,7 +14,7 @@ import { Canvas } from "./Canvas";
 interface DemoProps {
   id: string;
   title: string;
-  drawer: ManipulableDrawer<any>;
+  drawer: ManipulableDrawer<any, any>;
   height: number;
   padding?: number;
   initialSnapRadius?: number;
@@ -27,21 +31,10 @@ export function Demo({
   const { debugView } = useDemoContext();
   const [snapRadius, setSnapRadius] = useState(initialSnapRadius);
   const [transitionWhileDragging, setTransitionWhileDragging] = useState(true);
-  const pointerRef = useRef<PointerManager | null>(null);
-
-  // Handle manipulable-specific config
-  const manipulable = drawer.manipulable as any;
   const [manipulableConfig, setManipulableConfig] = useState(
-    manipulable.defaultConfig || {},
+    manipulableDefaultConfig(drawer.manipulable),
   );
-
-  // Update configs during render
-  drawer.config.debugView = debugView;
-  drawer.config.snapRadius = snapRadius;
-  drawer.config.transitionWhileDragging = transitionWhileDragging;
-  if (manipulable.config) {
-    manipulable.config = manipulableConfig;
-  }
+  const pointerRef = useRef<PointerManager | null>(null);
 
   // Memoize the draw callback to prevent unnecessary re-renders
   const draw = useCallback(
@@ -66,11 +59,23 @@ export function Demo({
       const paddingVec = Vec2(padding, padding);
       const lyrOffset = layer(ctx);
       lyr.place(lyrOffset, paddingVec);
-      drawer.draw(lyrOffset, pointerManagerWithOffset(pointer, paddingVec));
+      drawer.draw(
+        lyrOffset,
+        pointerManagerWithOffset(pointer, paddingVec),
+        { debugView, snapRadius, transitionWhileDragging },
+        manipulableConfig,
+      );
 
       lyr.draw();
     },
-    [drawer, padding],
+    [
+      drawer,
+      padding,
+      debugView,
+      snapRadius,
+      transitionWhileDragging,
+      manipulableConfig,
+    ],
   );
 
   return (
@@ -100,7 +105,7 @@ export function Demo({
           <Canvas height={height + padding * 2} draw={draw} />
         </div>
         <div
-          className={`${manipulable.renderConfig ? "w-64 md:w-52" : "w-48 md:w-32"} bg-gray-50 rounded p-3 flex flex-col gap-2`}
+          className={`${hasConfig(drawer.manipulable) ? "w-64 md:w-52" : "w-48 md:w-32"} bg-gray-50 rounded p-3 flex flex-col gap-2`}
         >
           <label className="flex flex-col gap-1 text-xs">
             <span className="font-medium text-gray-700">Snap Radius</span>
@@ -124,10 +129,10 @@ export function Demo({
             />
             <span>Transition While Dragging</span>
           </label>
-          {manipulable.renderConfig && (
+          {hasConfig(drawer.manipulable) && (
             <>
               <div className="border-t border-gray-300 my-1" />
-              {manipulable.renderConfig(
+              {drawer.manipulable.renderConfig(
                 manipulableConfig,
                 setManipulableConfig,
               )}
