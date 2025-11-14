@@ -14,8 +14,8 @@ export const XYWH = (x: number, y: number, w: number, h: number): XYWH => {
   return [x, y, w, h];
 };
 
-export const inXYWH = (tx: number, ty: number, [x, y, w, h]: XYWH) => {
-  return x <= tx && tx <= x + w && y <= ty && ty <= y + h;
+export const inXYWH = (t: Vec2, [x, y, w, h]: XYWH) => {
+  return x <= t.x && t.x <= x + w && y <= t.y && t.y <= y + h;
 };
 
 export const fromCenter = (center: Vec2, w: number, h: number): XYWH => {

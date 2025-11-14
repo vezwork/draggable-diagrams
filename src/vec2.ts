@@ -4,8 +4,9 @@ export type Vec2 = Vec2Class;
 
 export type Vec2able =
   | Vec2
-  | [number, number]
+  | [number, number, ...any]
   | readonly [number, number]
+  | { x: number; y: number }
   | number;
 
 export function Vec2(xy: Vec2able): Vec2;
@@ -17,12 +18,14 @@ export function Vec2(xOrXY: number | Vec2able, y?: number): Vec2 {
     } else {
       return new Vec2Class(xOrXY, y);
     }
+  } else if (typeof xOrXY === "object" && "x" in xOrXY && "y" in xOrXY) {
+    return new Vec2Class(xOrXY.x, xOrXY.y);
   } else if (Array.isArray(xOrXY)) {
     return new Vec2Class(xOrXY[0], xOrXY[1]);
   } else {
     // TS doesn't think `readonly [number, number]` passes the
     // Array.isArray check
-    return xOrXY as Vec2;
+    return xOrXY as any as Vec2Class;
   }
 }
 
@@ -34,6 +37,10 @@ class Vec2Class {
 
   arr(): [number, number] {
     return [this.x, this.y];
+  }
+
+  xy(): { x: number; y: number } {
+    return { x: this.x, y: this.y };
   }
 
   eq(v: Vec2able): boolean {
@@ -106,9 +113,10 @@ class Vec2Class {
   }
 
   projOnto(v: Vec2able): Vec2 {
-    v = Vec2(v);
-    const scalar = this.dot(v) / v.len2();
-    return v.mul(scalar);
+    // TODO weird that we need a new variable here to make TS happy
+    const v2 = Vec2(v);
+    const scalar = this.dot(v2) / v2.len2();
+    return v2.mul(scalar);
   }
 }
 

@@ -58,7 +58,7 @@ export const manipulableSokoban: Manipulable<SokobanState> = {
       ),
 
       transform(
-        Vec2(state.player[0] * TILE_SIZE, state.player[1] * TILE_SIZE),
+        Vec2(state.player).mul(TILE_SIZE),
         keyed(
           `player`,
           true,
@@ -75,12 +75,12 @@ export const manipulableSokoban: Manipulable<SokobanState> = {
   accessibleFrom(state, _draggableKey) {
     function isFloor(pos: Vec2): boolean {
       return (
-        inXYWH(...pos.arr(), [0, 0, state.w - 1, state.h - 1]) &&
+        inXYWH(pos, [0, 0, state.w - 1, state.h - 1]) &&
         !state.walls.some((w) => pos.eq(w))
       );
     }
     function boxIdxAt(pos: Vec2): number {
-      return state.boxes.findIndex((b) => pos.eq([b[0], b[1]]));
+      return state.boxes.findIndex((b) => pos.eq(b));
     }
 
     const curLoc = Vec2(state.player);

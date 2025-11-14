@@ -63,9 +63,7 @@ export class PointerManager implements IPointerManager {
       this.hoverPointer &&
       // get smalleset clickable containing hoverPointer
       _.minBy(
-        this.clickables.filter((c) =>
-          inXYWH(this.hoverPointer.x, this.hoverPointer.y, c.xywh),
-        ),
+        this.clickables.filter((c) => inXYWH(this.hoverPointer, c.xywh)),
         ({ xywh: [_x, _y, w, h] }) => w * h,
       )
     );

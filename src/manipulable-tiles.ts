@@ -3,7 +3,7 @@ import { Manipulable } from "./manipulable";
 import { group, keyed, transform } from "./shape";
 import { filterMap } from "./utils";
 import { Vec2 } from "./vec2";
-import { XYWH } from "./xywh";
+import { inXYWH, XYWH } from "./xywh";
 
 type TilesState = {
   w: number;
@@ -41,26 +41,24 @@ export const manipulableTiles: Manipulable<TilesState> = {
   },
 
   accessibleFrom(state, draggableKey) {
-    const curLoc = state.tiles[draggableKey];
+    const dragLoc = Vec2(state.tiles[draggableKey]);
     return {
       manifolds: filterMap(
         [
-          { dx: -1, dy: 0 },
-          { dx: 1, dy: 0 },
-          { dx: 0, dy: -1 },
-          { dx: 0, dy: 1 },
-        ],
-        ({ dx, dy }) => {
-          const x = curLoc.x + dx;
-          const y = curLoc.y + dy;
-          if (x < 0 || x >= state.w || y < 0 || y >= state.h) return;
-          if (Object.values(state.tiles).some((t) => t.x === x && t.y === y))
-            return;
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+        ] as const,
+        (d) => {
+          const adjLoc = dragLoc.add(d);
+          if (!inXYWH(adjLoc, XYWH(0, 0, state.w - 1, state.h - 1))) return;
+          if (Object.values(state.tiles).some((t) => adjLoc.eq(t))) return;
           return [
             state,
             {
               ...state,
-              tiles: { ...state.tiles, [draggableKey]: { x, y } },
+              tiles: { ...state.tiles, [draggableKey]: adjLoc.xy() },
             },
           ];
         },

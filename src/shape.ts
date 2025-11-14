@@ -398,102 +398,6 @@ export function flattenShape(
   }
 }
 
-// /** Returns a bounding box in global coordinates */
-// export function drawShape(
-//   /** Layer to draw on. We assume drawShape is called without
-//    * transformations applied to lyr. */
-//   lyr: Layer,
-//   shape: Shape,
-//   /** The offset vector that defines the relationship between local
-//    * coordinates and global coordinates – global = local + offset. */
-//   offset: Vec2,
-//   ctx: DrawShapeContext,
-// ): XYWH | null {
-//   switch (shape.type) {
-//     case "circle": {
-//       const newCenter = shape.center.add(offset);
-//       lyr.do(() => {
-//         lyr.fillStyle = shape.fillStyle;
-//         lyr.beginPath();
-//         lyr.arc(...newCenter.arr(), shape.radius, 0, Math.PI * 2);
-//         lyr.fill();
-//       });
-//       return fromCenter(newCenter, shape.radius * 2, shape.radius * 2);
-//     }
-//     case "line": {
-//       lyr.do(() => {
-//         lyr.strokeStyle = shape.strokeStyle;
-//         lyr.lineWidth = shape.lineWidth;
-//         lyr.beginPath();
-//         lyr.moveTo(...shape.from.add(offset).arr());
-//         lyr.lineTo(...shape.to.add(offset).arr());
-//         lyr.stroke();
-//       });
-//       return null; // lines have no bounding box
-//     }
-//     case "curve": {
-//       lyr.do(() => {
-//         lyr.strokeStyle = shape.strokeStyle;
-//         lyr.lineWidth = shape.lineWidth;
-//         const curve = d3.curveCardinal(lyr);
-//         lyr.beginPath();
-//         curve.lineStart();
-//         for (const pt of shape.points) {
-//           curve.point(...pt.add(offset).arr());
-//         }
-//         curve.lineEnd();
-//         lyr.stroke();
-//       });
-//       return null; // curves have no bounding box
-//     }
-//     case "group": {
-//       let bbox: XYWH | null = null;
-//       for (const child of shape.shapes) {
-//         const childBbox = drawShape(lyr, child, offset, ctx);
-//         bbox = merge(bbox, childBbox);
-//       }
-//       return bbox;
-//     }
-//     case "keyed-group": {
-//       let bbox: XYWH | null = null;
-//       for (const key of Object.keys(shape.shapes)) {
-//         const childBbox = drawShape(lyr, shape.shapes[key], offset, ctx);
-//         bbox = merge(bbox, childBbox);
-//       }
-//       return bbox;
-//     }
-//     case "keyed": {
-//       const bbox = drawShape(lyr, shape.shape, offset, ctx);
-//       if (shape.isDraggable && bbox) {
-//         if (inXYWH(...ctx.pointer.hoverPointer.arr(), bbox)) {
-//           ctx.pointer.setCursor("grab");
-//         }
-//         // console.log("adding click handler for draggable", bbox);
-//         ctx.pointer.addClickHandler(bbox, () => {
-//           // this is the pointer position in the group's inner coordinates
-//           const pointerLocal = ctx.pointer.dragPointer!.sub(offset);
-//           ctx.onDragStart(shape.key, pointerLocal);
-//         });
-//       }
-//       return bbox;
-//     }
-//     case "transform": {
-//       const bbox = drawShape(lyr, shape.shape, offset.add(shape.offset), ctx);
-//       return bbox && translate(bbox, shape.offset);
-//     }
-//     case "z-index": {
-//       return drawShape(lyr, shape.shape, offset, ctx);
-//     }
-//     case "lazy": {
-//       assert(shape.state.hasRun, "Cannot draw lazy shape that has not run yet");
-//       return drawShape(lyr, shape.state.shape, offset, ctx);
-//     }
-//     default: {
-//       assertNever(shape);
-//     }
-//   }
-// }
-
 /** Returns a bounding box in global coordinates */
 export function drawFlatShapes(
   /** Layer to draw on. We assume drawShape is called without
@@ -575,7 +479,7 @@ export function drawFlatShapes(
   // now handle draggable targets
   if (ctx) {
     for (const shape of draggableTargets) {
-      if (inXYWH(...ctx.pointer.hoverPointer.arr(), shape.bbox)) {
+      if (inXYWH(ctx.pointer.hoverPointer, shape.bbox)) {
         ctx.pointer.setCursor("grab");
       }
       // console.log("adding click handler for draggable", bbox);

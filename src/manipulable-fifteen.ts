@@ -3,7 +3,7 @@ import { Manipulable } from "./manipulable";
 import { group, keyed, transform } from "./shape";
 import { filterMap } from "./utils";
 import { Vec2 } from "./vec2";
-import { XYWH } from "./xywh";
+import { inXYWH, XYWH } from "./xywh";
 
 type FifteenState = {
   w: number;
@@ -43,33 +43,29 @@ export const manipulableFifteen: Manipulable<FifteenState> = {
   accessibleFrom(state, draggableKey) {
     // if we're not blank, we can only swap with blank
     // if we are blank, we can swap with any neighbor
-    const curLoc = state.tiles[draggableKey];
+    const dragLoc = Vec2(state.tiles[draggableKey]);
     return {
       manifolds: filterMap(
         [
-          { dx: -1, dy: 0 },
-          { dx: 1, dy: 0 },
-          { dx: 0, dy: -1 },
-          { dx: 0, dy: 1 },
-        ],
-        ({ dx, dy }) => {
-          const x = curLoc.x + dx;
-          const y = curLoc.y + dy;
-          if (x < 0 || x >= state.w || y < 0 || y >= state.h) return;
-          const adjTile = Object.entries(state.tiles).find(
-            ([, t]) => t.x === x && t.y === y,
-          );
-          if (!adjTile) return;
-          const canSwap = draggableKey === " " || adjTile[0] === " ";
-          if (!canSwap) return;
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+        ] as const,
+        (d) => {
+          const adjLoc = dragLoc.add(d);
+          if (!inXYWH(adjLoc, XYWH(0, 0, state.w - 1, state.h - 1))) return;
+          const adjTileKey = _.findKey(state.tiles, (t) => adjLoc.eq(t));
+          if (!adjTileKey) return;
+          if (!(draggableKey === " " || adjTileKey === " ")) return;
           return [
             state,
             {
               ...state,
               tiles: {
                 ...state.tiles,
-                [draggableKey]: { x, y },
-                [adjTile[0]]: { x: curLoc.x, y: curLoc.y },
+                [draggableKey]: adjLoc.xy(),
+                [adjTileKey]: dragLoc.xy(),
               },
             },
           ];
