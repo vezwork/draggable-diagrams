@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { Manipulable } from "./manipulable";
 import { group, keyed, transform } from "./shape";
-import { insert, remove } from "./utils";
+import { insertImm, removeImm } from "./utils";
 import { Vec2 } from "./vec2";
 import { XYWH } from "./xywh";
 
@@ -12,6 +12,7 @@ type PermState = {
 
 export const manipulableInsertAndRemove: Manipulable<PermState> = {
   sourceFile: "manipulable-insert-and-remove.ts",
+
   render(state) {
     // draw grid as rectangles
     const TILE_SIZE = 50;
@@ -52,32 +53,28 @@ export const manipulableInsertAndRemove: Manipulable<PermState> = {
     const itemIdx = state.items.findIndex((item) => item.key === draggableKey);
     if (itemIdx !== -1) {
       const draggedItem = state.items[itemIdx];
-      const itemsWithoutDragged = remove(state.items, itemIdx);
+      const itemsWithoutDragged = removeImm(state.items, itemIdx);
 
       return [
         ..._.range(itemsWithoutDragged.length + 1).map((idx) => ({
           ...state,
-          items: insert(itemsWithoutDragged, idx, draggedItem),
+          items: insertImm(itemsWithoutDragged, idx, draggedItem),
         })),
-        {
-          ...state,
-          items: itemsWithoutDragged,
-        },
+        // TODO: handle deletion
+        // {
+        //   ...state,
+        //   items: itemsWithoutDragged,
+        // },
       ];
     } else {
       // item is from store, can be inserted anywhere
       const storeItem = state.store.find((item) => item.key === draggableKey)!;
-      return [
-        state,
-        ..._.range(state.items.length + 1).map((idx) => ({
-          store: state.store.map((item) =>
-            item.key === draggableKey
-              ? { ...item, key: item.key + "-1" }
-              : item,
-          ),
-          items: insert(state.items, idx, storeItem),
-        })),
-      ];
+      return _.range(state.items.length + 1).map((idx) => ({
+        store: state.store.map((item) =>
+          item.key === draggableKey ? { ...item, key: item.key + "-1" } : item,
+        ),
+        items: insertImm(state.items, idx, storeItem),
+      }));
     }
   },
 };

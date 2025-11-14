@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { Manipulable } from "./manipulable";
 import { group, keyed, transform, zIndex } from "./shape";
-import { filterMap } from "./utils";
+import { defined } from "./utils";
 import { Vec2 } from "./vec2";
 import { inXYWH, XYWH } from "./xywh";
 
@@ -85,50 +85,47 @@ export const manipulableSokoban: Manipulable<SokobanState> = {
 
     const curLoc = Vec2(state.player);
     return {
-      manifolds: [
-        [state],
-        ...filterMap(
-          [
-            [-1, 0],
-            [1, 0],
-            [0, -1],
-            [0, 1],
-          ] as const,
-          (d) => {
-            const newLoc = curLoc.add(d);
-            console.log("trying move to", newLoc);
-            if (!isFloor(newLoc)) return;
-            console.log("is floor");
-            // check for box
-            const boxIdx = boxIdxAt(newLoc);
-            if (boxIdx === -1) {
-              // no box, just move player
-              return [
-                state,
-                {
-                  ...state,
-                  player: newLoc.arr() as [number, number],
-                },
-              ];
-            }
-            // box present, try to push
-            const boxNewLoc = newLoc.add(d);
-            if (!isFloor(boxNewLoc)) return;
-            if (boxIdxAt(boxNewLoc) !== -1) return;
-            // can push box
-            const newBoxes = state.boxes.slice();
-            newBoxes[boxIdx] = [boxNewLoc.x, boxNewLoc.y, newBoxes[boxIdx][2]];
+      manifolds: (
+        [
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+        ] as const
+      )
+        .map((d) => {
+          const newLoc = curLoc.add(d);
+          console.log("trying move to", newLoc);
+          if (!isFloor(newLoc)) return;
+          console.log("is floor");
+          // check for box
+          const boxIdx = boxIdxAt(newLoc);
+          if (boxIdx === -1) {
+            // no box, just move player
             return [
               state,
               {
                 ...state,
                 player: newLoc.arr() as [number, number],
-                boxes: newBoxes,
               },
             ];
-          },
-        ),
-      ],
+          }
+          // box present, try to push
+          const boxNewLoc = newLoc.add(d);
+          if (!isFloor(boxNewLoc)) return;
+          if (boxIdxAt(boxNewLoc) !== -1) return;
+          // can push box
+          const newBoxes = state.boxes.slice();
+          newBoxes[boxIdx] = [boxNewLoc.x, boxNewLoc.y, newBoxes[boxIdx][2]];
+          return [
+            {
+              ...state,
+              player: newLoc.arr() as [number, number],
+              boxes: newBoxes,
+            },
+          ];
+        })
+        .filter(defined),
     };
   },
 };

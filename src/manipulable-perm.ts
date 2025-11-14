@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { Manipulable } from "./manipulable";
 import { group, keyed, transform } from "./shape";
-import { insert, remove } from "./utils";
+import { insertImm, removeImm } from "./utils";
 import { Vec2 } from "./vec2";
 import { XYWH } from "./xywh";
 
@@ -34,10 +34,10 @@ export const manipulablePerm: Manipulable<PermState> = {
 
   accessibleFrom(state, draggableKey) {
     const draggedIdx = state.perm.indexOf(draggableKey);
-    const permWithoutDragged = remove(state.perm, draggedIdx);
+    const permWithoutDragged = removeImm(state.perm, draggedIdx);
 
     return _.range(permWithoutDragged.length + 1).map((idx) => ({
-      perm: insert(permWithoutDragged, idx, draggableKey),
+      perm: insertImm(permWithoutDragged, idx, draggableKey),
     }));
   },
 };

@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { Manipulable } from "./manipulable";
 import { group, keyed, transform } from "./shape";
-import { assert, insert, remove } from "./utils";
+import { assert, insertImm, removeImm } from "./utils";
 import { Vec2 } from "./vec2";
 import { XYWH } from "./xywh";
 
@@ -50,13 +50,13 @@ export const manipulablePermDouble: Manipulable<PermDoubleState> = {
     const draggedColIdx = draggedRow.indexOf(draggableKey);
     assert(draggedColIdx !== -1);
 
-    const rowsWithoutDraggedRow = remove(state.rows, draggedRowIdx);
-    const rowWithoutDraggedItem = remove(draggedRow, draggedColIdx);
+    const rowsWithoutDraggedRow = removeImm(state.rows, draggedRowIdx);
+    const rowWithoutDraggedItem = removeImm(draggedRow, draggedColIdx);
 
     return _.range(rowWithoutDraggedItem.length + 1).flatMap((colIdx) => {
-      const newRow = insert(rowWithoutDraggedItem, colIdx, draggableKey);
+      const newRow = insertImm(rowWithoutDraggedItem, colIdx, draggableKey);
       return _.range(rowsWithoutDraggedRow.length + 1).map((rowIdx) => ({
-        rows: insert(rowsWithoutDraggedRow, rowIdx, newRow),
+        rows: insertImm(rowsWithoutDraggedRow, rowIdx, newRow),
       }));
     });
   },

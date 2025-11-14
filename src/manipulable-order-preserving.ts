@@ -18,6 +18,7 @@ type OrderPreservingState = {
 
 export const manipulableOrderPreserving: Manipulable<OrderPreservingState> = {
   sourceFile: "manipulable-order-preserving.ts",
+
   render(state) {
     const r = drawBgTree(
       state.codomainTree,

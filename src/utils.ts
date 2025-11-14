@@ -41,32 +41,47 @@ export function clamp(a: number, b: number, c: number): number {
   return a + b + c - Math.max(a, b, c) - Math.min(a, b, c);
 }
 
-export function insert<T>(arr: T[], idx: number, val: T): T[] {
+export function insertImm<T>(arr: T[], idx: number, val: T): T[] {
   const newArr = arr.slice();
   newArr.splice(idx, 0, val);
   return newArr;
 }
 
-export function remove<T>(arr: T[], idx: number): T[] {
+export function removeImm<T>(arr: T[], idx: number): T[] {
   const newArr = arr.slice();
   newArr.splice(idx, 1);
   return newArr;
 }
 
-export function set<T>(arr: T[], idx: number, val: T): T[] {
+export function setImm<T>(arr: T[], idx: number, val: T): T[] {
   const newArr = arr.slice();
   newArr[idx] = val;
   return newArr;
 }
 
-export function filterMap<A, B>(
-  xs: readonly A[],
-  f: (a: A) => B | undefined,
-): B[] {
-  const out: B[] = [];
-  for (const a of xs) {
-    const v = f(a);
-    if (v !== undefined) out.push(v);
-  }
-  return out;
+export function defined<T>(x: T | undefined | null): x is T {
+  return x !== undefined && x !== null;
+}
+
+export function pipe<T1, T2>(arg: T1, fn1: (arg: T1) => T2): T2;
+export function pipe<T1, T2, T3>(
+  arg: T1,
+  fn1: (arg: T1) => T2,
+  fn2: (arg: T2) => T3,
+): T3;
+export function pipe<T1, T2, T3, T4>(
+  arg: T1,
+  fn1: (arg: T1) => T2,
+  fn2: (arg: T2) => T3,
+  fn3: (arg: T3) => T4,
+): T4;
+export function pipe<T1, T2, T3, T4, T5>(
+  arg: T1,
+  fn1: (arg: T1) => T2,
+  fn2: (arg: T2) => T3,
+  fn3: (arg: T3) => T4,
+  fn4: (arg: T4) => T5,
+): T5;
+export function pipe(arg: unknown, ...fns: Array<(arg: unknown) => unknown>) {
+  return fns.reduce((acc, fn) => fn(acc), arg);
 }

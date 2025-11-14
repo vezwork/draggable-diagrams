@@ -13,7 +13,7 @@ import {
   Shape,
   shapeByKey,
 } from "./shape";
-import { assert, clamp } from "./utils";
+import { assert, pipe } from "./utils";
 import { Vec2 } from "./vec2";
 
 /** A manipulable is a way of visualizing and interacting with
@@ -64,7 +64,18 @@ export function manipulableDefaultConfig<T, ManipulableConfig>(
   return (manipulable as any).defaultConfig;
 }
 
-// TODO: think about this API
+/**
+ * accessibleFrom returns one or more "manifolds" – sets of states
+ * that can be interpolated between continuously by dragging. Either
+ * directly return one manifold, or an object with multiple
+ * manifolds. Either way, note that a manifold can either return the
+ * starting state or not, as is convenient – in either case the
+ * starting state will be considered part of all manifolds.
+ *
+ * Note: So far, there only seem to be two patterns – either return a
+ * single manifold, or a bunch of manifolds each going to a single
+ * new state. Hmm.
+ */
 export type AccessibleFromReturn<T> = T[] | { manifolds: T[][] };
 
 export type ManifoldPoint<T> = {
@@ -74,7 +85,9 @@ export type ManifoldPoint<T> = {
 };
 
 export type Manifold<T> = {
+  // .points[0] is always the starting point
   points: ManifoldPoint<T>[];
+  // points in .delaunay are indexed parallel to .points
   delaunay: Delaunay<Delaunay.Point>;
 };
 
@@ -88,12 +101,13 @@ export class ManipulableDrawer<T, Config = unknown> {
         type: "dragging";
         draggableKey: string;
         pointerOffset: Vec2;
-        prevState: T;
+        startingPoint: ManifoldPoint<T>;
         manifolds: Manifold<T>[];
-        accessibleDeletionInfo: {
-          state: T;
-          shape: InterpolatableShape;
-        } | null;
+        // TODO: handle deletion
+        // accessibleDeletionInfo: {
+        //   state: T;
+        //   shape: InterpolatableShape;
+        // } | null;
       }
     | {
         type: "animating";
@@ -162,23 +176,23 @@ export class ManipulableDrawer<T, Config = unknown> {
 
         // check if it's time to delete
         // TODO: make this work better lol
-        if (state.accessibleDeletionInfo) {
-          const deletionDist = bestManifoldProjection.dist;
-          if (deletionDist > 40) {
-            const t = clamp((deletionDist - 40) / 20, 0, 1);
-            return {
-              shapeToDraw: lerpShapes(
-                closestManifoldPt!.shape,
-                state.accessibleDeletionInfo.shape,
-                t,
-              ),
-              newState:
-                t > 0.5
-                  ? state.accessibleDeletionInfo.state
-                  : closestManifoldPt!.state,
-            };
-          }
-        }
+        // if (state.accessibleDeletionInfo) {
+        //   const deletionDist = bestManifoldProjection.dist;
+        //   if (deletionDist > 40) {
+        //     const t = clamp((deletionDist - 40) / 20, 0, 1);
+        //     return {
+        //       shapeToDraw: lerpShapes(
+        //         closestManifoldPt!.shape,
+        //         state.accessibleDeletionInfo.shape,
+        //         t,
+        //       ),
+        //       newState:
+        //         t > 0.5
+        //           ? state.accessibleDeletionInfo.state
+        //           : closestManifoldPt!.state,
+        //     };
+        //   }
+        // }
 
         const newState = closestManifoldPt!.state;
 
@@ -290,33 +304,29 @@ export class ManipulableDrawer<T, Config = unknown> {
     pointerOffset: Vec2,
     manipulableConfig: Config,
   ) {
-    const result = this.manipulable.accessibleFrom(
-      state,
-      draggableKey,
-      manipulableConfig,
+    const statesForManifolds = pipe(
+      this.manipulable.accessibleFrom(state, draggableKey, manipulableConfig),
+      (r) => (Array.isArray(r) ? [r] : r.manifolds),
     );
-    const statesForManifolds = Array.isArray(result)
-      ? [result]
-      : result.manifolds;
-    // TODO: I haven't thought about how manifolds work with deletions
-    let accessibleDeletionInfo: {
-      state: T;
-      interpolatableShape: Shape;
-    } | null = null;
-    const manifolds = statesForManifolds.flatMap((statesForManifold) => {
-      const points: ManifoldPoint<T>[] = statesForManifold.flatMap((state) => {
-        const shape = origToInterpolatable(
-          this.manipulable.render(state, manipulableConfig),
-        );
-        const foundShape = shapeByKey(shape, draggableKey);
-        if (foundShape) {
-          return { state, shape, offset: foundShape.offset };
-        } else {
-          assert(!accessibleDeletionInfo, "Multiple deletions found");
-          accessibleDeletionInfo = { state, interpolatableShape: shape };
-          return [];
-        }
-      });
+
+    const makeManifoldPoint = (state: T): ManifoldPoint<T> => {
+      const shape = origToInterpolatable(
+        this.manipulable.render(state, manipulableConfig),
+      );
+      const foundShape = shapeByKey(shape, draggableKey);
+      assert(!!foundShape, "Draggable key not found in rendered shape");
+      return { state, shape, offset: foundShape.offset };
+    };
+
+    const startingPoint = makeManifoldPoint(state);
+
+    const manifolds = statesForManifolds.map((statesForManifold) => {
+      const points = [
+        startingPoint,
+        ...statesForManifold
+          .filter((s) => !_.isEqual(s, state))
+          .map((state) => makeManifoldPoint(state)),
+      ];
       const delaunay = Delaunay.from(points.map((info) => info.offset.arr()));
       return { points, delaunay };
     });
@@ -324,9 +334,8 @@ export class ManipulableDrawer<T, Config = unknown> {
       type: "dragging",
       draggableKey,
       pointerOffset,
-      prevState: state,
+      startingPoint,
       manifolds,
-      accessibleDeletionInfo,
     };
   }
 }

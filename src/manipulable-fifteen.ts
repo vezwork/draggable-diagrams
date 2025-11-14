@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { Manipulable } from "./manipulable";
 import { group, keyed, transform } from "./shape";
-import { filterMap } from "./utils";
+import { defined } from "./utils";
 import { Vec2 } from "./vec2";
 import { inXYWH, XYWH } from "./xywh";
 
@@ -13,6 +13,7 @@ type FifteenState = {
 
 export const manipulableFifteen: Manipulable<FifteenState> = {
   sourceFile: "manipulable-tiles.ts",
+
   render(state) {
     const TILE_SIZE = 50;
     return group(`tiles`, [
@@ -45,21 +46,21 @@ export const manipulableFifteen: Manipulable<FifteenState> = {
     // if we are blank, we can swap with any neighbor
     const dragLoc = Vec2(state.tiles[draggableKey]);
     return {
-      manifolds: filterMap(
+      manifolds: (
         [
           [-1, 0],
           [1, 0],
           [0, -1],
           [0, 1],
-        ] as const,
-        (d) => {
+        ] as const
+      )
+        .map((d) => {
           const adjLoc = dragLoc.add(d);
           if (!inXYWH(adjLoc, XYWH(0, 0, state.w - 1, state.h - 1))) return;
           const adjTileKey = _.findKey(state.tiles, (t) => adjLoc.eq(t));
           if (!adjTileKey) return;
           if (!(draggableKey === " " || adjTileKey === " ")) return;
           return [
-            state,
             {
               ...state,
               tiles: {
@@ -69,8 +70,8 @@ export const manipulableFifteen: Manipulable<FifteenState> = {
               },
             },
           ];
-        },
-      ),
+        })
+        .filter(defined),
     };
   },
 };

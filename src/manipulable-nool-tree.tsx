@@ -2,7 +2,7 @@ import _ from "lodash";
 import React from "react";
 import { Manipulable } from "./manipulable";
 import { group, keyed, keyedGroup, Shape, transform } from "./shape";
-import { insert, remove, set } from "./utils";
+import { insertImm, removeImm, setImm } from "./utils";
 
 type NoolTree = {
   id: string;
@@ -107,13 +107,13 @@ export const manipulableNoolTree: Manipulable<NoolTree, NoolTreeConfig> = {
         const childIdx = tree.children.findIndex((c) => c.id === draggableKey);
         if (childIdx !== -1) {
           const dragged = tree.children[childIdx];
-          const childrenWithoutDragged = remove(tree.children, childIdx);
+          const childrenWithoutDragged = removeImm(tree.children, childIdx);
           // try inserting the dragged child at every position
           _.range(0, childrenWithoutDragged.length + 1).forEach((insertIdx) => {
             if (insertIdx === childIdx) return;
             replaceNode({
               ...tree,
-              children: insert(childrenWithoutDragged, insertIdx, dragged),
+              children: insertImm(childrenWithoutDragged, insertIdx, dragged),
             });
           });
         }
@@ -281,13 +281,13 @@ export const manipulableNoolTree: Manipulable<NoolTree, NoolTreeConfig> = {
         walk(child, (newChild) =>
           replaceNode({
             ...tree,
-            children: set(tree.children, childIdx, newChild),
+            children: setImm(tree.children, childIdx, newChild),
           }),
         ),
       );
     }
     walk(state, (newTree) => {
-      manifolds.push([state, newTree]);
+      manifolds.push([newTree]);
     });
     return { manifolds };
   },

@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { Manipulable } from "./manipulable";
 import { group, keyed, transform } from "./shape";
-import { filterMap } from "./utils";
+import { defined } from "./utils";
 import { Vec2 } from "./vec2";
 import { inXYWH, XYWH } from "./xywh";
 
@@ -43,26 +43,26 @@ export const manipulableTiles: Manipulable<TilesState> = {
   accessibleFrom(state, draggableKey) {
     const dragLoc = Vec2(state.tiles[draggableKey]);
     return {
-      manifolds: filterMap(
+      manifolds: (
         [
           [-1, 0],
           [1, 0],
           [0, -1],
           [0, 1],
-        ] as const,
-        (d) => {
+        ] as const
+      )
+        .map((d) => {
           const adjLoc = dragLoc.add(d);
           if (!inXYWH(adjLoc, XYWH(0, 0, state.w - 1, state.h - 1))) return;
           if (Object.values(state.tiles).some((t) => adjLoc.eq(t))) return;
           return [
-            state,
             {
               ...state,
               tiles: { ...state.tiles, [draggableKey]: adjLoc.xy() },
             },
           ];
-        },
-      ),
+        })
+        .filter(defined),
     };
   },
 };
