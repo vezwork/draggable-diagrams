@@ -26,6 +26,7 @@ export function Demo({
 }: DemoProps) {
   const { debugView } = useDemoContext();
   const [snapRadius, setSnapRadius] = useState(initialSnapRadius);
+  const [transitionWhileDragging, setTransitionWhileDragging] = useState(true);
   const pointerRef = useRef<PointerManager | null>(null);
 
   // Handle manipulable-specific config
@@ -34,7 +35,10 @@ export function Demo({
     manipulable.defaultConfig || {},
   );
 
-  // Update manipulable config when it changes
+  // Update configs during render
+  drawer.config.debugView = debugView;
+  drawer.config.snapRadius = snapRadius;
+  drawer.config.transitionWhileDragging = transitionWhileDragging;
   if (manipulable.config) {
     manipulable.config = manipulableConfig;
   }
@@ -58,10 +62,6 @@ export function Demo({
       const rect = canvas.getBoundingClientRect();
       lyr.fillRect(0, 0, rect.width, rect.height);
 
-      // Update debug settings
-      drawer.config.debugView = debugView;
-      drawer.config.snapRadius = snapRadius;
-
       // Draw the demo with padding (offset both layer and pointer)
       const paddingVec = Vec2(padding, padding);
       const lyrOffset = layer(ctx);
@@ -70,7 +70,7 @@ export function Demo({
 
       lyr.draw();
     },
-    [drawer, padding, debugView, snapRadius, manipulableConfig],
+    [drawer, padding],
   );
 
   return (
@@ -115,6 +115,14 @@ export function Demo({
             <span className="text-gray-500 text-center">
               {snapRadius} pixels
             </span>
+          </label>
+          <label className="flex items-start gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={transitionWhileDragging}
+              onChange={(e) => setTransitionWhileDragging(e.target.checked)}
+            />
+            <span>Transition While Dragging</span>
           </label>
           {manipulable.renderConfig && (
             <>

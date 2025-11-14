@@ -55,7 +55,11 @@ export class ManipulableDrawer<T> {
         } | null;
       };
 
-  public config: { snapRadius: number; debugView: boolean };
+  public config: {
+    snapRadius: number;
+    debugView: boolean;
+    transitionWhileDragging: boolean;
+  };
 
   constructor(
     public manipulable: Manipulable<T>,
@@ -63,7 +67,12 @@ export class ManipulableDrawer<T> {
     config: Partial<typeof this.config> = {},
   ) {
     this.state = { type: "idle", state };
-    this.config = { snapRadius: 20, debugView: false, ...config };
+    this.config = {
+      snapRadius: 20,
+      debugView: false,
+      transitionWhileDragging: true,
+      ...config,
+    };
   }
 
   draw(lyr: Layer, pointer: IPointerManager): void {
@@ -130,8 +139,9 @@ export class ManipulableDrawer<T> {
 
         // check if it's time to snap
         if (
+          this.config.transitionWhileDragging &&
           bestManifoldProjection.projectedPt.dist(closestManifoldPt!.offset) <
-          this.config.snapRadius
+            this.config.snapRadius
         ) {
           // TODO: maybe this should be optional?
           this.enterDraggingMode(
