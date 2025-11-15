@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { ReactNode, useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDemoContext } from "../DemoContext";
 import { layer } from "../layer";
@@ -14,6 +14,7 @@ import { Canvas } from "./Canvas";
 interface DemoProps {
   id: string;
   title: string;
+  notes?: ReactNode;
   drawer: ManipulableDrawer<any, any>;
   height: number;
   padding?: number;
@@ -24,6 +25,7 @@ interface DemoProps {
 export function Demo({
   id,
   title,
+  notes,
   drawer,
   height,
   padding = 0,
@@ -112,6 +114,7 @@ export function Demo({
           </a>
         )}
       </div>
+      {notes && <div className="mt-2 text-sm text-gray-600">{notes}</div>}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1">
           <Canvas height={height + padding * 2} draw={draw} />

@@ -299,3 +299,79 @@ function drawFgSubtreeInBgNode(
     h: FG_NODE_SIZE + (childrenMaxH > 0 ? FG_NODE_GAP + childrenMaxH : 0),
   };
 }
+
+export function drawSubtree(
+  node: TreeNode,
+  keyPrefix: string,
+  style: "fg" | "bg",
+  /** An mutable record of where nodes are centered */
+  nodeCenters: Record<string, PointInShape>,
+): {
+  shape: Shape;
+  w: number;
+  h: number;
+} {
+  const childrenShape = group(`drawSubtree(${node.id})-children`);
+  let childrenX = 0;
+  let childrenMaxH = 0;
+  for (const [i, child] of node.children.entries()) {
+    if (i > 0) {
+      childrenX += FG_NODE_GAP;
+    }
+    const r = drawSubtree(child, keyPrefix, style, nodeCenters);
+    childrenShape.shapes.push(transform(Vec2(childrenX, 0), r.shape));
+    childrenX += r.w;
+    childrenMaxH = Math.max(childrenMaxH, r.h);
+
+    childrenShape.shapes.push(
+      keyed(
+        `${keyPrefix}-${node.id}->${child.id}`,
+        false,
+        lazy((resolveHere) => {
+          const from = resolveHere(nodeCenters[node.id]);
+          const to = resolveHere(nodeCenters[child.id]);
+          return {
+            type: "curve",
+            points: [from, from, to],
+            strokeStyle: { fg: "black", bg: "lightgray" }[style],
+            lineWidth: { fg: 2, bg: 12 }[style],
+          };
+        }),
+      ),
+    );
+  }
+
+  const shape = group(`drawSubtree(${node.id})`);
+  let nodeX;
+  if (childrenX < FG_NODE_SIZE) {
+    nodeX = FG_NODE_SIZE / 2;
+    shape.shapes.push(
+      transform(
+        Vec2((FG_NODE_SIZE - childrenX) / 2, FG_NODE_SIZE + FG_NODE_GAP),
+        childrenShape,
+      ),
+    );
+  } else {
+    nodeX = childrenX / 2;
+    shape.shapes.push(
+      transform(Vec2(0, FG_NODE_SIZE + FG_NODE_GAP), childrenShape),
+    );
+  }
+
+  const nodeCenter = Vec2(nodeX, FG_NODE_SIZE / 2);
+  nodeCenters[node.id] = pointInShape(shape, nodeCenter);
+  shape.shapes.push(
+    keyed(`${keyPrefix}-${node.id}`, false, {
+      type: "circle",
+      center: nodeCenter,
+      radius: FG_NODE_SIZE / 2,
+      fillStyle: { fg: "black", bg: "lightgray" }[style],
+    }),
+  );
+
+  return {
+    shape,
+    w: Math.max(childrenX, FG_NODE_SIZE),
+    h: FG_NODE_SIZE + (childrenMaxH > 0 ? FG_NODE_GAP + childrenMaxH : 0),
+  };
+}

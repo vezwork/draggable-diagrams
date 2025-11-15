@@ -50,7 +50,8 @@ export const demos: DemoEntry[] = [
     node: (
       <Demo
         id="15-puzzle"
-        title="15 puzzle (with weird draggable blank for fun)"
+        title="15 puzzle"
+        notes="Weird experiment: I made the blank draggable"
         drawer={new ManipulableDrawer(manipulableFifteen, stateFifteen)}
         height={200}
         padding={20}
@@ -59,11 +60,12 @@ export const demos: DemoEntry[] = [
     ),
   },
   {
-    id: "lonely-tile-on-a-grid-goal-is-for-it-to-only-slide-orthogonally",
+    id: "lonely-tile-on-a-grid",
     node: (
       <Demo
-        id="lonely-tile-on-a-grid-goal-is-for-it-to-only-slide-orthogonally"
-        title="Lonely tile on a grid; goal is for it to only slide orthogonally"
+        id="lonely-tile-on-a-grid"
+        title="Lonely tile on a grid"
+        notes="I'm trying to make dragging feel right here. Goal is for the tile to only drag orthogonally, AND to not jump discontinuously. This seems to require 'Relative Pointer Motion' mode."
         drawer={new ManipulableDrawer(manipulableTiles, stateTilesLonely)}
         height={300}
         padding={20}
@@ -83,7 +85,7 @@ export const demos: DemoEntry[] = [
             stateOrderPreserving1,
           )
         }
-        height={260}
+        height={400}
         padding={20}
       />
     ),
@@ -100,7 +102,7 @@ export const demos: DemoEntry[] = [
             stateOrderPreserving2,
           )
         }
-        height={500}
+        height={550}
         padding={20}
       />
     ),
@@ -205,7 +207,7 @@ export const demos: DemoEntry[] = [
         id="simplest"
         title="Simplest"
         drawer={new ManipulableDrawer(manipulableSimplest, stateSimplest1)}
-        height={150}
+        height={100}
         padding={20}
       />
     ),

@@ -118,6 +118,12 @@ class Vec2Class {
     const scalar = this.dot(v2) / v2.len2();
     return v2.mul(scalar);
   }
+
+  towards(v: Vec2able, d: number): Vec2 {
+    // TODO weird that we need a new variable here to make TS happy
+    const v2 = Vec2(v);
+    return this.add(v2.sub(this).norm().mul(d));
+  }
 }
 
 export function lerp(a: number, b: number, t: number): number {
