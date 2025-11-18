@@ -33,6 +33,11 @@ export type Shape =
       lineWidth: number;
     }
   | {
+      type: "polygon";
+      points: Vec2[];
+      fillStyle: string;
+    }
+  | {
       type: "rectangle";
       xywh: XYWH;
       fillStyle?: string;
@@ -153,6 +158,8 @@ export function shapeChildren(
     case "curve":
       return [];
     case "rectangle":
+      return [];
+    case "polygon":
       return [];
     default:
       assertNever(shape);
@@ -278,7 +285,10 @@ type DrawShapeContext = {
 };
 
 export type FlatShape =
-  | (Extract<Shape, { type: "circle" | "line" | "curve" | "rectangle" }> & {
+  | (Extract<
+      Shape,
+      { type: "circle" | "line" | "curve" | "rectangle" | "polygon" }
+    > & {
       zIndex: number;
     })
   | { type: "draggable-target"; key: string; bbox: XYWH; origin: Vec2 };
@@ -346,6 +356,22 @@ export function flattenShape(
             },
           ],
           bbox: translate(shape.xywh, offset),
+        };
+      case "polygon":
+        const minX = _.min(shape.points.map((p) => p.x))!;
+        const minY = _.min(shape.points.map((p) => p.y))!;
+        const maxX = _.max(shape.points.map((p) => p.x))!;
+        const maxY = _.max(shape.points.map((p) => p.y))!;
+        return {
+          flatShapes: [
+            {
+              type: "polygon",
+              points: shape.points.map((p) => p.add(offset)),
+              fillStyle: shape.fillStyle,
+              zIndex,
+            },
+          ],
+          bbox: translate([minX, minY, maxX - minX, maxY - minY], offset),
         };
       case "group": {
         const results = shape.shapes.map((s) =>
@@ -471,6 +497,19 @@ export function drawFlatShapes(
         });
         break;
       }
+      case "polygon": {
+        lyr.do(() => {
+          lyr.fillStyle = shape.fillStyle;
+          lyr.beginPath();
+          lyr.moveTo(...shape.points[0].arr());
+          for (let i = 1; i < shape.points.length; i++) {
+            lyr.lineTo(...shape.points[i].arr());
+          }
+          lyr.closePath();
+          lyr.fill();
+        });
+        break;
+      }
       default:
         assertNever(shape);
     }
@@ -502,6 +541,8 @@ export function pruneEmptyGroups(shape: Shape): Shape | null {
     case "curve":
       return shape;
     case "rectangle":
+      return shape;
+    case "polygon":
       return shape;
     case "group": {
       const prunedShapes = shape.shapes
@@ -689,6 +730,15 @@ function lerpShapesImpl(a: Shape, b: Shape, t: number): Shape {
             ? undefined
             : lerp(a.lineWidth, b.lineWidth, t),
         label: a.label,
+      };
+    case "polygon":
+      assertSameType(a, b);
+      assert(a.fillStyle === b.fillStyle);
+      assert(a.points.length === b.points.length);
+      return {
+        type: "polygon",
+        points: a.points.map((ap, i) => ap.lerp(b.points[i], t)),
+        fillStyle: a.fillStyle,
       };
     case "group":
       assertSameType(a, b);

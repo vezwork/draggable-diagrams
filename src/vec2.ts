@@ -124,6 +124,12 @@ class Vec2Class {
     const v2 = Vec2(v);
     return this.add(v2.sub(this).norm().mul(d));
   }
+
+  rotate(angleRad: number): Vec2 {
+    const cosA = Math.cos(angleRad);
+    const sinA = Math.sin(angleRad);
+    return Vec2(this.x * cosA - this.y * sinA, this.x * sinA + this.y * cosA);
+  }
 }
 
 export function lerp(a: number, b: number, t: number): number {

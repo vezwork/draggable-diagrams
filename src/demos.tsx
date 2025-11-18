@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Demo } from "./components/Demo";
 import { ManipulableDrawer } from "./manipulable";
 import { manipulableFifteen, stateFifteen } from "./manipulable-fifteen";
+import { manipulableGraph, stateGraph } from "./manipulable-graph";
 import { manipulableGridPoly, stateGridPoly1 } from "./manipulable-grid-poly";
 import {
   manipulableInsertAndRemove,
@@ -197,6 +198,18 @@ export const demos: DemoEntry[] = [
         height={500}
         padding={20}
         initialRelativePointerMotion={true}
+      />
+    ),
+  },
+  {
+    id: "graph",
+    node: (
+      <Demo
+        id="graph"
+        title="Graph"
+        drawer={new ManipulableDrawer(manipulableGraph, stateGraph)}
+        height={200}
+        padding={20}
       />
     ),
   },
