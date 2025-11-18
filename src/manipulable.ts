@@ -13,8 +13,10 @@ import {
   Shape,
   shapeByKey,
 } from "./shape";
-import { assert, pipe } from "./utils";
+import { assert, assertNever, pipe } from "./utils";
 import { Vec2 } from "./vec2";
+// @ts-ignore
+import { minimize } from "./minimize";
 
 /** A manipulable is a way of visualizing and interacting with
  * "state" (of some type T).
@@ -80,7 +82,10 @@ export function manipulableDefaultConfig<T, ManipulableConfig>(
  * single manifold, or a bunch of manifolds each going to a single
  * new state. Hmm.
  */
-export type AccessibleFromReturn<T> = T[] | { manifolds: T[][] };
+export type AccessibleFromReturn<T> =
+  | T[]
+  | { manifolds: T[][] }
+  | { initParams: number[]; stateFromParams: (...params: number[]) => T };
 
 export type ManifoldPoint<T> = {
   state: T;
@@ -112,6 +117,13 @@ export class ManipulableDrawer<T, Config = unknown> {
         //   state: T;
         //   shape: InterpolatableShape;
         // } | null;
+      }
+    | {
+        type: "dragging-params";
+        draggableKey: string;
+        pointerOffset: Vec2;
+        curParams: number[];
+        stateFromParams: (...params: number[]) => T;
       }
     | {
         type: "animating";
@@ -263,6 +275,42 @@ export class ManipulableDrawer<T, Config = unknown> {
           this.state = { type: "idle", state: newState };
         }
       });
+    } else if (state.type === "dragging-params") {
+      pointer.setCursor("grabbing");
+      const draggableDestPt = pointer.dragPointer!.sub(state.pointerOffset);
+
+      // TODO: would be nice to save this fn, but it varies with
+      // draggableDestPt
+      const objectiveFn = (params: number[]) => {
+        const candidateState = state.stateFromParams(...params);
+        const shape = origToInterpolatable(
+          this.manipulable.render(
+            candidateState,
+            state.draggableKey,
+            manipulableConfig,
+          ),
+        );
+        const foundShape = shapeByKey(shape, state.draggableKey);
+        assert(!!foundShape, "Draggable key not found in rendered shape");
+        return draggableDestPt.dist2(foundShape.offset);
+      };
+
+      const r = minimize(objectiveFn, state.curParams);
+      state.curParams = r.solution;
+
+      const newState = state.stateFromParams(...state.curParams);
+      const shape = origToInterpolatable(
+        this.manipulable.render(
+          newState,
+          state.draggableKey,
+          manipulableConfig,
+        ),
+      );
+      drawInterpolatable(lyr, shape);
+
+      pointer.addPointerUpHandler(() => {
+        this.state = { type: "idle", state: newState };
+      });
     } else if (state.type === "animating") {
       pointer.setCursor("default");
 
@@ -305,6 +353,8 @@ export class ManipulableDrawer<T, Config = unknown> {
           );
         },
       });
+    } else {
+      assertNever(state);
     }
 
     lyr.place(lyrDebug);
@@ -316,10 +366,24 @@ export class ManipulableDrawer<T, Config = unknown> {
     pointerOffset: Vec2,
     manipulableConfig: Config,
   ) {
-    const statesForManifolds = pipe(
-      this.manipulable.accessibleFrom(state, draggableKey, manipulableConfig),
-      (r) => (Array.isArray(r) ? [r] : r.manifolds),
+    const r = this.manipulable.accessibleFrom(
+      state,
+      draggableKey,
+      manipulableConfig,
     );
+
+    if (typeof r === "object" && "initParams" in r) {
+      this.state = {
+        type: "dragging-params",
+        draggableKey,
+        pointerOffset,
+        curParams: r.initParams,
+        stateFromParams: r.stateFromParams,
+      };
+      return;
+    }
+
+    const statesForManifolds = Array.isArray(r) ? [r] : r.manifolds;
 
     const makeManifoldPoint = (state: T): ManifoldPoint<T> => {
       const shape = origToInterpolatable(

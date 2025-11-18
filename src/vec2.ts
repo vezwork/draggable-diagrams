@@ -102,6 +102,11 @@ class Vec2Class {
     return Math.atan2(v.y - this.y, v.x - this.x);
   }
 
+  dist2(v: Vec2able): number {
+    v = Vec2(v);
+    return this.sub(v).len2();
+  }
+
   dist(v: Vec2able): number {
     v = Vec2(v);
     return this.sub(v).len();
