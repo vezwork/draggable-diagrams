@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Demo } from "./components/Demo";
 import { ManipulableDrawer } from "./manipulable";
 import { manipulableAngle, stateAngle } from "./manipulable-angle";
+import { manipulableClock, stateClock } from "./manipulable-clock";
 import { manipulableFifteen, stateFifteen } from "./manipulable-fifteen";
 import { manipulableFlippy, stateFlippy1 } from "./manipulable-flippy";
 import { manipulableGraph, stateGraph } from "./manipulable-graph";
@@ -263,6 +264,18 @@ export const demos: DemoEntry[] = [
         id="angle"
         title="Angle"
         drawer={new ManipulableDrawer(manipulableAngle, stateAngle)}
+        height={200}
+        padding={20}
+      />
+    ),
+  },
+  {
+    id: "clock",
+    node: (
+      <Demo
+        id="clock"
+        title="Clock"
+        drawer={new ManipulableDrawer(manipulableClock, stateClock)}
         height={200}
         padding={20}
       />
