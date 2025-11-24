@@ -34,12 +34,9 @@ export const manipulableAngle: Manipulable<AngleState> = {
     ]);
   },
 
-  accessibleFrom(state, _draggableKey) {
+  accessibleFrom(_state, _draggableKey) {
     return {
-      initParams: [state.angle],
-      stateFromParams(newAngle) {
-        return { angle: newAngle };
-      },
+      paramPaths: [["angle"]],
     };
   },
 };

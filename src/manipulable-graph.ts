@@ -133,16 +133,11 @@ export const manipulableGraph: Manipulable<GraphState> = {
       }
     } else if (draggableKey.startsWith("node-")) {
       const nodeKey = draggableKey.slice("node-".length);
-      const node = state.nodes[nodeKey];
       return {
-        initParams: [node.x, node.y],
-        stateFromParams: (x: number, y: number) => ({
-          ...state,
-          nodes: {
-            ...state.nodes,
-            [nodeKey]: { x, y },
-          },
-        }),
+        paramPaths: [
+          ["nodes", nodeKey, "x"],
+          ["nodes", nodeKey, "y"],
+        ],
       };
     }
     return newStates;

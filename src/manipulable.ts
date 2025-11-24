@@ -17,6 +17,7 @@ import { assert, assertNever, pipe } from "./utils";
 import { Vec2 } from "./vec2";
 // @ts-ignore
 import { minimize } from "./minimize";
+import { getAtPath, PathIn, setAtPath } from "./paths";
 
 /** A manipulable is a way of visualizing and interacting with
  * "state" (of some type T).
@@ -85,7 +86,10 @@ export function manipulableDefaultConfig<T, ManipulableConfig>(
 export type AccessibleFromReturn<T> =
   | T[]
   | { manifolds: T[][] }
-  | { initParams: number[]; stateFromParams: (...params: number[]) => T };
+  | { initParams: number[]; stateFromParams: (...params: number[]) => T }
+  | { paramPaths: PathIn<T, number>[] };
+
+export type Path = (string | number)[];
 
 export type ManifoldPoint<T> = {
   state: T;
@@ -379,6 +383,23 @@ export class ManipulableDrawer<T, Config = unknown> {
         pointerOffset,
         curParams: r.initParams,
         stateFromParams: r.stateFromParams,
+      };
+      return;
+    }
+
+    if (typeof r === "object" && "paramPaths" in r) {
+      this.state = {
+        type: "dragging-params",
+        draggableKey,
+        pointerOffset,
+        curParams: r.paramPaths.map((path) => getAtPath(state, path)),
+        stateFromParams: (...params: number[]) => {
+          let newState = state;
+          r.paramPaths.forEach((path, idx) => {
+            newState = setAtPath(newState, path, params[idx]);
+          });
+          return newState;
+        },
       };
       return;
     }
