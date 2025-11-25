@@ -404,7 +404,11 @@ export class ManipulableDrawer<T, Config = unknown> {
       return;
     }
 
-    const statesForManifolds = Array.isArray(r) ? [r] : r.manifolds;
+    const statesForManifolds = Array.isArray(r)
+      ? [r]
+      : r.manifolds.length > 0 // things go wrong if there are zero manifolds
+        ? r.manifolds
+        : [[]];
 
     const makeManifoldPoint = (state: T): ManifoldPoint<T> => {
       const shape = origToInterpolatable(
@@ -427,6 +431,7 @@ export class ManipulableDrawer<T, Config = unknown> {
       const delaunay = Delaunay.from(points.map((info) => info.offset.arr()));
       return { points, delaunay };
     });
+    // console.log("manifolds:", manifolds);
     this.state = {
       type: "dragging",
       draggableKey,
