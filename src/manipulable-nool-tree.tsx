@@ -1,5 +1,6 @@
 import _ from "lodash";
 import React from "react";
+import { ConfigCheckbox } from "./config-controls";
 import { Manipulable } from "./manipulable";
 import { group, keyedGroup, rectangle, ShapeWithMethods } from "./shape";
 import { insertImm, removeImm, setImm } from "./utils";
@@ -9,64 +10,6 @@ type NoolTree = {
   label: string;
   children: NoolTree[];
 };
-
-function renderNoolTree(tree: NoolTree): {
-  shape: ShapeWithMethods;
-  w: number;
-  h: number;
-  id: string;
-} {
-  const GAP = 10;
-  const PADDING = 5;
-  const LABEL_WIDTH = 20;
-  const LABEL_MIN_HEIGHT = 20;
-  const renderedChildren = tree.children.map(renderNoolTree);
-  const renderedChildrenShape = keyedGroup();
-  let childY = 0;
-  for (const childR of renderedChildren) {
-    renderedChildrenShape.shapes[childR.id] = childR.shape.translate([
-      0,
-      childY,
-    ]);
-    childY += childR.h + GAP;
-  }
-  const innerW =
-    LABEL_WIDTH +
-    (renderedChildren.length > 0
-      ? GAP + _.max(renderedChildren.map((c) => c.w))!
-      : 0);
-  const innerH =
-    renderedChildren.length > 0
-      ? _.sumBy(renderedChildren, (c) => c.h) +
-        GAP * (renderedChildren.length - 1)
-      : LABEL_MIN_HEIGHT;
-  return {
-    shape: group("node", [
-      rectangle({
-        // background
-        xywh: [0, 0, innerW + PADDING * 2, innerH + PADDING * 2],
-        strokeStyle: "gray",
-        lineWidth: 1,
-      }),
-      rectangle({
-        // label
-        xywh: [PADDING, PADDING, LABEL_WIDTH, innerH],
-        label: tree.label,
-      }),
-      ...(renderedChildren.length > 0
-        ? [
-            renderedChildrenShape.translate([
-              PADDING + LABEL_WIDTH + GAP,
-              PADDING,
-            ]),
-          ]
-        : []),
-    ]).keyed(tree.id, true),
-    w: innerW + PADDING * 2,
-    h: innerH + PADDING * 2,
-    id: tree.id,
-  };
-}
 
 function isOp(node: NoolTree): boolean {
   return node.label === "+" || node.label === "×";
@@ -303,90 +246,71 @@ export const manipulableNoolTree: Manipulable<NoolTree, NoolTreeConfig> = {
 
     return (
       <>
-        <label className="flex items-start gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={config.commutativity}
-            onChange={(e) =>
-              setConfig({ ...config, commutativity: e.target.checked })
-            }
-          />
-          <span>
-            <b>Commutativity</b>
-            <br />
-            <D>A</D> {plus1} B → B {plus1} <D>A</D>
-          </span>
-        </label>
-        <label className="flex items-start gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={config.pullUpOp}
-            onChange={(e) =>
-              setConfig({ ...config, pullUpOp: e.target.checked })
-            }
-          />
-          <span>
-            <b>Associativity</b>
-            <br />
-            Pull up op
-            <br />
-            <D>(A {plus1} B)</D> {plus2} C →{" "}
-            <D>
-              A {plus1} (B {plus2} C)
-            </D>
-          </span>
-        </label>
-        <label className="flex items-start gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={config.pullDownOp}
-            onChange={(e) =>
-              setConfig({ ...config, pullDownOp: e.target.checked })
-            }
-          />
-          <span>
-            <b>Associativity</b>
-            <br />
-            Pull down op
-            <br />
-            <D>
-              A {plus1} (B {plus2} C)
-            </D>{" "}
-            → <D>(A {plus1} B)</D> {plus2} C
-          </span>
-        </label>
-        <label className="flex items-start gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={config.pullUpTail}
-            onChange={(e) =>
-              setConfig({ ...config, pullUpTail: e.target.checked })
-            }
-          />
-          <span>
-            <b>Associativity</b>
-            <br />
-            Pull up operand
-            <br />(<D>A</D> {plus1} B) {plus2} C → <D>A</D> {plus1} (B {plus2}{" "}
-            C)
-          </span>
-        </label>
-        <label className="flex items-start gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={config.pullDownTail}
-            onChange={(e) =>
-              setConfig({ ...config, pullDownTail: e.target.checked })
-            }
-          />
-          <span>
-            <b>Associativity</b>
-            <br />
-            Pull down operand
-            <br />
-            <D>A</D> {plus1} (B {plus2} C) → (<D>A</D> {plus1} B) {plus2} C
-          </span>
-        </label>
+        <ConfigCheckbox
+          value={config.commutativity}
+          onChange={(newValue) =>
+            setConfig({ ...config, commutativity: newValue })
+          }
+        >
+          <b>Commutativity</b>
+          <br />
+          <D>A</D> {plus1} B → B {plus1} <D>A</D>
+        </ConfigCheckbox>
+
+        <ConfigCheckbox
+          value={config.pullUpOp}
+          onChange={(newValue) => setConfig({ ...config, pullUpOp: newValue })}
+        >
+          <b>Associativity</b>
+          <br />
+          Pull up op
+          <br />
+          <D>(A {plus1} B)</D> {plus2} C →{" "}
+          <D>
+            A {plus1} (B {plus2} C)
+          </D>
+        </ConfigCheckbox>
+
+        <ConfigCheckbox
+          value={config.pullDownOp}
+          onChange={(newValue) =>
+            setConfig({ ...config, pullDownOp: newValue })
+          }
+        >
+          <b>Associativity</b>
+          <br />
+          Pull down op
+          <br />
+          <D>
+            A {plus1} (B {plus2} C)
+          </D>{" "}
+          → <D>(A {plus1} B)</D> {plus2} C
+        </ConfigCheckbox>
+
+        <ConfigCheckbox
+          value={config.pullUpTail}
+          onChange={(newValue) =>
+            setConfig({ ...config, pullUpTail: newValue })
+          }
+        >
+          <b>Associativity</b>
+          <br />
+          Pull up operand
+          <br />(<D>A</D> {plus1} B) {plus2} C → <D>A</D> {plus1} (B {plus2} C)
+        </ConfigCheckbox>
+
+        <ConfigCheckbox
+          value={config.pullDownTail}
+          onChange={(newValue) =>
+            setConfig({ ...config, pullDownTail: newValue })
+          }
+        >
+          <b>Associativity</b>
+          <br />
+          Pull down operand
+          <br />
+          <D>A</D> {plus1} (B {plus2} C) → (<D>A</D> {plus1} B) {plus2} C
+        </ConfigCheckbox>
       </>
     );
   },
@@ -462,3 +386,61 @@ export const stateNoolTree2: NoolTree = {
     },
   ],
 };
+
+function renderNoolTree(tree: NoolTree): {
+  shape: ShapeWithMethods;
+  w: number;
+  h: number;
+  id: string;
+} {
+  const GAP = 10;
+  const PADDING = 5;
+  const LABEL_WIDTH = 20;
+  const LABEL_MIN_HEIGHT = 20;
+  const renderedChildren = tree.children.map(renderNoolTree);
+  const renderedChildrenShape = keyedGroup();
+  let childY = 0;
+  for (const childR of renderedChildren) {
+    renderedChildrenShape.shapes[childR.id] = childR.shape.translate([
+      0,
+      childY,
+    ]);
+    childY += childR.h + GAP;
+  }
+  const innerW =
+    LABEL_WIDTH +
+    (renderedChildren.length > 0
+      ? GAP + _.max(renderedChildren.map((c) => c.w))!
+      : 0);
+  const innerH =
+    renderedChildren.length > 0
+      ? _.sumBy(renderedChildren, (c) => c.h) +
+        GAP * (renderedChildren.length - 1)
+      : LABEL_MIN_HEIGHT;
+  return {
+    shape: group("node", [
+      rectangle({
+        // background
+        xywh: [0, 0, innerW + PADDING * 2, innerH + PADDING * 2],
+        strokeStyle: "gray",
+        lineWidth: 1,
+      }),
+      rectangle({
+        // label
+        xywh: [PADDING, PADDING, LABEL_WIDTH, innerH],
+        label: tree.label,
+      }),
+      ...(renderedChildren.length > 0
+        ? [
+            renderedChildrenShape.translate([
+              PADDING + LABEL_WIDTH + GAP,
+              PADDING,
+            ]),
+          ]
+        : []),
+    ]).keyed(tree.id, true),
+    w: innerW + PADDING * 2,
+    h: innerH + PADDING * 2,
+    id: tree.id,
+  };
+}

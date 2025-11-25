@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { ConfigCheckbox } from "./config-controls";
 import { overlapIntervals } from "./layout";
 import { Manipulable } from "./manipulable";
 import {
@@ -109,18 +110,11 @@ export const manipulableOrderPreserving: Manipulable<
 
   renderConfig(config, setConfig) {
     return (
-      <>
-        <label className="flex items-start gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={config.showTradRep}
-            onChange={(e) =>
-              setConfig({ ...config, showTradRep: e.target.checked })
-            }
-          />
-          <span>Show Traditional Representation</span>
-        </label>
-      </>
+      <ConfigCheckbox
+        label="Show Traditional Representation"
+        value={config.showTradRep}
+        onChange={(newValue) => setConfig({ ...config, showTradRep: newValue })}
+      />
     );
   },
 };

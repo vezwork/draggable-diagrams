@@ -1,5 +1,6 @@
 import { ReactNode, useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { ConfigCheckbox } from "../config-controls";
 import { useDemoContext } from "../DemoContext";
 import { layer } from "../layer";
 import {
@@ -140,22 +141,16 @@ export function Demo({
               {snapRadius} pixels
             </span>
           </label>
-          <label className="flex items-start gap-2 text-xs">
-            <input
-              type="checkbox"
-              checked={transitionWhileDragging}
-              onChange={(e) => setTransitionWhileDragging(e.target.checked)}
-            />
-            <span>Transition While Dragging</span>
-          </label>
-          <label className="flex items-start gap-2 text-xs">
-            <input
-              type="checkbox"
-              checked={relativePointerMotion}
-              onChange={(e) => setRelativePointerMotion(e.target.checked)}
-            />
-            <span>Relative Pointer Motion</span>
-          </label>
+          <ConfigCheckbox
+            label="Transition While Dragging"
+            value={transitionWhileDragging}
+            onChange={setTransitionWhileDragging}
+          />
+          <ConfigCheckbox
+            label="Relative Pointer Motion"
+            value={relativePointerMotion}
+            onChange={setRelativePointerMotion}
+          />
           {hasConfig(drawer.manipulable) && (
             <>
               <div className="border-t border-gray-300 my-1" />
