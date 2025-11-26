@@ -409,12 +409,13 @@ function drawFgSubtreeInBgNode(
   fgNodeCenters[fgNode.id] = pointInDiagram(diagram, nodeCenter);
   diagram.push(
     circle({
-      center: nodeCenter,
+      center: Vec2(0),
       radius: FG_NODE_SIZE / 2,
       fillStyle: "black",
     })
       .draggable(fgNode.id)
-      .absoluteKey(fgNode.id),
+      .absoluteKey(fgNode.id)
+      .translate(nodeCenter),
   );
 
   return {
