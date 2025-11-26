@@ -77,7 +77,7 @@ function SingleDemo() {
             ← Back to all demos
           </Link>
         </div>
-        <div className="flex flex-col gap-5 px-5 pb-5 max-w-3xl mx-auto flex-1">
+        <div className="flex flex-col gap-5 px-5 pb-5 max-w-3xl mx-auto flex-1 min-w-1/2">
           {demo.node}
         </div>
         <div className="sticky bottom-0 bg-white/95 py-4 px-5 border-t border-gray-200 flex gap-5 items-center justify-center shadow-[0_-2px_4px_rgba(0,0,0,0.1)]">

@@ -42,6 +42,7 @@ export type ManipulableBase<T, ManipulableConfig> = {
     draggableKey: string,
     config: ManipulableConfig,
   ): DragSpec<T>;
+  cleanTransientState?(state: T): T;
   sourceFile?: string;
 };
 
@@ -95,8 +96,8 @@ export type DragSpecParams<T> =
       stateFromParams: (...params: number[]) => T;
     };
 
-export function span<T>(states: T[]): DragSpecManifold<T> {
-  return { type: "manifold", states };
+export function span<T>(...manyStates: Many<T>[]): DragSpecManifold<T> {
+  return { type: "manifold", states: manyToArray(manyStates) };
 }
 export function straightTo<T>(state: T): DragSpecManifold<T> {
   return { type: "manifold", states: [state] };
@@ -245,7 +246,10 @@ export class ManipulableDrawer<T, Config = unknown> {
         //   }
         // }
 
-        const newState = closestManifoldPt!.state;
+        const newState = pipe(
+          closestManifoldPt!.state,
+          (s) => this.manipulable.cleanTransientState?.(s) ?? s,
+        );
 
         // check if it's time to snap
         if (
@@ -400,6 +404,18 @@ export class ManipulableDrawer<T, Config = unknown> {
     pointerOffset: Vec2,
     manipulableConfig: Config,
   ) {
+    // first check if the draggable has been removed from the diagram
+    // TODO: perf?
+    const diagram = this.manipulable.render(
+      state,
+      draggableKey,
+      manipulableConfig,
+    );
+    if (!flatShapeByDraggableKey(diagram, draggableKey)) {
+      this.state = { type: "idle", state };
+      return;
+    }
+
     const dragSpec = this.manipulable.accessibleFrom(
       state,
       draggableKey,

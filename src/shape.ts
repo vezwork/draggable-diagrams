@@ -2,7 +2,7 @@ import * as d3 from "d3-shape";
 import _ from "lodash";
 import { Layer } from "./layer";
 import { IPointerManager } from "./pointer";
-import { assert, Many, manyToArray } from "./utils";
+import { assert, defined, Many, manyToArray } from "./utils";
 import { lerp, Vec2, Vec2able } from "./vec2";
 import { fromCenter, inXYWH, lerpXYWH, mm, translateXYWH, XYWH } from "./xywh";
 
@@ -428,20 +428,20 @@ export function lerpDiagrams(a: Diagram, b: Diagram, t: number): Diagram {
   const bKeyed = _.keyBy(b.flatShapes, (fs) => fs.path.key);
 
   const allKeys = _.union(Object.keys(aKeyed), Object.keys(bKeyed));
-  const lerpedFlatShapes: FlatShape[] = allKeys.map((key) => {
-    const aFs = aKeyed[key];
-    const bFs = bKeyed[key];
-    if (aFs && bFs) {
-      return {
-        shape: aFs.shape.lerp(bFs.shape, t),
-        path: aFs.path,
-        transform: aFs.transform.lerp(bFs.transform, t),
-        zIndex: lerp(aFs.zIndex, bFs.zIndex, t),
-      };
-    } else {
-      return aFs ?? bFs!;
-    }
-  });
+  const lerpedFlatShapes: FlatShape[] = allKeys
+    .map((key) => {
+      const aFs = aKeyed[key];
+      const bFs = bKeyed[key];
+      if (aFs && bFs) {
+        return {
+          shape: aFs.shape.lerp(bFs.shape, t),
+          path: aFs.path,
+          transform: aFs.transform.lerp(bFs.transform, t),
+          zIndex: lerp(aFs.zIndex, bFs.zIndex, t),
+        };
+      }
+    })
+    .filter(defined);
 
   // TODO: we don't lerp frames cuz they're only used at construction
   // time?
@@ -464,12 +464,8 @@ export function lerpDiagrams3(
 export function flatShapeByDraggableKey(
   diagram: Diagram,
   draggableKey: string,
-): FlatShape {
-  const fs = diagram.flatShapes.find((fs) => fs.draggableKey === draggableKey);
-  if (!fs) {
-    throw new Error(`No shape with key ${draggableKey}`);
-  }
-  return fs;
+) {
+  return diagram.flatShapes.find((fs) => fs.draggableKey === draggableKey);
 }
 
 // # the return of the point in the diagram
