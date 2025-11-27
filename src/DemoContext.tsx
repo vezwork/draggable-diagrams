@@ -1,24 +1,11 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, useContext } from "react";
 
 interface DemoContextValue {
   debugView: boolean;
+  onDragStateChange?: (dragState: any) => void;
 }
 
-const DemoContext = createContext<DemoContextValue | undefined>(undefined);
-
-export function DemoProvider({
-  debugView,
-  children,
-}: {
-  debugView: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <DemoContext.Provider value={{ debugView }}>
-      {children}
-    </DemoContext.Provider>
-  );
-}
+export const DemoContext = createContext<DemoContextValue | undefined>(undefined);
 
 export function useDemoContext() {
   const context = useContext(DemoContext);

@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
 import { Demo } from "./components/Demo";
-import { ManipulableDrawer } from "./manipulable";
 import { manipulableAngle, stateAngle } from "./manipulable-angle";
 import { manipulableAngleViaTransform } from "./manipulable-angle-via-transform";
 import { manipulableClock, stateClock } from "./manipulable-clock";
@@ -42,17 +41,26 @@ export interface DemoEntry {
 
 export const demos: DemoEntry[] = [
   {
+    id: "simplest",
+    node: (
+      <Demo
+        id="simplest"
+        title="Simplest"
+        manipulable={manipulableSimplest}
+        initialState={stateSimplest1}
+        height={100}
+        padding={20}
+      />
+    ),
+  },
+  {
     id: "order-preserving-map",
     node: (
       <Demo
         id="order-preserving-map"
         title="Order preserving map"
-        drawer={
-          new ManipulableDrawer(
-            manipulableOrderPreserving,
-            stateOrderPreserving1,
-          )
-        }
+        manipulable={manipulableOrderPreserving}
+        initialState={stateOrderPreserving1}
         height={400}
         padding={20}
       />
@@ -64,12 +72,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="order-preserving-map-big"
         title="Order preserving map (big)"
-        drawer={
-          new ManipulableDrawer(
-            manipulableOrderPreserving,
-            stateOrderPreserving2,
-          )
-        }
+        manipulable={manipulableOrderPreserving}
+        initialState={stateOrderPreserving2}
         height={650}
         padding={20}
       />
@@ -81,7 +85,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="rush-hour"
         title="Rush Hour"
-        drawer={new ManipulableDrawer(manipulableRushHour, stateRushHour1)}
+        manipulable={manipulableRushHour}
+        initialState={stateRushHour1}
         height={300}
         padding={20}
       />
@@ -94,7 +99,8 @@ export const demos: DemoEntry[] = [
         id="15-puzzle"
         title="15 puzzle"
         notes="Weird experiment: I made the blank draggable"
-        drawer={new ManipulableDrawer(manipulableFifteen, stateFifteen)}
+        manipulable={manipulableFifteen}
+        initialState={stateFifteen}
         height={200}
         padding={20}
         initialRelativePointerMotion={true}
@@ -108,7 +114,8 @@ export const demos: DemoEntry[] = [
         id="lonely-tile-on-a-grid"
         title="Lonely tile on a grid"
         notes="I'm trying to make dragging feel right here. Goal is for the tile to only drag orthogonally, AND to not jump discontinuously. This seems to require 'Relative Pointer Motion' mode (or divergent approaches)."
-        drawer={new ManipulableDrawer(manipulableTiles, stateTilesLonely)}
+        manipulable={manipulableTiles}
+        initialState={stateTilesLonely}
         height={300}
         padding={20}
         initialRelativePointerMotion={true}
@@ -121,7 +128,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="grid-polygon"
         title="Grid polygon"
-        drawer={new ManipulableDrawer(manipulableGridPoly, stateGridPoly1)}
+        manipulable={manipulableGridPoly}
+        initialState={stateGridPoly1}
         height={250}
         padding={20}
       />
@@ -133,7 +141,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="permutation"
         title="Permutation"
-        drawer={new ManipulableDrawer(manipulablePerm, statePerm1)}
+        manipulable={manipulablePerm}
+        initialState={statePerm1}
         height={50}
         padding={15}
       />
@@ -145,7 +154,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="permutation-of-permutations"
         title="Permutation of permutations"
-        drawer={new ManipulableDrawer(manipulablePermDouble, statePermDouble1)}
+        manipulable={manipulablePermDouble}
+        initialState={statePermDouble1}
         height={200}
       />
     ),
@@ -156,7 +166,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="spinny"
         title="Spinny"
-        drawer={new ManipulableDrawer(manipulableSpinny, stateSpinny1)}
+        manipulable={manipulableSpinny}
+        initialState={stateSpinny1}
         height={200}
         padding={30}
         initialRelativePointerMotion={false}
@@ -169,7 +180,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="spinny-old"
         title="Spinny (Old)"
-        drawer={new ManipulableDrawer(manipulableSpinnyOld, stateSpinny1)}
+        manipulable={manipulableSpinnyOld}
+        initialState={stateSpinny1}
         height={200}
         padding={30}
         initialRelativePointerMotion={false}
@@ -182,7 +194,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="flippy"
         title="Flippy"
-        drawer={new ManipulableDrawer(manipulableFlippy, stateFlippy1)}
+        manipulable={manipulableFlippy}
+        initialState={stateFlippy1}
         height={200}
         padding={30}
         initialTransitionWhileDragging={false}
@@ -196,12 +209,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="inserting-removing-items"
         title="Inserting & removing items"
-        drawer={
-          new ManipulableDrawer(
-            manipulableInsertAndRemove,
-            stateInsertAndRemove1,
-          )
-        }
+        manipulable={manipulableInsertAndRemove}
+        initialState={stateInsertAndRemove1}
         height={150}
         padding={10}
       />
@@ -213,7 +222,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="nool-tree"
         title="Nool tree"
-        drawer={new ManipulableDrawer(manipulableNoolTree, stateNoolTree1)}
+        manipulable={manipulableNoolTree}
+        initialState={stateNoolTree1}
         height={350}
         padding={20}
         initialSnapRadius={1}
@@ -227,7 +237,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="nool-tree-simpler"
         title="Nool tree, simpler"
-        drawer={new ManipulableDrawer(manipulableNoolTree, stateNoolTree2)}
+        manipulable={manipulableNoolTree}
+        initialState={stateNoolTree2}
         height={200}
         padding={20}
         initialSnapRadius={1}
@@ -241,7 +252,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="outline"
         title="Outline"
-        drawer={new ManipulableDrawer(manipulableOutline, stateOutline1)}
+        manipulable={manipulableOutline}
+        initialState={stateOutline1}
         height={400}
         padding={20}
         initialSnapRadius={5}
@@ -254,7 +266,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="sokoban"
         title="Sokoban"
-        drawer={new ManipulableDrawer(manipulableSokoban, stateSokoban1)}
+        manipulable={manipulableSokoban}
+        initialState={stateSokoban1}
         height={500}
         padding={20}
         initialRelativePointerMotion={true}
@@ -267,7 +280,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="graph"
         title="Graph"
-        drawer={new ManipulableDrawer(manipulableGraph, stateGraph)}
+        manipulable={manipulableGraph}
+        initialState={stateGraph}
         height={200}
         padding={20}
       />
@@ -279,7 +293,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="angle"
         title="Angle"
-        drawer={new ManipulableDrawer(manipulableAngle, stateAngle)}
+        manipulable={manipulableAngle}
+        initialState={stateAngle}
         height={200}
         padding={20}
       />
@@ -291,7 +306,8 @@ export const demos: DemoEntry[] = [
       <Demo
         id="angle-via-transform"
         title="Angle (via transform)"
-        drawer={new ManipulableDrawer(manipulableAngleViaTransform, stateAngle)}
+        manipulable={manipulableAngleViaTransform}
+        initialState={stateAngle}
         height={200}
         padding={20}
       />
@@ -303,20 +319,9 @@ export const demos: DemoEntry[] = [
       <Demo
         id="clock"
         title="Clock"
-        drawer={new ManipulableDrawer(manipulableClock, stateClock)}
+        manipulable={manipulableClock}
+        initialState={stateClock}
         height={200}
-        padding={20}
-      />
-    ),
-  },
-  {
-    id: "simplest",
-    node: (
-      <Demo
-        id="simplest"
-        title="Simplest"
-        drawer={new ManipulableDrawer(manipulableSimplest, stateSimplest1)}
-        height={100}
         padding={20}
       />
     ),

@@ -121,7 +121,7 @@ export type Manifold<T> = {
 };
 
 export class ManipulableDrawer<T, Config = unknown> {
-  private state:
+  private dragState:
     | {
         type: "idle";
         state: T;
@@ -156,8 +156,18 @@ export class ManipulableDrawer<T, Config = unknown> {
   constructor(
     public manipulable: Manipulable<T, Config>,
     state: T,
+    public onDragStateChange?: (
+      dragState: ManipulableDrawer<T, Config>["dragState"],
+    ) => void,
   ) {
-    this.state = { type: "idle", state };
+    this.dragState = { type: "idle", state };
+  }
+
+  private setDragState(
+    newDragState: ManipulableDrawer<T, Config>["dragState"],
+  ) {
+    this.dragState = newDragState;
+    this.onDragStateChange?.(newDragState);
   }
 
   draw(
@@ -172,16 +182,18 @@ export class ManipulableDrawer<T, Config = unknown> {
     },
     manipulableConfig: Config,
   ): void {
-    const state = this.state;
+    const { dragState } = this;
     const lyrDebug = layer(lyr);
 
-    if (state.type === "dragging") {
+    if (dragState.type === "dragging") {
       pointer.setCursor("grabbing");
 
       const { diagramToDraw, newState } = pipe(null, () => {
-        const draggableDestPt = pointer.dragPointer!.sub(state.pointerOffset);
+        const draggableDestPt = pointer.dragPointer!.sub(
+          dragState.pointerOffset,
+        );
 
-        const manifoldProjections = state.manifolds.map((manifold) => {
+        const manifoldProjections = dragState.manifolds.map((manifold) => {
           return {
             ...projectOntoConvexHull(manifold.delaunay, draggableDestPt),
             manifold,
@@ -204,13 +216,13 @@ export class ManipulableDrawer<T, Config = unknown> {
         )!;
 
         if (drawerConfig.relativePointerMotion) {
-          state.pointerOffset = pointer.dragPointer!.sub(
+          dragState.pointerOffset = pointer.dragPointer!.sub(
             bestManifoldProjection.projectedPt,
           );
         }
 
         const closestManifoldPt = _.minBy(
-          state.manifolds.flatMap((m) => m.points),
+          dragState.manifolds.flatMap((m) => m.points),
           (info) => draggableDestPt.dist(info.offset),
         )!;
 
@@ -247,8 +259,8 @@ export class ManipulableDrawer<T, Config = unknown> {
         ) {
           this.enterDraggingMode(
             newState,
-            state.draggableKey,
-            state.pointerOffset,
+            dragState.draggableKey,
+            dragState.pointerOffset,
             manipulableConfig,
           );
           return { diagramToDraw: closestManifoldPt!.diagram, newState };
@@ -293,66 +305,69 @@ export class ManipulableDrawer<T, Config = unknown> {
       if (diagramToDraw) drawDiagram(diagramToDraw, lyr);
       pointer.addPointerUpHandler(() => {
         if (diagramToDraw) {
-          this.state = {
+          this.setDragState({
             type: "animating",
             startDiagram: diagramToDraw,
             targetState: newState,
             startTime: Date.now(),
             duration: drawerConfig.animationDuration,
-          };
+          });
         } else {
-          this.state = { type: "idle", state: newState };
+          this.setDragState({ type: "idle", state: newState });
         }
       });
-    } else if (state.type === "dragging-params") {
+    } else if (dragState.type === "dragging-params") {
       pointer.setCursor("grabbing");
-      const draggableDestPt = pointer.dragPointer!.sub(state.pointerOffset);
+      const draggableDestPt = pointer.dragPointer!.sub(dragState.pointerOffset);
 
       // TODO: would be nice to save this fn, but it varies with
       // draggableDestPt
       const objectiveFn = (params: number[]) => {
-        const candidateState = state.stateFromParams(...params);
+        const candidateState = dragState.stateFromParams(...params);
         const diagram = this.manipulable.render(
           candidateState,
-          state.draggableKey,
+          dragState.draggableKey,
           manipulableConfig,
         );
-        const foundShape = flatShapeByDraggableKey(diagram, state.draggableKey);
+        const foundShape = flatShapeByDraggableKey(
+          diagram,
+          dragState.draggableKey,
+        );
         assert(!!foundShape, "Draggable key not found in rendered shape");
         return draggableDestPt.dist2(
           transformVec2(Vec2(0), foundShape.transform),
         );
       };
 
-      const r = minimize(objectiveFn, state.curParams);
-      state.curParams = r.solution;
+      const r = minimize(objectiveFn, dragState.curParams);
+      dragState.curParams = r.solution;
 
-      const newState = state.stateFromParams(...state.curParams);
+      const newState = dragState.stateFromParams(...dragState.curParams);
       const diagram = this.manipulable.render(
         newState,
-        state.draggableKey,
+        dragState.draggableKey,
         manipulableConfig,
       );
       drawDiagram(diagram, lyr);
 
       pointer.addPointerUpHandler(() => {
-        this.state = { type: "idle", state: newState };
+        this.setDragState({ type: "idle", state: newState });
       });
-    } else if (state.type === "animating") {
+    } else if (dragState.type === "animating") {
       pointer.setCursor("default");
 
       const now = Date.now();
-      const elapsed = now - state.startTime;
-      const progress = Math.min(elapsed / state.duration, 1);
+      const elapsed = now - dragState.startTime;
+      const progress = Math.min(elapsed / dragState.duration, 1);
       const easedProgress = easeElastic(progress);
 
       const targetDiagram = this.manipulable.render(
-        state.targetState,
+        dragState.targetState,
         null,
         manipulableConfig,
       );
       const interpolatedDiagram = lerpDiagrams(
-        state.startDiagram,
+        dragState.startDiagram,
         targetDiagram,
         easedProgress,
       );
@@ -360,13 +375,13 @@ export class ManipulableDrawer<T, Config = unknown> {
       drawDiagram(interpolatedDiagram, lyr);
 
       if (progress >= 1) {
-        this.state = { type: "idle", state: state.targetState };
+        this.setDragState({ type: "idle", state: dragState.targetState });
       }
-    } else if (state.type === "idle") {
+    } else if (dragState.type === "idle") {
       pointer.setCursor("default");
 
       const diagram = this.manipulable.render(
-        state.state,
+        dragState.state,
         null,
         manipulableConfig,
       );
@@ -374,7 +389,7 @@ export class ManipulableDrawer<T, Config = unknown> {
         pointer: pointer,
         onDragStart: (key, pointerOffset) => {
           this.enterDraggingMode(
-            state.state,
+            dragState.state,
             key,
             pointerOffset,
             manipulableConfig,
@@ -382,7 +397,7 @@ export class ManipulableDrawer<T, Config = unknown> {
         },
       });
     } else {
-      assertNever(state);
+      assertNever(dragState);
     }
 
     lyr.place(lyrDebug);
@@ -402,7 +417,7 @@ export class ManipulableDrawer<T, Config = unknown> {
       manipulableConfig,
     );
     if (!flatShapeByDraggableKey(diagram, draggableKey)) {
-      this.state = { type: "idle", state };
+      this.setDragState({ type: "idle", state });
       return;
     }
 
@@ -413,18 +428,18 @@ export class ManipulableDrawer<T, Config = unknown> {
     );
 
     if (hasKey(dragSpec, "initParams")) {
-      this.state = {
+      this.setDragState({
         type: "dragging-params",
         draggableKey,
         pointerOffset,
         curParams: dragSpec.initParams,
         stateFromParams: dragSpec.stateFromParams,
-      };
+      });
       return;
     }
 
     if (hasKey(dragSpec, "paramPaths")) {
-      this.state = {
+      this.setDragState({
         type: "dragging-params",
         draggableKey,
         pointerOffset,
@@ -436,7 +451,7 @@ export class ManipulableDrawer<T, Config = unknown> {
           });
           return newState;
         },
-      };
+      });
       return;
     }
 
@@ -470,13 +485,13 @@ export class ManipulableDrawer<T, Config = unknown> {
       return { points, delaunay };
     });
     // console.log("manifolds:", manifolds);
-    this.state = {
+    this.setDragState({
       type: "dragging",
       draggableKey,
       pointerOffset,
       startingPoint,
       manifolds,
-    };
+    });
   }
 }
 

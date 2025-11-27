@@ -1,10 +1,11 @@
-import { ReactNode, useCallback, useRef, useState } from "react";
+import { ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ConfigCheckbox } from "../config-controls";
 import { useDemoContext } from "../DemoContext";
 import { layer } from "../layer";
 import {
   hasConfig,
+  Manipulable,
   manipulableDefaultConfig,
   ManipulableDrawer,
 } from "../manipulable";
@@ -12,11 +13,12 @@ import { PointerManager, pointerManagerWithOffset } from "../pointer";
 import { Vec2 } from "../vec2";
 import { Canvas } from "./Canvas";
 
-interface DemoProps {
+interface DemoProps<T, Config> {
   id: string;
   title: string;
   notes?: ReactNode;
-  drawer: ManipulableDrawer<any, any>;
+  manipulable: Manipulable<T, Config>;
+  initialState: T;
   height: number;
   padding?: number;
   initialSnapRadius?: number;
@@ -24,18 +26,23 @@ interface DemoProps {
   initialRelativePointerMotion?: boolean;
 }
 
-export function Demo({
+export function Demo<T, Config>({
   id,
   title,
   notes,
-  drawer,
+  manipulable,
+  initialState,
   height,
   padding = 0,
   initialSnapRadius = 10,
   initialTransitionWhileDragging = true,
   initialRelativePointerMotion = false,
-}: DemoProps) {
-  const { debugView } = useDemoContext();
+}: DemoProps<T, Config>) {
+  const { debugView, onDragStateChange } = useDemoContext();
+  const drawer = useMemo(
+    () => new ManipulableDrawer(manipulable, initialState, onDragStateChange),
+    [manipulable, initialState, onDragStateChange],
+  );
   const [snapRadius, setSnapRadius] = useState(initialSnapRadius);
   const [transitionWhileDragging, setTransitionWhileDragging] = useState(
     initialTransitionWhileDragging,
@@ -44,7 +51,7 @@ export function Demo({
     initialRelativePointerMotion,
   );
   const [manipulableConfig, setManipulableConfig] = useState(
-    manipulableDefaultConfig(drawer.manipulable),
+    manipulableDefaultConfig(manipulable),
   );
   const pointerRef = useRef<PointerManager | null>(null);
 

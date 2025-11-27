@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { HashRouter, Link, Route, Routes, useParams } from "react-router-dom";
-import { DemoProvider } from "./DemoContext";
+import { useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { DemoContext } from "./DemoContext";
 import { demos } from "./demos";
 import { ErrorBoundary } from "./ErrorBoundary";
-import { PrettyPrintDemo } from "./pretty-print-demo";
+import { PrettyPrint } from "./pretty-print";
 
 function DemoList() {
   const [debugView, setDebugView] = useState(false);
 
   return (
-    <DemoProvider debugView={debugView}>
+    <DemoContext.Provider value={{ debugView }}>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="text-center py-10 px-5 max-w-3xl mx-auto">
           <h1 className="text-3xl font-normal text-gray-800">
@@ -37,7 +37,7 @@ function DemoList() {
           </label>
         </div>
       </div>
-    </DemoProvider>
+    </DemoContext.Provider>
   );
 }
 
@@ -46,6 +46,12 @@ function SingleDemo() {
   const [debugView, setDebugView] = useState(false);
 
   const demo = demos.find((d) => d.id === id);
+
+  const [dragState, setDragState] = useState<any>(null);
+  const lastExcitingDragStateRef = useRef<any>(null);
+  if (dragState?.type !== "idle") {
+    lastExcitingDragStateRef.current = dragState;
+  }
 
   if (!demo) {
     return (
@@ -63,7 +69,9 @@ function SingleDemo() {
   }
 
   return (
-    <DemoProvider debugView={debugView}>
+    <DemoContext.Provider
+      value={{ debugView, onDragStateChange: setDragState }}
+    >
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="text-center py-10 px-5 max-w-3xl mx-auto">
           <h1 className="text-3xl font-normal text-gray-800">
@@ -78,9 +86,16 @@ function SingleDemo() {
             ← Back to all demos
           </Link>
         </div>
-        <div className="flex flex-col gap-5 px-5 pb-5 max-w-3xl mx-auto flex-1 min-w-1/2">
+        <div className="flex flex-col gap-5 px-5 pb-5 max-w-3xl mx-auto min-w-1/2">
           {demo.node}
         </div>
+        {debugView ? (
+          <div className="px-5 max-w-3xl mx-auto w-full flex-1 overflow-y-auto min-h-0">
+            {<PrettyPrint value={lastExcitingDragStateRef.current} />}
+          </div>
+        ) : (
+          <div className="flex-1" />
+        )}
         <div className="sticky bottom-0 bg-white/95 py-4 px-5 border-t border-gray-200 flex gap-5 items-center justify-center shadow-[0_-2px_4px_rgba(0,0,0,0.1)]">
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -92,18 +107,12 @@ function SingleDemo() {
           </label>
         </div>
       </div>
-    </DemoProvider>
+    </DemoContext.Provider>
   );
 }
 
-export function App() {
-  return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<DemoList />} />
-        <Route path="/pretty-print" element={<PrettyPrintDemo />} />
-        <Route path="/:id" element={<SingleDemo />} />
-      </Routes>
-    </HashRouter>
-  );
+export function DemoLayout() {
+  const { id } = useParams<{ id: string }>();
+
+  return id ? <SingleDemo /> : <DemoList />;
 }
