@@ -89,7 +89,7 @@ function SingleDemo() {
         <div className="flex flex-col gap-5 px-5 pb-5 max-w-3xl mx-auto min-w-1/2">
           {demo.node}
         </div>
-        {debugView ? (
+        {false && debugView ? (
           <div className="px-5 max-w-3xl mx-auto w-full flex-1 overflow-y-auto min-h-0">
             {<PrettyPrint value={lastExcitingDragStateRef.current} />}
           </div>
