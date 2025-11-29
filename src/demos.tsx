@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Demo } from "./components/Demo";
+import { DemoSvg } from "./components/DemoSvg";
 import { manipulableAngle, stateAngle } from "./manipulable-angle";
 import { manipulableAngleViaTransform } from "./manipulable-angle-via-transform";
 import { manipulableClock, stateClock } from "./manipulable-clock";
@@ -32,6 +33,10 @@ import {
   manipulableSecondSimplest,
   stateSecondSimplest1,
 } from "./manipulable-second-simplest";
+import {
+  manipulableSecondSimplestSvg,
+  stateSecondSimplestSvg,
+} from "./manipulable-second-simplest-svg";
 import { manipulableSimplest, stateSimplest1 } from "./manipulable-simplest";
 import { manipulableSokoban, stateSokoban1 } from "./manipulable-sokoban";
 import { manipulableSpinny } from "./manipulable-spinny";
@@ -66,6 +71,19 @@ export const demos: DemoEntry[] = [
         manipulable={manipulableSecondSimplest}
         initialState={stateSecondSimplest1}
         height={120}
+        padding={20}
+      />
+    ),
+  },
+  {
+    id: "second-simplest-svg",
+    node: (
+      <DemoSvg
+        id="second-simplest-svg"
+        title="Second simplest (SVG)"
+        manipulableSvg={manipulableSecondSimplestSvg}
+        initialState={stateSecondSimplestSvg}
+        height={200}
         padding={20}
       />
     ),
@@ -339,6 +357,19 @@ export const demos: DemoEntry[] = [
         manipulable={manipulableClock}
         initialState={stateClock}
         height={200}
+        padding={20}
+      />
+    ),
+  },
+  {
+    id: "second-simplest-svg",
+    node: (
+      <Demo
+        id="second-simplest-svg"
+        title="Second simplest (via SVG)"
+        manipulable={manipulableSecondSimplest}
+        initialState={stateSecondSimplest1}
+        height={100}
         padding={20}
       />
     ),
