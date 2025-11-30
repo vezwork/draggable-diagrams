@@ -176,7 +176,11 @@ export function PrettyPrint({
  * Pretty-print a JavaScript value using Prettier's doc builder API.
  * Returns a Doc that can be printed with prettier.printDocToString()
  */
-export function prettyPrint(value: unknown, useColor: boolean = true): Doc {
+function prettyPrintToDoc(
+  value: unknown,
+  useColor: boolean = true,
+  visited: Set<unknown> = new Set(),
+): Doc {
   // Handle primitives
   if (value === null) return useColor ? colorize("null", "null") : "null";
   if (value === undefined)
@@ -210,13 +214,25 @@ export function prettyPrint(value: unknown, useColor: boolean = true): Doc {
     return useColor ? colorize(str, "number") : str;
   }
 
+  // Check for circular references (objects and arrays)
+  if (typeof value === "object" && value !== null) {
+    if (visited.has(value)) {
+      return useColor ? colorize("[Circular]", "null") : "[Circular]";
+    }
+  }
+  // Mark this object/array as visited
+  visited = new Set(visited);
+  visited.add(value);
+
   // Handle arrays
   if (Array.isArray(value)) {
     if (value.length === 0) {
       return "[]";
     }
 
-    const elements = value.map((item) => prettyPrint(item, useColor));
+    const elements = value.map((item) =>
+      prettyPrintToDoc(item, useColor, visited),
+    );
 
     // Use commas when inline, line breaks when multi-line
     const withSeparators: Doc[] = [];
@@ -257,9 +273,9 @@ export function prettyPrint(value: unknown, useColor: boolean = true): Doc {
       const ctor = useColor ? colorize("Map", "keyword") : "Map";
       const entries = Array.from(value.entries()).map(([k, v]) => [
         "[",
-        prettyPrint(k, useColor),
+        prettyPrintToDoc(k, useColor, visited),
         ", ",
-        prettyPrint(v, useColor),
+        prettyPrintToDoc(v, useColor, visited),
         "]",
       ]);
 
@@ -290,7 +306,9 @@ export function prettyPrint(value: unknown, useColor: boolean = true): Doc {
       }
       const keyword = useColor ? colorize("new", "keyword") : "new";
       const ctor = useColor ? colorize("Set", "keyword") : "Set";
-      const items = Array.from(value).map((v) => prettyPrint(v, useColor));
+      const items = Array.from(value).map((v) =>
+        prettyPrintToDoc(v, useColor, visited),
+      );
 
       const withSeparators: Doc[] = [];
       for (let i = 0; i < items.length; i++) {
@@ -325,7 +343,7 @@ export function prettyPrint(value: unknown, useColor: boolean = true): Doc {
     const idValue = idEntry?.[1];
 
     const remainingEntries = entries.filter(
-      ([key]) => key !== "type" && key !== "id"
+      ([key]) => key !== "type" && key !== "id",
     );
 
     const props = remainingEntries.map(([key, val]) => {
@@ -333,7 +351,7 @@ export function prettyPrint(value: unknown, useColor: boolean = true): Doc {
         ? key
         : JSON.stringify(key);
       const coloredKey = useColor ? colorize(keyStr, "key") : keyStr;
-      return [coloredKey, ": ", prettyPrint(val, useColor)];
+      return [coloredKey, ": ", prettyPrintToDoc(val, useColor, visited)];
     });
 
     // Use commas when inline, line breaks when multi-line
@@ -379,7 +397,7 @@ export function prettyPrintToString(
   printWidth: number = 80,
   useColor: boolean = true,
 ): string {
-  const doc = prettyPrint(value, useColor);
+  const doc = prettyPrintToDoc(value, useColor);
   const formatted = prettier.doc.printer.printDocToString(doc, {
     printWidth,
     tabWidth: 2,

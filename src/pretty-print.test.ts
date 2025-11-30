@@ -8,31 +8,15 @@ describe("prettyPrintToString", () => {
     const withoutAnsi = prettyPrintToString(longArray, 200, false);
     const withAnsi = prettyPrintToString(longArray, 200, true);
 
-    console.log("WITHOUT ANSI (printWidth: 200):");
-    console.log(withoutAnsi);
-    console.log("Length:", withoutAnsi.length);
-    console.log("---");
-
-    console.log("WITH ANSI (printWidth: 200):");
-    console.log(withAnsi);
-    console.log("Length:", withAnsi.length);
-    console.log("Raw with escapes visible:", JSON.stringify(withAnsi));
-    console.log("---");
-
     // Count ANSI escape sequences
     const ansiMatches = withAnsi.match(/\x1b\[\d+m/g);
-    console.log("Number of ANSI codes:", ansiMatches?.length);
-    console.log("ANSI codes add characters:", withAnsi.length - withoutAnsi.length);
+    expect(ansiMatches).toBeTruthy();
+    expect(withAnsi.length).toBeGreaterThan(withoutAnsi.length);
   });
 
   it("should format long arrays inline with wide printWidth", () => {
     const longArray = Array.from({ length: 20 }, (_, i) => i);
     const result = prettyPrintToString(longArray, 200, false);
-
-    console.log("printWidth: 200");
-    console.log("longArray result:");
-    console.log(result);
-    console.log("---");
 
     // With width 200, this should be all on one line
     expect(result).not.toContain("\n");
@@ -41,11 +25,6 @@ describe("prettyPrintToString", () => {
   it("should format long arrays with line breaks when narrow", () => {
     const longArray = Array.from({ length: 20 }, (_, i) => i);
     const result = prettyPrintToString(longArray, 40, false);
-
-    console.log("printWidth: 40");
-    console.log("longArray result:");
-    console.log(result);
-    console.log("---");
 
     // With width 40, this should break across multiple lines
     expect(result).toContain("\n");
@@ -64,11 +43,6 @@ describe("prettyPrintToString", () => {
     };
     const result = prettyPrintToString(obj, 200, false);
 
-    console.log("printWidth: 200");
-    console.log("object result:");
-    console.log(result);
-    console.log("---");
-
     // Should be relatively compact
     expect(result.split("\n").length).toBeLessThan(10);
   });
@@ -85,13 +59,6 @@ describe("prettyPrintToString", () => {
     const wide = prettyPrintToString(nested, 200, false);
     const narrow = prettyPrintToString(nested, 40, false);
 
-    console.log("printWidth: 200 (wide)");
-    console.log(wide);
-    console.log("---");
-    console.log("printWidth: 40 (narrow)");
-    console.log(narrow);
-    console.log("---");
-
     // Wide version should have fewer line breaks
     expect(wide.split("\n").length).toBeLessThan(narrow.split("\n").length);
   });
@@ -102,18 +69,50 @@ describe("prettyPrintToString", () => {
     const wide = prettyPrintToString(veryLongArray, 300, false);
     const narrow = prettyPrintToString(veryLongArray, 60, false);
 
-    console.log("printWidth: 300 (wide) - 50 element array");
-    console.log(wide);
-    console.log("---");
-    console.log("printWidth: 60 (narrow) - 50 element array");
-    console.log(narrow);
-    console.log("---");
-
     // Both should contain all elements
     expect(wide).toContain("49");
     expect(narrow).toContain("49");
 
     // Narrow should have more line breaks
     expect(narrow.split("\n").length).toBeGreaterThan(wide.split("\n").length);
+  });
+
+  it("should detect circular references in objects", () => {
+    const obj: any = { a: 1, b: 2 };
+    obj.self = obj;
+
+    const result = prettyPrintToString(obj, 80, false);
+
+    expect(result).toBe("{a: 1, b: 2, self: [Circular]}");
+  });
+
+  it("should detect circular references in arrays", () => {
+    const arr: any[] = [1, 2, 3];
+    arr.push(arr);
+
+    const result = prettyPrintToString(arr, 80, false);
+
+    expect(result).toBe("[1, 2, 3, [Circular]]");
+  });
+
+  it("should detect circular references in nested structures", () => {
+    const parent: any = { name: "parent", children: [] };
+    const child: any = { name: "child", parent: parent };
+    parent.children.push(child);
+
+    const result = prettyPrintToString(parent, 80, false);
+
+    expect(result).toBe(
+      '{name: "parent", children: [{name: "child", parent: [Circular]}]}',
+    );
+  });
+
+  it("should print repeated references distinctly", () => {
+    const shared = { value: 42 };
+    const obj = { first: shared, second: shared };
+
+    const result = prettyPrintToString(obj, 80, false);
+
+    expect(result).toBe("{first: {value: 42}, second: {value: 42}}");
   });
 });
