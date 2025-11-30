@@ -14,7 +14,7 @@ type GridPolyState = {
 
 export const manipulableGridPolySvg: ManipulableSvg<GridPolyState> = ({
   state,
-  draggable,
+  drag,
 }) => {
   const TILE_SIZE = 50;
 
@@ -44,16 +44,14 @@ export const manipulableGridPolySvg: ManipulableSvg<GridPolyState> = ({
       })}
 
       {/* Draggable polygon vertices */}
-      {state.points.map((pt, idx) =>
-        draggable(
-          <circle
-            transform={translate(pt.x * TILE_SIZE, pt.y * TILE_SIZE)}
-            cx={0}
-            cy={0}
-            r={10}
-            fill="black"
-          />,
-          () => {
+      {state.points.map((pt, idx) => (
+        <circle
+          transform={translate(pt.x * TILE_SIZE, pt.y * TILE_SIZE)}
+          cx={0}
+          cy={0}
+          r={10}
+          fill="black"
+          data-on-drag={drag(() => {
             const states = [];
             for (const x of _.range(state.w)) {
               for (const y of _.range(state.h)) {
@@ -67,9 +65,9 @@ export const manipulableGridPolySvg: ManipulableSvg<GridPolyState> = ({
               }
             }
             return span(states);
-          },
-        ),
-      )}
+          })}
+        />
+      ))}
     </g>
   );
 };

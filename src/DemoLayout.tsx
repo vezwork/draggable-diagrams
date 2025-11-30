@@ -9,38 +9,35 @@ function DemoList() {
   const [debugView, setDebugView] = useState(false);
 
   return (
-    <DemoContext.Provider value={{ debugView }}>
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="text-center py-10 px-5 max-w-3xl mx-auto">
-          <h1 className="text-3xl font-normal text-gray-800">
-            Draggable diagrams
-          </h1>
-        </div>
-        <div className="flex flex-col gap-5 px-5 pb-5 max-w-3xl mx-auto flex-1">
-          {demos.map((demo) => {
-            const id = (demo.props as any).id;
-            return (
-              <ErrorBoundary
-                key={id}
-                fallback={<div>Error loading demo: {id}</div>}
-              >
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="text-center py-10 px-5 max-w-3xl mx-auto">
+        <h1 className="text-3xl font-normal text-gray-800">
+          Draggable diagrams
+        </h1>
+      </div>
+      <div className="flex flex-col gap-5 px-5 pb-5 max-w-3xl mx-auto flex-1">
+        {demos.map((demo) => {
+          const id = (demo.props as any).id;
+          return (
+            <DemoContext.Provider key={id} value={{ debugView }}>
+              <ErrorBoundary>
                 {demo}
               </ErrorBoundary>
-            );
-          })}
-        </div>
-        <div className="sticky bottom-0 bg-white/95 py-4 px-5 border-t border-gray-200 flex gap-5 items-center justify-center shadow-[0_-2px_4px_rgba(0,0,0,0.1)]">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={debugView}
-              onChange={(e) => setDebugView(e.target.checked)}
-            />
-            Debug View
-          </label>
-        </div>
+            </DemoContext.Provider>
+          );
+        })}
       </div>
-    </DemoContext.Provider>
+      <div className="sticky bottom-0 bg-white/95 py-4 px-5 border-t border-gray-200 flex gap-5 items-center justify-center shadow-[0_-2px_4px_rgba(0,0,0,0.1)]">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={debugView}
+            onChange={(e) => setDebugView(e.target.checked)}
+          />
+          Debug View
+        </label>
+      </div>
+    </div>
   );
 }
 
@@ -90,7 +87,9 @@ function SingleDemo() {
         <DemoContext.Provider
           value={{ debugView, onDragStateChange: setDragState }}
         >
-          {demo}
+          <ErrorBoundary>
+            {demo}
+          </ErrorBoundary>
         </DemoContext.Provider>
       </div>
       {false && debugView ? (

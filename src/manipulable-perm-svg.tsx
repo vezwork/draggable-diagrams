@@ -9,7 +9,7 @@ type PermState = {
 
 export const manipulablePermSvg: ManipulableSvg<PermState> = ({
   state,
-  draggable,
+  drag,
   draggedId,
 }) => {
   const TILE_SIZE = 50;
@@ -18,11 +18,22 @@ export const manipulablePermSvg: ManipulableSvg<PermState> = ({
     <g>
       {state.perm.map((p, idx) => {
         const isDragged = p === draggedId;
-        return draggable(
+        return (
           <g
             id={p}
             transform={translate(idx * TILE_SIZE, isDragged ? -10 : 0)}
             data-z-index={isDragged ? 1 : 0}
+            data-on-drag={drag(() => {
+              const draggedIdx = state.perm.indexOf(p);
+              return span(
+                _.range(state.perm.length).map((idx) =>
+                  produce(state, (draft) => {
+                    draft.perm.splice(draggedIdx, 1);
+                    draft.perm.splice(idx, 0, p);
+                  }),
+                ),
+              );
+            })}
           >
             <rect
               x={0}
@@ -43,18 +54,7 @@ export const manipulablePermSvg: ManipulableSvg<PermState> = ({
             >
               {p}
             </text>
-          </g>,
-          () => {
-            const draggedIdx = state.perm.indexOf(p);
-            return span(
-              _.range(state.perm.length).map((idx) =>
-                produce(state, (draft) => {
-                  draft.perm.splice(draggedIdx, 1);
-                  draft.perm.splice(idx, 0, p);
-                }),
-              ),
-            );
-          },
+          </g>
         );
       })}
     </g>

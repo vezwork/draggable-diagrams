@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { DragSpec, straightTo } from "./DragSpec";
 import { SvgElem } from "./jsx-flatten";
-import { ManipulableSvg, translate } from "./manipulable-svg";
+import { Drag, ManipulableSvg, translate } from "./manipulable-svg";
 import { insertImm, removeImm, setImm } from "./utils";
 
 type NoolTree = {
@@ -36,15 +36,15 @@ const defaultConfig: NoolTreeConfig = {
 
 export const manipulableNoolTreeSvg: ManipulableSvg<NoolTree> = ({
   state,
-  draggable,
+  drag,
 }) => {
-  return renderNoolTree(state, state, draggable, defaultConfig).element;
+  return renderNoolTree(state, state, drag, defaultConfig).element;
 };
 
 function renderNoolTree(
   rootState: NoolTree,
   tree: NoolTree,
-  draggable: any,
+  drag: Drag<NoolTree>,
   config: NoolTreeConfig,
 ): {
   element: SvgElem;
@@ -58,7 +58,7 @@ function renderNoolTree(
   const LABEL_MIN_HEIGHT = 20;
 
   const renderedChildren = tree.children.map((child) =>
-    renderNoolTree(rootState, child, draggable, config),
+    renderNoolTree(rootState, child, drag, config),
   );
 
   const renderedChildrenElements: SvgElem[] = [];
@@ -94,20 +94,18 @@ function renderNoolTree(
         fill="none"
       />
       {/* Label - draggable text */}
-      {draggable(
-        <text
-          x={PADDING + LABEL_WIDTH / 2}
-          y={PADDING + innerH / 2}
-          dominantBaseline="middle"
-          textAnchor="middle"
-          fontSize={20}
-          fill="black"
-        >
-          {tree.label}
-        </text>,
-        () => dragTargets(rootState, tree.id, config),
-      )}
-      {/* Children */}
+      <text
+        x={PADDING + LABEL_WIDTH / 2}
+        y={PADDING + innerH / 2}
+        dominantBaseline="middle"
+        textAnchor="middle"
+        fontSize={20}
+        fill="black"
+        data-on-drag={drag(() => dragTargets(rootState, tree.id, config))}
+      >
+        {tree.label}
+      </text>
+      ,{/* Children */}
       {renderedChildren.length > 0 && (
         <g transform={translate(PADDING + LABEL_WIDTH + GAP, PADDING)}>
           {renderedChildrenElements}

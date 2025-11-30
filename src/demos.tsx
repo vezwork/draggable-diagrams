@@ -1,7 +1,7 @@
 import { ReactElement } from "react";
 import { Demo } from "./components/Demo";
 import { DemoSvg } from "./components/DemoSvg";
-import { numsAtPaths } from "./DragSpec";
+import { numsAtPaths, straightTo } from "./DragSpec";
 import { manipulableAngle, stateAngle } from "./manipulable-angle";
 import { manipulableAngleSvg } from "./manipulable-angle-svg";
 import { manipulableAngleViaTransform } from "./manipulable-angle-via-transform";
@@ -9,15 +9,13 @@ import {
   manipulableAngleViaTransformSvg,
   stateAngleViaTransformSvg,
 } from "./manipulable-angle-via-transform-svg";
+import { manipulableBraid } from "./manipulable-braid";
 import { manipulableClock, stateClock } from "./manipulable-clock";
 import { manipulableClockSvg, stateClockSvg } from "./manipulable-clock-svg";
 import { manipulableFifteen, stateFifteen } from "./manipulable-fifteen";
 import { manipulableFlippy, stateFlippy1 } from "./manipulable-flippy";
 import { manipulableGraph, stateGraph } from "./manipulable-graph";
-import {
-  manipulableGraphSvg,
-  stateGraphSvg,
-} from "./manipulable-graph-svg";
+import { manipulableGraphSvg, stateGraphSvg } from "./manipulable-graph-svg";
 import { manipulableGridPoly, stateGridPoly1 } from "./manipulable-grid-poly";
 import { manipulableGridPolySvg } from "./manipulable-grid-poly-svg";
 import {
@@ -73,7 +71,7 @@ import {
   manipulableSpinnySvg,
   stateSpinny1 as stateSpinny1Svg,
 } from "./manipulable-spinny-svg";
-import { points, rotate, scale, translate } from "./manipulable-svg";
+import { rotate, scale, translate } from "./manipulable-svg";
 import { manipulableTiles, stateTilesLonely } from "./manipulable-tiles";
 import { manipulableTilesSvg } from "./manipulable-tiles-svg";
 import { manipulableTodo, stateTodo1 } from "./manipulable-todo";
@@ -100,6 +98,27 @@ export const demos: ReactElement[] = [
     title="Second simplest (SVG)"
     manipulableSvg={manipulableSecondSimplestSvg}
     initialState={stateSecondSimplestSvg}
+    height={200}
+    padding={20}
+  />,
+  <DemoSvg
+    id="second-simplest-svg-on-drag"
+    title="Second simplest (SVG, as data-on-drag)"
+    initialState={{ value: 0 }}
+    manipulableSvg={({ state, drag }) => (
+      <rect
+        id="switch"
+        transform={translate(state.value * 100, 20 * (-1) ** state.value + 20)}
+        x={0}
+        y={0}
+        width={100}
+        height={100}
+        data-on-drag={drag(() => [
+          state.value > 0 && straightTo({ value: state.value - 1 }),
+          state.value < 3 && straightTo({ value: state.value + 1 }),
+        ])}
+      />
+    )}
     height={200}
     padding={20}
   />,
@@ -171,7 +190,7 @@ export const demos: ReactElement[] = [
     initialState={stateTilesLonely}
     height={300}
     padding={20}
-    // initialRelativePointerMotion={true}
+    initialRelativePointerMotion={true}
   />,
   <Demo
     id="grid-polygon"
@@ -452,6 +471,14 @@ export const demos: ReactElement[] = [
     title="Clock (SVG)"
     manipulableSvg={manipulableClockSvg}
     initialState={stateClockSvg}
+    height={200}
+    padding={20}
+  />,
+  <DemoSvg
+    id="braids"
+    title="Braids"
+    manipulableSvg={manipulableBraid}
+    initialState={{ n: 2, seq: [] as const, buds: true }}
     height={200}
     padding={20}
   />,

@@ -12,7 +12,7 @@ type TilesState = {
 
 export const manipulableTilesSvg: ManipulableSvg<TilesState> = ({
   state,
-  draggable,
+  drag,
 }) => {
   const TILE_SIZE = 50;
   return (
@@ -30,30 +30,10 @@ export const manipulableTilesSvg: ManipulableSvg<TilesState> = ({
           />
         )),
       )}
-      {Object.entries(state.tiles).map(([key, tile]) =>
-        draggable(
-          <g transform={translate(tile.x * TILE_SIZE, tile.y * TILE_SIZE)}>
-            <rect
-              x={0}
-              y={0}
-              width={TILE_SIZE}
-              height={TILE_SIZE}
-              fill="#eee"
-              stroke="black"
-              strokeWidth={2}
-            />
-            <text
-              x={TILE_SIZE / 2}
-              y={TILE_SIZE / 2}
-              dominantBaseline="middle"
-              textAnchor="middle"
-              fontSize={20}
-              fill="black"
-            >
-              {key}
-            </text>
-          </g>,
-          () =>
+      {Object.entries(state.tiles).map(([key, tile]) => (
+        <g
+          transform={translate(tile.x * TILE_SIZE, tile.y * TILE_SIZE)}
+          data-on-drag={drag(() =>
             (
               [
                 [-1, 0],
@@ -65,68 +45,36 @@ export const manipulableTilesSvg: ManipulableSvg<TilesState> = ({
               const adjLoc = Vec2(tile).add(d);
               if (!inXYWH(adjLoc, [0, 0, state.w - 1, state.h - 1])) return;
               if (Object.values(state.tiles).some((t) => adjLoc.eq(t))) return;
-              return straightTo({
-                ...state,
-                tiles: { ...state.tiles, [key]: adjLoc.xy() },
-              });
+              const newState = structuredClone(state);
+              newState.tiles[key] = { x: adjLoc.x, y: adjLoc.y };
+              return straightTo(newState);
             }),
-        ),
-      )}
+          )}
+        >
+          <rect
+            x={0}
+            y={0}
+            width={TILE_SIZE}
+            height={TILE_SIZE}
+            fill="#eee"
+            stroke="black"
+            strokeWidth={2}
+          />
+          <text
+            x={TILE_SIZE / 2}
+            y={TILE_SIZE / 2}
+            dominantBaseline="middle"
+            textAnchor="middle"
+            fontSize={20}
+            fill="black"
+          >
+            {key}
+          </text>
+        </g>
+      ))}
     </g>
   );
 };
-
-// export const manipulableTiles: Manipulable<TilesState> = {
-//   sourceFile: "manipulable-tiles-svg.tsx",
-
-//   render(state) {
-//     const TILE_SIZE = 50;
-//     return group(
-//       _.range(state.w).map((x) =>
-//         _.range(state.h).map((y) =>
-//           rectangle({
-//             xywh: XYWH(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE),
-//             strokeStyle: "gray",
-//             lineWidth: 1,
-//           }),
-//         ),
-//       ),
-//       Object.entries(state.tiles).map(([key, tile]) =>
-//         rectangle({
-//           xywh: XYWH(0, 0, TILE_SIZE, TILE_SIZE),
-//           fillStyle: "#eee",
-//           strokeStyle: "black",
-//           lineWidth: 2,
-//           label: key,
-//         })
-//           .draggable(key)
-//           .translate(Vec2(tile.x * TILE_SIZE, tile.y * TILE_SIZE)),
-//       ),
-//     );
-//   },
-
-//   onDrag(state, draggableKey) {
-//     const dragLoc = Vec2(state.tiles[draggableKey]);
-//     return (
-//       [
-//         [-1, 0],
-//         [1, 0],
-//         [0, -1],
-//         [0, 1],
-//       ] as const
-//     )
-//       .map((d) => {
-//         const adjLoc = dragLoc.add(d);
-//         if (!inXYWH(adjLoc, XYWH(0, 0, state.w - 1, state.h - 1))) return;
-//         if (Object.values(state.tiles).some((t) => adjLoc.eq(t))) return;
-//         return straightTo({
-//           ...state,
-//           tiles: { ...state.tiles, [draggableKey]: adjLoc.xy() },
-//         });
-//       })
-//       .filter(defined);
-//   },
-// };
 
 export const stateTilesLonely: TilesState = {
   w: 5,

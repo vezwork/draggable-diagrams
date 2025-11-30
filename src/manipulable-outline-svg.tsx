@@ -1,6 +1,6 @@
 import { span } from "./DragSpec";
 import { SvgElem } from "./jsx-flatten";
-import { Draggable, ManipulableSvg, translate } from "./manipulable-svg";
+import { Drag, ManipulableSvg, translate } from "./manipulable-svg";
 
 type Outline = {
   id: string;
@@ -16,7 +16,7 @@ function renderOutline(
   tree: Outline,
   rootState: Outline,
   draggedId: string | null,
-  draggable: Draggable<Outline>,
+  drag: Drag<Outline>,
 ): {
   elem: SvgElem;
   h: number;
@@ -24,8 +24,33 @@ function renderOutline(
   const isDragged = tree.id === draggedId;
   const zIndex = isDragged ? 1 : 0;
 
-  const block = draggable(
-    <g>
+  const block = (
+    <g
+      data-on-drag={drag(() => {
+        const newState = structuredClone(rootState);
+        // Remove the dragged node from its current location
+        let foundNode: Outline | null = null;
+        function removeKey(node: Outline): boolean {
+          for (let i = 0; i < node.children.length; i++) {
+            if (node.children[i].id === tree.id) {
+              foundNode = node.children[i];
+              node.children.splice(i, 1);
+              return true;
+            }
+            if (removeKey(node.children[i])) {
+              return true;
+            }
+          }
+          return false;
+        }
+        removeKey(newState);
+        if (!foundNode) {
+          return [];
+        }
+
+        return span(insertAtAllPositions(newState, foundNode));
+      })}
+    >
       <rect
         x={0}
         y={0}
@@ -45,31 +70,7 @@ function renderOutline(
       >
         {tree.label}
       </text>
-    </g>,
-    () => {
-      const newState = structuredClone(rootState);
-      // Remove the dragged node from its current location
-      let foundNode: Outline | null = null;
-      function removeKey(node: Outline): boolean {
-        for (let i = 0; i < node.children.length; i++) {
-          if (node.children[i].id === tree.id) {
-            foundNode = node.children[i];
-            node.children.splice(i, 1);
-            return true;
-          }
-          if (removeKey(node.children[i])) {
-            return true;
-          }
-        }
-        return false;
-      }
-      removeKey(newState);
-      if (!foundNode) {
-        return [];
-      }
-
-      return span(insertAtAllPositions(newState, foundNode));
-    },
+    </g>
   );
 
   let y = HEIGHT;
@@ -83,7 +84,7 @@ function renderOutline(
             child,
             rootState,
             draggedId,
-            draggable,
+            drag,
           );
           const childPositioned = (
             <g id={`position-${child.id}`} transform={translate(INDENT, y)}>
@@ -143,12 +144,12 @@ function insertAtAllPositions(tree: Outline, child: Outline): Outline[] {
 
 export const manipulableOutlineSvg: ManipulableSvg<Outline> = ({
   state,
-  draggable,
+  drag,
   draggedId,
 }) => {
   return (
     <g transform={translate(10, 10)}>
-      {renderOutline(state, state, draggedId, draggable).elem}
+      {renderOutline(state, state, draggedId, drag).elem}
     </g>
   );
 };

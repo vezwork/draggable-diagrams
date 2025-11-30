@@ -9,7 +9,7 @@ type PermDoubleState = {
 
 export const manipulablePermDoubleSvg: ManipulableSvg<PermDoubleState> = ({
   state,
-  draggable,
+  drag,
   draggedId,
 }) => {
   const TILE_SIZE = 50;
@@ -24,40 +24,18 @@ export const manipulablePermDoubleSvg: ManipulableSvg<PermDoubleState> = ({
     <g>
       {state.rows.map((row, rowIdx) => (
         <g transform={translate(0, rowIdx * (TILE_SIZE + ROW_PADDING * 2))}>
-          {row.map((p, idx) =>
-            draggable(
-              <g
-                id={p}
-                data-z-index={
-                  p === draggedId
-                    ? 2
-                    : draggedRow && row.includes(draggedId!)
-                      ? 1
-                      : 0
-                }
-                transform={translate(idx * TILE_SIZE + ROW_PADDING, ROW_PADDING)}
-              >
-                <rect
-                  x={0}
-                  y={0}
-                  width={TILE_SIZE}
-                  height={TILE_SIZE}
-                  stroke="black"
-                  strokeWidth={2}
-                  fill="white"
-                />
-                <text
-                  x={TILE_SIZE / 2}
-                  y={TILE_SIZE / 2}
-                  dominantBaseline="middle"
-                  textAnchor="middle"
-                  fontSize={20}
-                  fill="black"
-                >
-                  {p}
-                </text>
-              </g>,
-              () => {
+          {row.map((p, idx) => (
+            <g
+              id={p}
+              data-z-index={
+                p === draggedId
+                  ? 2
+                  : draggedRow && row.includes(draggedId!)
+                    ? 1
+                    : 0
+              }
+              transform={translate(idx * TILE_SIZE + ROW_PADDING, ROW_PADDING)}
+              data-on-drag={drag(() => {
                 const draggedRowIdx = state.rows.findIndex((r) => r.includes(p));
                 const draggedRow = state.rows[draggedRowIdx];
                 const draggedColIdx = draggedRow.indexOf(p);
@@ -77,9 +55,29 @@ export const manipulablePermDoubleSvg: ManipulableSvg<PermDoubleState> = ({
                   }
                 }
                 return span(states);
-              },
-            ),
-          )}
+              })}
+            >
+              <rect
+                x={0}
+                y={0}
+                width={TILE_SIZE}
+                height={TILE_SIZE}
+                stroke="black"
+                strokeWidth={2}
+                fill="white"
+              />
+              <text
+                x={TILE_SIZE / 2}
+                y={TILE_SIZE / 2}
+                dominantBaseline="middle"
+                textAnchor="middle"
+                fontSize={20}
+                fill="black"
+              >
+                {p}
+              </text>
+            </g>
+          ))}
         </g>
       ))}
     </g>

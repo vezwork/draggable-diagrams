@@ -7,7 +7,7 @@ type ClockState = {
 
 export const manipulableClockSvg: ManipulableSvg<ClockState> = ({
   state,
-  draggable,
+  drag,
 }) => {
   function hand(
     name: string,
@@ -25,16 +25,14 @@ export const manipulableClockSvg: ManipulableSvg<ClockState> = ({
           stroke="black"
           strokeWidth={strokeWidth}
         />
-        {draggable(
-          <circle
-            transform={translate(length, 0)}
-            cx={0}
-            cy={0}
-            r={10}
-            fill="black"
-          />,
-          numAtPath(["hours"]),
-        )}
+        <circle
+          transform={translate(length, 0)}
+          cx={0}
+          cy={0}
+          r={10}
+          fill="black"
+          data-on-drag={drag(numAtPath(["hours"]))}
+        />
       </g>
     );
   }

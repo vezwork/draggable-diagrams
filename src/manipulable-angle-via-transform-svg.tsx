@@ -7,7 +7,7 @@ type AngleState = {
 
 export const manipulableAngleViaTransformSvg: ManipulableSvg<AngleState> = ({
   state,
-  draggable,
+  drag,
 }) => {
   const radius = 100;
 
@@ -15,16 +15,14 @@ export const manipulableAngleViaTransformSvg: ManipulableSvg<AngleState> = ({
     <g transform={translate(100, 100)}>
       <g transform={rotate(state.angle)}>
         <line x1={0} y1={0} x2={radius} y2={0} stroke="black" strokeWidth={4} />
-        {draggable(
-          <circle
-            transform={translate(radius, 0)}
-            cx={0}
-            cy={0}
-            r={20}
-            fill="black"
-          />,
-          numAtPath(["angle"]),
-        )}
+        <circle
+          transform={translate(radius, 0)}
+          cx={0}
+          cy={0}
+          r={20}
+          fill="black"
+          data-on-drag={drag(numAtPath(["angle"]))}
+        />
       </g>
     </g>
   );

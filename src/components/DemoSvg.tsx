@@ -1,6 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
 import { ConfigCheckbox } from "../config-controls";
+import { ErrorBoundary } from "../ErrorBoundary";
 import { ManipulableSvg, ManipulableSvgDrawer } from "../manipulable-svg";
 
 interface DemoSvgProps<T extends object> {
@@ -49,17 +50,19 @@ export function DemoSvg<T extends object>({
       {notes && <div className="mt-2 text-sm text-gray-600">{notes}</div>}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1" style={{ padding }}>
-          <ManipulableSvgDrawer
-            manipulableSvg={manipulableSvg}
-            initialState={initialState}
-            config={{
-              snapRadius,
-              chainDrags,
-              relativePointerMotion,
-              animationDuration: 300,
-            }}
-            height={height}
-          />
+          <ErrorBoundary>
+            <ManipulableSvgDrawer
+              manipulableSvg={manipulableSvg}
+              initialState={initialState}
+              config={{
+                snapRadius,
+                chainDrags,
+                relativePointerMotion,
+                animationDuration: 300,
+              }}
+              height={height}
+            />
+          </ErrorBoundary>
         </div>
         <div
           className={`${false ? "w-64 md:w-52" : "w-48 md:w-32"} bg-gray-50 rounded p-3 flex flex-col gap-2`}

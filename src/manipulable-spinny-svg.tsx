@@ -11,9 +11,10 @@ const RADIUS = 100;
 
 export const manipulableSpinnySvg: ManipulableSvg<PermState> = ({
   state,
-  draggable,
+  drag,
 }) => (
   <g transform={translate(100, 100)}>
+    {/* background circle */}
     <circle
       cx={0}
       cy={0}
@@ -22,14 +23,28 @@ export const manipulableSpinnySvg: ManipulableSvg<PermState> = ({
       stroke="#eee"
       strokeWidth={8}
     />
+
+    {/* item circles */}
     {state.perm.map((p) => {
       const angle = (state.perm.indexOf(p) / state.perm.length) * 360 + 180;
-
-      return draggable(
+      return (
         <g
           id={p}
           transform={rotate(angle) + translate(RADIUS, 0) + rotate(-angle)}
           data-z-index={1}
+          data-on-drag={drag([
+            straightTo(
+              // we use immer's `produce` to make immutable updates easier
+              produce(state, (s) => {
+                s.perm.push(s.perm.shift()!);
+              }),
+            ),
+            straightTo(
+              produce(state, (s) => {
+                s.perm.unshift(s.perm.pop()!);
+              }),
+            ),
+          ])}
         >
           <circle
             cx={0}
@@ -49,19 +64,7 @@ export const manipulableSpinnySvg: ManipulableSvg<PermState> = ({
           >
             {p}
           </text>
-        </g>,
-        [
-          straightTo(
-            produce(state, (s) => {
-              s.perm.push(s.perm.shift()!);
-            }),
-          ),
-          straightTo(
-            produce(state, (s) => {
-              s.perm.unshift(s.perm.pop()!);
-            }),
-          ),
-        ],
+        </g>
       );
     })}
   </g>

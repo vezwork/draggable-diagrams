@@ -10,7 +10,7 @@ type GraphState = {
 
 export const manipulableGraphSvg: ManipulableSvg<GraphState> = ({
   state,
-  draggable,
+  drag,
 }) => {
   const NODE_R = 20;
 
@@ -56,18 +56,16 @@ export const manipulableGraphSvg: ManipulableSvg<GraphState> = ({
               stroke="black"
               strokeWidth={2}
             />
-            {draggable(
-              <polygon
-                id={`head-${key}`}
-                transform={translate(arrowPos)}
-                points={points(
-                  Vec2(0),
-                  backFromTip.rotate(arrowHeadAngle),
-                  backFromTip.rotate(-arrowHeadAngle),
-                )}
-                fill="black"
-              />,
-              () => {
+            <polygon
+              id={`head-${key}`}
+              transform={translate(arrowPos)}
+              points={points(
+                Vec2(0),
+                backFromTip.rotate(arrowHeadAngle),
+                backFromTip.rotate(-arrowHeadAngle),
+              )}
+              fill="black"
+              data-on-drag={drag(() => {
                 // Construct all new graphs where the "edgeKey" edge has a different node as "to"
                 const newStates = [];
                 for (const newToNodeKey of Object.keys(state.nodes)) {
@@ -89,18 +87,16 @@ export const manipulableGraphSvg: ManipulableSvg<GraphState> = ({
                   });
                 }
                 return span(newStates);
-              },
-            )}
-            {draggable(
-              <circle
-                id={`tail-${key}`}
-                transform={translate(tailPos)}
-                cx={0}
-                cy={0}
-                r={5}
-                fill="black"
-              />,
-              () => {
+              })}
+            />
+            <circle
+              id={`tail-${key}`}
+              transform={translate(tailPos)}
+              cx={0}
+              cy={0}
+              r={5}
+              fill="black"
+              data-on-drag={drag(() => {
                 // Construct all new graphs where the "edgeKey" edge has a different node as "from"
                 const newStates = [];
                 for (const newFromNodeKey of Object.keys(state.nodes)) {
@@ -125,29 +121,29 @@ export const manipulableGraphSvg: ManipulableSvg<GraphState> = ({
                   });
                 }
                 return span(newStates);
-              },
-            )}
+              })}
+            />
           </g>
         );
       })}
 
       {/* Render nodes */}
-      {Object.entries(state.nodes).map(([key, node]) =>
-        draggable(
-          <circle
-            id={`node-${key}`}
-            transform={translate(node.x, node.y)}
-            cx={0}
-            cy={0}
-            r={NODE_R}
-            fill="black"
-          />,
-          numsAtPaths([
-            ["nodes", key, "x"],
-            ["nodes", key, "y"],
-          ]),
-        ),
-      )}
+      {Object.entries(state.nodes).map(([key, node]) => (
+        <circle
+          id={`node-${key}`}
+          transform={translate(node.x, node.y)}
+          cx={0}
+          cy={0}
+          r={NODE_R}
+          fill="black"
+          data-on-drag={drag(
+            numsAtPaths([
+              ["nodes", key, "x"],
+              ["nodes", key, "y"],
+            ]),
+          )}
+        />
+      ))}
     </g>
   );
 };
