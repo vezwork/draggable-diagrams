@@ -158,6 +158,30 @@ describe("assignPaths", () => {
       </g>
     `);
   });
+
+  it("throws error when id contains a slash", () => {
+    const tree = (
+      <g>
+        <rect id="root/child" />
+      </g>
+    );
+
+    expect(() => assignPaths(tree)).toThrow(
+      'Element id "root/child" contains a slash, which is not allowed'
+    );
+  });
+
+  it("throws error when id contains multiple slashes", () => {
+    const tree = (
+      <g>
+        <rect id="a/b/c" />
+      </g>
+    );
+
+    expect(() => assignPaths(tree)).toThrow(
+      'Element id "a/b/c" contains a slash, which is not allowed'
+    );
+  });
 });
 
 describe("findByPath", () => {

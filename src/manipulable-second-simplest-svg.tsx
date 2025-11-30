@@ -11,12 +11,18 @@ export const manipulableSecondSimplestSvg: ManipulableSvg<State> = ({
   state,
   draggable,
 }) => {
-  return (
-    <g transform={translate(state.value * 100, 20 * (-1) ** state.value + 20)}>
-      {draggable(<rect x={0} y={0} width={100} height={100} />, [
-        state.value > 0 && straightTo({ value: state.value - 1 }),
-        state.value < 3 && straightTo({ value: state.value + 1 }),
-      ])}
-    </g>
+  return draggable(
+    <rect
+      id="switch"
+      transform={translate(state.value * 100, 20 * (-1) ** state.value + 20)}
+      x={0}
+      y={0}
+      width={100}
+      height={100}
+    />,
+    [
+      state.value > 0 && straightTo({ value: state.value - 1 }),
+      state.value < 3 && straightTo({ value: state.value + 1 }),
+    ],
   );
 };

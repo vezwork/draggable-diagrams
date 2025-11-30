@@ -22,7 +22,7 @@ interface DemoProps<T extends object, Config> {
   height: number;
   padding?: number;
   initialSnapRadius?: number;
-  initialTransitionWhileDragging?: boolean;
+  initialChainDrags?: boolean;
   initialRelativePointerMotion?: boolean;
 }
 
@@ -35,7 +35,7 @@ export function Demo<T extends object, Config>({
   height,
   padding = 0,
   initialSnapRadius = 10,
-  initialTransitionWhileDragging = true,
+  initialChainDrags = true,
   initialRelativePointerMotion = false,
 }: DemoProps<T, Config>) {
   const { debugView, onDragStateChange } = useDemoContext();
@@ -44,9 +44,7 @@ export function Demo<T extends object, Config>({
     [manipulable, initialState, onDragStateChange],
   );
   const [snapRadius, setSnapRadius] = useState(initialSnapRadius);
-  const [transitionWhileDragging, setTransitionWhileDragging] = useState(
-    initialTransitionWhileDragging,
-  );
+  const [chainDrags, setChainDrags] = useState(initialChainDrags);
   const [relativePointerMotion, setRelativePointerMotion] = useState(
     initialRelativePointerMotion,
   );
@@ -84,7 +82,7 @@ export function Demo<T extends object, Config>({
         {
           debugView,
           snapRadius,
-          transitionWhileDragging,
+          chainDrags,
           relativePointerMotion,
           animationDuration: 300,
         },
@@ -98,7 +96,7 @@ export function Demo<T extends object, Config>({
       padding,
       debugView,
       snapRadius,
-      transitionWhileDragging,
+      chainDrags,
       relativePointerMotion,
       manipulableConfig,
     ],
@@ -150,8 +148,8 @@ export function Demo<T extends object, Config>({
           </label>
           <ConfigCheckbox
             label="Chain drags automatically"
-            value={transitionWhileDragging}
-            onChange={setTransitionWhileDragging}
+            value={chainDrags}
+            onChange={setChainDrags}
           />
           <ConfigCheckbox
             label="Relative pointer motion"

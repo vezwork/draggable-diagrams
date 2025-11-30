@@ -143,7 +143,7 @@ export class ManipulableDrawer<T extends object, Config = unknown> {
     drawerConfig: {
       snapRadius: number;
       debugView: boolean;
-      transitionWhileDragging: boolean;
+      chainDrags: boolean;
       relativePointerMotion: boolean;
       animationDuration: number;
     },
@@ -220,7 +220,7 @@ export class ManipulableDrawer<T extends object, Config = unknown> {
 
         // check if it's time to snap
         if (
-          drawerConfig.transitionWhileDragging &&
+          drawerConfig.chainDrags &&
           bestManifoldProjection.projectedPt.dist(closestManifoldPt!.offset) <
             drawerConfig.snapRadius
         ) {

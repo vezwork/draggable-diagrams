@@ -1,5 +1,6 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
+import { ConfigCheckbox } from "../config-controls";
 import { ManipulableSvg, ManipulableSvgDrawer } from "../manipulable-svg";
 
 interface DemoSvgProps<T extends object> {
@@ -10,6 +11,9 @@ interface DemoSvgProps<T extends object> {
   initialState: T;
   height: number;
   padding?: number;
+  initialSnapRadius?: number;
+  initialChainDrags?: boolean;
+  initialRelativePointerMotion?: boolean;
 }
 
 export function DemoSvg<T extends object>({
@@ -20,7 +24,16 @@ export function DemoSvg<T extends object>({
   initialState,
   height,
   padding = 0,
+  initialSnapRadius = 10,
+  initialChainDrags = true,
+  initialRelativePointerMotion = false,
 }: DemoSvgProps<T>) {
+  const [snapRadius, setSnapRadius] = useState(initialSnapRadius);
+  const [chainDrags, setChainDrags] = useState(initialChainDrags);
+  const [relativePointerMotion, setRelativePointerMotion] = useState(
+    initialRelativePointerMotion,
+  );
+
   return (
     <div className="bg-white rounded-lg p-5 shadow-sm" id={id}>
       <div className="flex items-center justify-between mb-4">
@@ -35,17 +48,55 @@ export function DemoSvg<T extends object>({
       </div>
       {notes && <div className="mt-2 text-sm text-gray-600">{notes}</div>}
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1" style={{ height: height + padding * 2 }}>
+        <div className="flex-1" style={{ padding }}>
           <ManipulableSvgDrawer
             manipulableSvg={manipulableSvg}
             initialState={initialState}
             config={{
-              snapRadius: 10,
-              transitionWhileDragging: true,
-              relativePointerMotion: false,
+              snapRadius,
+              chainDrags,
+              relativePointerMotion,
               animationDuration: 300,
             }}
+            height={height}
           />
+        </div>
+        <div
+          className={`${false ? "w-64 md:w-52" : "w-48 md:w-32"} bg-gray-50 rounded p-3 flex flex-col gap-2`}
+        >
+          <label className="flex flex-col gap-1 text-xs">
+            <span className="font-medium text-gray-700">Snap radius</span>
+            <input
+              type="range"
+              min="0"
+              max="50"
+              value={snapRadius}
+              onChange={(e) => setSnapRadius(Number(e.target.value))}
+              className="w-full"
+            />
+            <span className="text-gray-500 text-center">
+              {snapRadius} pixels
+            </span>
+          </label>
+          <ConfigCheckbox
+            label="Chain drags automatically"
+            value={chainDrags}
+            onChange={setChainDrags}
+          />
+          <ConfigCheckbox
+            label="Relative pointer motion"
+            value={relativePointerMotion}
+            onChange={setRelativePointerMotion}
+          />
+          {/* {hasConfig(drawer.manipulable) && (
+            <>
+              <div className="border-t border-gray-300 my-1" />
+              {drawer.manipulable.renderConfig(
+                manipulableConfig,
+                setManipulableConfig,
+              )}
+            </>
+          )} */}
         </div>
       </div>
     </div>

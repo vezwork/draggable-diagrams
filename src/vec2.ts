@@ -43,6 +43,18 @@ class Vec2Class {
     return { x: this.x, y: this.y };
   }
 
+  xy1(): { x1: number; y1: number } {
+    return { x1: this.x, y1: this.y };
+  }
+
+  xy2(): { x2: number; y2: number } {
+    return { x2: this.x, y2: this.y };
+  }
+
+  cxy(): { cx: number; cy: number } {
+    return { cx: this.x, cy: this.y };
+  }
+
   eq(v: Vec2able): boolean {
     v = Vec2(v);
     return this.x === v.x && this.y === v.y;

@@ -3,8 +3,10 @@ import {
   cloneElement,
   isValidElement,
   ReactElement,
+  ReactNode,
   SVGProps,
 } from "react";
+import { emptyToUndefined } from "./utils";
 
 export type SvgElem = ReactElement<SVGProps<SVGElement>>;
 export type FlattenedSvg = Map<string, SvgElem>;
@@ -12,37 +14,25 @@ export type FlattenedSvg = Map<string, SvgElem>;
 const accumulatedTransformProp = "data-accumulated-transform";
 
 /**
- * Flattens an SVG tree by pulling nodes with IDs to the top level.
- * Accumulates transform attributes from parent <g> nodes.
- * Returns a map of elements keyed by their path (id).
- * - Key "" contains the root with extracted nodes removed
- * - Extracted nodes are removed from their parents
- * - Recurses into nodes with IDs to find deeper IDs
+ * Determines if we should recurse into an element's children when walking the tree.
+ * Returns false for foreignObject to avoid processing non-SVG content inside it.
+ * It's still fine to read the foreignObject element's props (like transform).
  */
-export function flattenSvg(
-  element: SvgElem,
-  addAccumulatedTransforms: boolean = false,
-): FlattenedSvg {
-  const result: FlattenedSvg = new Map();
-  const rootWithExtractedRemoved = collectFlatNodes(
-    element,
-    "",
-    result,
-    addAccumulatedTransforms,
-  );
-  result.set("", rootWithExtractedRemoved);
-  return result;
+export function shouldRecurseIntoChildren(element: SvgElem): boolean {
+  return element.type !== "foreignObject";
 }
 
 /**
- * Recursively collects nodes with IDs into flatNodes map.
- * Returns the element with extracted children removed.
+ * Step 1: Walks the SVG tree and adds data-accumulated-transform to all elements.
+ * Accumulates transform attributes from parent <g> nodes.
  */
-function collectFlatNodes(
+export function accumulateTransforms(element: SvgElem): SvgElem {
+  return walkAndAccumulateTransforms(element, "");
+}
+
+function walkAndAccumulateTransforms(
   element: SvgElem,
   accumulatedTransform: string,
-  flatNodes: FlattenedSvg,
-  addAccumulatedTransforms: boolean,
 ): SvgElem {
   const props = element.props as any;
   const elementTransform = props.transform || "";
@@ -51,36 +41,100 @@ function collectFlatNodes(
     elementTransform,
   );
 
-  // Process children first, recursively
+  // Process children recursively (skip foreignObject children)
   const children = Children.toArray(props.children);
-  const newChildren: SvgElem[] = [];
+  const newChildren: ReactNode[] = [];
 
-  for (const child of children) {
-    if (isValidElement(child)) {
-      const processedChild = collectFlatNodes(
-        child as SvgElem,
-        newAccumulatedTransform,
-        flatNodes,
-        addAccumulatedTransforms,
-      );
-      // Only keep the child if it doesn't have an ID (wasn't extracted)
-      if (!(child.props as any).id) {
+  if (shouldRecurseIntoChildren(element)) {
+    for (const child of children) {
+      if (isValidElement(child)) {
+        const processedChild = walkAndAccumulateTransforms(
+          child as SvgElem,
+          newAccumulatedTransform,
+        );
         newChildren.push(processedChild);
+      } else {
+        // Preserve non-element children (like text nodes)
+        newChildren.push(child);
       }
     }
+  } else {
+    // For foreignObject, preserve children as-is
+    newChildren.push(...children);
   }
 
-  if (addAccumulatedTransforms && newAccumulatedTransform) {
-    element = cloneElement(element, {
-      [accumulatedTransformProp as any]: newAccumulatedTransform,
-    });
+  // Clone element with data-accumulated-transform and new children
+  return cloneElement(element, {
+    children: emptyToUndefined(newChildren),
+    [accumulatedTransformProp as any]: newAccumulatedTransform || undefined,
+  });
+}
+
+/**
+ * Step 2: Flattens an SVG tree by pulling nodes with IDs to the top level.
+ * Reads data-accumulated-transform and sets it as transform for extracted nodes.
+ * Returns a map of elements keyed by their id.
+ * - Key "" contains the root with extracted nodes removed (or null if root has an ID)
+ * - Extracted nodes are removed from their parents
+ * - Recurses into nodes with IDs to find deeper IDs
+ */
+export function flattenSvg(element: SvgElem): FlattenedSvg {
+  const result: FlattenedSvg = new Map();
+  const rootWithExtractedRemoved = extractIdNodes(element, result);
+
+  // If the root element has an ID, it was extracted, so "" should be null
+  const props = element.props as any;
+  if (!props.id) {
+    result.set("", rootWithExtractedRemoved);
   }
 
-  // If this element has an ID, extract it with accumulated transform
+  return result;
+}
+
+/**
+ * Recursively extracts nodes with IDs into flatNodes map.
+ * Returns the element with extracted children removed.
+ */
+function extractIdNodes(element: SvgElem, flatNodes: FlattenedSvg): SvgElem {
+  const props = element.props as any;
+
+  // Validate: data-z-index can only be set on nodes with ids
+  if (props["data-z-index"] !== undefined && !props.id) {
+    throw new Error(
+      `data-z-index can only be set on elements with an id attribute. Found data-z-index="${props["data-z-index"]}" on <${element.type}> without id.`,
+    );
+  }
+
+  // Process children first, recursively (skip foreignObject children)
+  const children = Children.toArray(props.children);
+
+  const newChildren: ReactNode[] = [];
+
+  if (shouldRecurseIntoChildren(element)) {
+    for (const child of children) {
+      if (isValidElement(child)) {
+        const processedChild = extractIdNodes(child as SvgElem, flatNodes);
+
+        // Only keep the child if it doesn't have an ID (wasn't extracted)
+        if (!(child.props as any).id) {
+          newChildren.push(processedChild);
+        }
+      } else {
+        // Preserve non-element children (like text nodes)
+        newChildren.push(child);
+      }
+    }
+  } else {
+    // For foreignObject, preserve children as-is
+    newChildren.push(...children);
+  }
+
+  // If this element has an ID, extract it and set transform from data-accumulated-transform
   if (props.id) {
+    const accumulatedTransform = props[accumulatedTransformProp];
     const flattenedElement = cloneElement(element, {
-      children: newChildren,
-      transform: newAccumulatedTransform || undefined,
+      children: emptyToUndefined(newChildren),
+      transform: accumulatedTransform || undefined,
     });
 
     flatNodes.set(props.id, flattenedElement);

@@ -17,14 +17,17 @@ function DemoList() {
           </h1>
         </div>
         <div className="flex flex-col gap-5 px-5 pb-5 max-w-3xl mx-auto flex-1">
-          {demos.map((demo) => (
-            <ErrorBoundary
-              key={demo.id}
-              fallback={<div>Error loading demo: {demo.id}</div>}
-            >
-              {demo.node}
-            </ErrorBoundary>
-          ))}
+          {demos.map((demo) => {
+            const id = (demo.props as any).id;
+            return (
+              <ErrorBoundary
+                key={id}
+                fallback={<div>Error loading demo: {id}</div>}
+              >
+                {demo}
+              </ErrorBoundary>
+            );
+          })}
         </div>
         <div className="sticky bottom-0 bg-white/95 py-4 px-5 border-t border-gray-200 flex gap-5 items-center justify-center shadow-[0_-2px_4px_rgba(0,0,0,0.1)]">
           <label className="flex items-center gap-2 text-sm">
@@ -45,7 +48,7 @@ function SingleDemo() {
   const { id } = useParams<{ id: string }>();
   const [debugView, setDebugView] = useState(false);
 
-  const demo = demos.find((d) => d.id === id);
+  const demo = demos.find((d) => (d.props as any).id === id);
 
   const [dragState, setDragState] = useState<any>(null);
   const lastExcitingDragStateRef = useRef<any>(null);
@@ -87,10 +90,10 @@ function SingleDemo() {
         <DemoContext.Provider
           value={{ debugView, onDragStateChange: setDragState }}
         >
-          {demo.node}
+          {demo}
         </DemoContext.Provider>
       </div>
-      {true && debugView ? (
+      {false && debugView ? (
         <div className="px-5 max-w-3xl mx-auto w-full flex-1 overflow-y-auto overflow-x-hidden min-h-0">
           {<PrettyPrint value={lastExcitingDragStateRef.current} />}
         </div>

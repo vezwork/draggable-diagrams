@@ -1,12 +1,141 @@
+import { rgb } from "d3-color";
+import { interpolateHcl } from "d3-interpolate";
 import React from "react";
-import { SvgElem } from "./jsx-flatten";
+import { shouldRecurseIntoChildren, SvgElem } from "./jsx-flatten";
+import { prettyLog } from "./pretty-print";
 import { lerpTransformString } from "./svg-transform";
+import { emptyToUndefined } from "./utils";
+
+// SVG properties that should be interpolated as colors
+const COLOR_PROPS = new Set([
+  "fill",
+  "stroke",
+  "color",
+  "stop-color",
+  "flood-color",
+  "lighting-color",
+  // CSS properties that can appear in style objects
+  "backgroundColor",
+  "borderColor",
+  "outlineColor",
+]);
+
+/**
+ * Parses a points string (e.g., "0,0 10,5 20,10") into an array of [x, y] pairs.
+ */
+function parsePoints(pointsStr: string): number[][] {
+  // Split on whitespace and/or commas, filter empty strings
+  const tokens = pointsStr
+    .trim()
+    .split(/[\s,]+/)
+    .filter((s) => s.length > 0)
+    .map((s) => parseFloat(s));
+
+  const points: number[][] = [];
+  for (let i = 0; i < tokens.length; i += 2) {
+    points.push([tokens[i], tokens[i + 1]]);
+  }
+  return points;
+}
+
+/**
+ * Serializes an array of [x, y] pairs back to a points string.
+ */
+function serializePoints(points: number[][]): string {
+  return points.map((p) => `${p[0]},${p[1]}`).join(" ");
+}
+
+/**
+ * Lerps between two points strings.
+ */
+function lerpPoints(pointsA: string, pointsB: string, t: number): string {
+  const parsedA = parsePoints(pointsA);
+  const parsedB = parsePoints(pointsB);
+
+  if (parsedA.length !== parsedB.length) {
+    throw new Error(
+      `Cannot lerp points: different point counts (${parsedA.length} vs ${parsedB.length})`,
+    );
+  }
+
+  const lerped = parsedA.map((pa, i) => {
+    const pb = parsedB[i];
+    return [lerp(pa[0], pb[0], t), lerp(pa[1], pb[1], t)];
+  });
+
+  return serializePoints(lerped);
+}
+
+/**
+ * Lerps a single value based on its type and property name.
+ */
+function lerpValue(key: string, valA: any, valB: any, t: number): any {
+  // Check equality first before attempting interpolation
+  if (valA === valB) {
+    return valA;
+  } else if (valA !== undefined && valB === undefined) {
+    return valA;
+  } else if (valA === undefined && valB !== undefined) {
+    return valB;
+  } else if (typeof valA === "number" && typeof valB === "number") {
+    return lerp(valA, valB, t);
+  } else if (
+    key === "points" &&
+    typeof valA === "string" &&
+    typeof valB === "string"
+  ) {
+    return lerpPoints(valA, valB, t);
+  } else if (
+    COLOR_PROPS.has(key) &&
+    typeof valA === "string" &&
+    typeof valB === "string"
+  ) {
+    // Handle "none" as transparent
+    const isANone = valA === "none";
+    const isBNone = valB === "none";
+
+    if (isANone || isBNone) {
+      // Get the actual color (the one that's not "none")
+      const actualColor = isANone ? valB : valA;
+      const colorRgb = rgb(actualColor);
+
+      if (colorRgb === null) {
+        // If color parsing failed, fall through to error
+        throw new Error(
+          `Cannot lerp prop "${key}": invalid color value (${actualColor})`,
+        );
+      }
+
+      // Create transparent version of the color
+      const transparentColor = rgb(colorRgb.r, colorRgb.g, colorRgb.b, 0);
+      const opaqueColor = rgb(colorRgb.r, colorRgb.g, colorRgb.b, 1);
+
+      // Interpolate between transparent and opaque
+      const colorInterp = isANone
+        ? interpolateHcl(transparentColor.formatRgb(), opaqueColor.formatRgb())
+        : interpolateHcl(opaqueColor.formatRgb(), transparentColor.formatRgb());
+
+      return colorInterp(t);
+    }
+
+    // Interpolate colors using HCL color space
+    const colorInterp = interpolateHcl(valA, valB);
+    return colorInterp(t);
+  } else {
+    // Different non-numeric values
+    throw new Error(
+      `Cannot lerp prop "${key}": different non-numeric values (${valA} vs ${valB})`,
+    );
+  }
+}
 
 /**
  * Lerps between two SVG JSX nodes.
  * Interpolates transforms and recursively lerps children.
  */
 export function lerpSvgNode(a: SvgElem, b: SvgElem, t: number): SvgElem {
+  // console.log("Lerping SVG nodes:", a, b, t);
+
   // Elements should be the same type
   if (a.type !== b.type) {
     throw new Error(
@@ -29,34 +158,50 @@ export function lerpSvgNode(a: SvgElem, b: SvgElem, t: number): SvgElem {
   for (const key of allPropKeys) {
     if (key === "children" || key === "transform") continue;
     if (key.startsWith("data-")) continue;
+    if (/^on[A-Z]/.test(key)) continue;
 
     const valA = propsA[key];
     const valB = propsB[key];
 
-    if (typeof valA === "number" && typeof valB === "number") {
-      lerpedNumericProps[key] = lerp(valA, valB, t);
-    } else if (valA === valB) {
-      // Non-numeric props must be the same
-      lerpedNumericProps[key] = valA;
-    } else if (valA !== undefined && valB === undefined) {
-      lerpedNumericProps[key] = valA;
-    } else if (valA === undefined && valB !== undefined) {
-      lerpedNumericProps[key] = valB;
+    // Special handling for style objects
+    if (
+      key === "style" &&
+      typeof valA === "object" &&
+      typeof valB === "object"
+    ) {
+      const styleA = valA || {};
+      const styleB = valB || {};
+      const lerpedStyle: any = {};
+      const allStyleKeys = new Set([
+        ...Object.keys(styleA),
+        ...Object.keys(styleB),
+      ]);
+
+      for (const styleKey of allStyleKeys) {
+        lerpedStyle[styleKey] = lerpValue(
+          styleKey,
+          styleA[styleKey],
+          styleB[styleKey],
+          t,
+        );
+      }
+
+      lerpedNumericProps[key] = lerpedStyle;
     } else {
-      // Different non-numeric values
-      throw new Error(
-        `Cannot lerp prop "${key}": different non-numeric values (${valA} vs ${valB})`,
-      );
+      lerpedNumericProps[key] = lerpValue(key, valA, valB, t);
     }
   }
 
-  // Lerp children recursively
+  // Lerp children recursively (skip foreignObject children)
   const childrenA = React.Children.toArray(propsA.children) as SvgElem[];
   const childrenB = React.Children.toArray(propsB.children) as SvgElem[];
 
   let lerpedChildren: SvgElem[] = [];
 
-  if (childrenA.length === childrenB.length) {
+  if (!shouldRecurseIntoChildren(a)) {
+    // For foreignObject, just use children from A
+    lerpedChildren = childrenA;
+  } else if (childrenA.length === childrenB.length) {
     lerpedChildren = childrenA.map((childA, i) => {
       const childB = childrenB[i];
       if (React.isValidElement(childA) && React.isValidElement(childB)) {
@@ -67,6 +212,8 @@ export function lerpSvgNode(a: SvgElem, b: SvgElem, t: number): SvgElem {
     });
   } else {
     // Children counts differ
+    prettyLog(childrenA, { label: "Children A" });
+    prettyLog(childrenB, { label: "Children B" });
     throw new Error(
       `Cannot lerp children: different child counts (${childrenA.length} vs ${childrenB.length})`,
     );
@@ -75,7 +222,7 @@ export function lerpSvgNode(a: SvgElem, b: SvgElem, t: number): SvgElem {
   return React.cloneElement(a, {
     ...lerpedNumericProps,
     ...(lerpedTransform ? { transform: lerpedTransform } : {}),
-    children: lerpedChildren,
+    children: emptyToUndefined(lerpedChildren),
   });
 }
 

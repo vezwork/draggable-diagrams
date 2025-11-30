@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { flattenSvg } from "./jsx-flatten";
+import { accumulateTransforms, flattenSvg } from "./jsx-flatten";
 
 describe("flattenSvg", () => {
   it("pulls nodes with IDs to the top level", () => {
@@ -10,7 +10,7 @@ describe("flattenSvg", () => {
       </g>
     );
 
-    expect(flattenSvg(tree)).toMatchInlineSnapshot(`
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
       Map {
         "r1" => <rect
           id="r1"
@@ -30,13 +30,15 @@ describe("flattenSvg", () => {
       </g>
     );
 
-    expect(flattenSvg(tree)).toMatchInlineSnapshot(`
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
       Map {
         "r1" => <rect
+          data-accumulated-transform="translate(10, 20)"
           id="r1"
           transform="translate(10, 20)"
         />,
         "" => <g
+          data-accumulated-transform="translate(10, 20)"
           transform="translate(10, 20)"
         />,
       }
@@ -52,16 +54,19 @@ describe("flattenSvg", () => {
       </g>
     );
 
-    expect(flattenSvg(tree)).toMatchInlineSnapshot(`
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
       Map {
         "r1" => <rect
+          data-accumulated-transform="translate(10, 20) rotate(45) scale(2)"
           id="r1"
           transform="translate(10, 20) rotate(45) scale(2)"
         />,
         "" => <g
+          data-accumulated-transform="translate(10, 20)"
           transform="translate(10, 20)"
         >
           <g
+            data-accumulated-transform="translate(10, 20) rotate(45)"
             transform="rotate(45)"
           />
         </g>,
@@ -79,20 +84,24 @@ describe("flattenSvg", () => {
       </g>
     );
 
-    expect(flattenSvg(tree)).toMatchInlineSnapshot(`
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
       Map {
         "r1" => <rect
+          data-accumulated-transform="translate(100, 0) rotate(90)"
           id="r1"
           transform="translate(100, 0) rotate(90)"
         />,
         "c1" => <circle
+          data-accumulated-transform="translate(100, 0) rotate(90) scale(0.5)"
           id="c1"
           transform="translate(100, 0) rotate(90) scale(0.5)"
         />,
         "" => <g
+          data-accumulated-transform="translate(100, 0)"
           transform="translate(100, 0)"
         >
           <g
+            data-accumulated-transform="translate(100, 0) rotate(90)"
             transform="rotate(90)"
           />
         </g>,
@@ -107,9 +116,10 @@ describe("flattenSvg", () => {
       </g>
     );
 
-    expect(flattenSvg(tree)).toMatchInlineSnapshot(`
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
       Map {
         "r1" => <rect
+          data-accumulated-transform="translate(10, 20)"
           fill="red"
           id="r1"
           transform="translate(10, 20)"
@@ -117,6 +127,7 @@ describe("flattenSvg", () => {
           y={10}
         />,
         "" => <g
+          data-accumulated-transform="translate(10, 20)"
           transform="translate(10, 20)"
         />,
       }
@@ -132,7 +143,7 @@ describe("flattenSvg", () => {
       </g>
     );
 
-    expect(flattenSvg(tree)).toMatchInlineSnapshot(`
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
       Map {
         "c1" => <circle
           id="c1"
@@ -155,18 +166,21 @@ describe("flattenSvg", () => {
       </>
     );
 
-    expect(flattenSvg(tree)).toMatchInlineSnapshot(`
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
       Map {
         "r1" => <rect
+          data-accumulated-transform="translate(0, 0)"
           id="r1"
           transform="translate(0, 0)"
         />,
         "c1" => <circle
+          data-accumulated-transform="translate(10, 10)"
           id="c1"
           transform="translate(10, 10)"
         />,
         "" => <React.Fragment>
           <g
+            data-accumulated-transform="translate(10, 10)"
             transform="translate(10, 10)"
           />
         </React.Fragment>,
@@ -182,21 +196,19 @@ describe("flattenSvg", () => {
       </g>
     );
 
-    expect(flattenSvg(tree)).toMatchInlineSnapshot(`
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
       Map {
         "group1" => <g
+          data-accumulated-transform="translate(50, 50)"
           id="group1"
           transform="translate(50, 50)"
         >
-          <rect />
-          <circle />
-        </g>,
-        "" => <g
-          id="group1"
-          transform="translate(50, 50)"
-        >
-          <rect />
-          <circle />
+          <rect
+            data-accumulated-transform="translate(50, 50)"
+          />
+          <circle
+            data-accumulated-transform="translate(50, 50)"
+          />
         </g>,
       }
     `);
@@ -213,16 +225,20 @@ describe("flattenSvg", () => {
       </>
     );
 
-    expect(flattenSvg(tree)).toMatchInlineSnapshot(`
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
       Map {
         "inner" => <g
+          data-accumulated-transform="translate(10, 10) rotate(45)"
           id="inner"
           transform="translate(10, 10) rotate(45)"
         >
-          <rect />
+          <rect
+            data-accumulated-transform="translate(10, 10) rotate(45)"
+          />
         </g>,
         "" => <React.Fragment>
           <g
+            data-accumulated-transform="translate(10, 10)"
             transform="translate(10, 10)"
           />
         </React.Fragment>,
@@ -240,13 +256,15 @@ describe("flattenSvg", () => {
       </g>
     );
 
-    expect(flattenSvg(tree)).toMatchInlineSnapshot(`
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
       Map {
         "r1" => <rect
+          data-accumulated-transform="translate(100, 100)"
           id="r1"
           transform="translate(100, 100)"
         />,
         "c1" => <circle
+          data-accumulated-transform="translate(100, 100)"
           id="c1"
           transform="translate(100, 100)"
         />,
@@ -254,6 +272,7 @@ describe("flattenSvg", () => {
           className="wrapper"
         >
           <g
+            data-accumulated-transform="translate(100, 100)"
             transform="translate(100, 100)"
           />
         </g>,
@@ -271,27 +290,32 @@ describe("flattenSvg", () => {
       </g>
     );
 
-    expect(flattenSvg(tree)).toMatchInlineSnapshot(`
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
       Map {
         "inner" => <rect
+          data-accumulated-transform="translate(10, 10) rotate(45)"
           id="inner"
           transform="translate(10, 10) rotate(45)"
           x={5}
         />,
         "outer" => <g
+          data-accumulated-transform="translate(10, 10) rotate(45)"
           id="outer"
           transform="translate(10, 10) rotate(45)"
         >
-          <circle />
+          <circle
+            data-accumulated-transform="translate(10, 10) rotate(45)"
+          />
         </g>,
         "" => <g
+          data-accumulated-transform="translate(10, 10)"
           transform="translate(10, 10)"
         />,
       }
     `);
   });
 
-  it("can add accumulated transforms as a prop", () => {
+  it("accumulateTransforms adds data-accumulated-transform to all elements", () => {
     const tree = (
       <g transform="translate(10, 20)">
         <g transform="rotate(30)">
@@ -300,23 +324,106 @@ describe("flattenSvg", () => {
       </g>
     );
 
-    expect(flattenSvg(tree, true)).toMatchInlineSnapshot(`
-      Map {
-        "r1" => <rect
+    expect(accumulateTransforms(tree)).toMatchInlineSnapshot(`
+      <g
+        data-accumulated-transform="translate(10, 20)"
+        transform="translate(10, 20)"
+      >
+        <g
           data-accumulated-transform="translate(10, 20) rotate(30)"
+          transform="rotate(30)"
+        >
+          <rect
+            data-accumulated-transform="translate(10, 20) rotate(30)"
+            id="r1"
+          />
+        </g>
+      </g>
+    `);
+  });
+
+  it("accumulateTransforms preserves text nodes", () => {
+    const tree = (
+      <g transform="translate(50, 100)">
+        <text x={10} y={20}>
+          hello world
+        </text>
+        <rect />
+      </g>
+    );
+
+    expect(accumulateTransforms(tree)).toMatchInlineSnapshot(`
+      <g
+        data-accumulated-transform="translate(50, 100)"
+        transform="translate(50, 100)"
+      >
+        <text
+          data-accumulated-transform="translate(50, 100)"
+          x={10}
+          y={20}
+        >
+          hello world
+        </text>
+        <rect
+          data-accumulated-transform="translate(50, 100)"
+        />
+      </g>
+    `);
+  });
+
+  it("handles <text> elements with IDs", () => {
+    const tree = (
+      <g transform="translate(50, 100)">
+        <text id="label1" x={10} y={20}>
+          hi
+        </text>
+        <rect id="r1" />
+      </g>
+    );
+
+    expect(flattenSvg(accumulateTransforms(tree))).toMatchInlineSnapshot(`
+      Map {
+        "label1" => <text
+          data-accumulated-transform="translate(50, 100)"
+          id="label1"
+          transform="translate(50, 100)"
+          x={10}
+          y={20}
+        >
+          hi
+        </text>,
+        "r1" => <rect
+          data-accumulated-transform="translate(50, 100)"
           id="r1"
-          transform="translate(10, 20) rotate(30)"
+          transform="translate(50, 100)"
         />,
         "" => <g
-          data-accumulated-transform="translate(10, 20)"
-          transform="translate(10, 20)"
-        >
-          <g
-            data-accumulated-transform="translate(10, 20) rotate(30)"
-            transform="rotate(30)"
-          />
-        </g>,
+          data-accumulated-transform="translate(50, 100)"
+          transform="translate(50, 100)"
+        />,
       }
     `);
+  });
+
+  it("throws error if data-z-index is set without id", () => {
+    const tree = (
+      <g>
+        <rect data-z-index={5} x={10} y={10} />
+      </g>
+    );
+
+    expect(() => flattenSvg(accumulateTransforms(tree))).toThrow(
+      /data-z-index can only be set on elements with an id attribute/,
+    );
+  });
+
+  it("allows data-z-index on elements with id", () => {
+    const tree = (
+      <g>
+        <rect id="r1" data-z-index={5} x={10} y={10} />
+      </g>
+    );
+
+    expect(() => flattenSvg(accumulateTransforms(tree))).not.toThrow();
   });
 });

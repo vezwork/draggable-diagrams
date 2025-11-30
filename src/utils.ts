@@ -140,3 +140,7 @@ export function hasKey<K extends string | number | symbol>(
 ): x is Record<K, unknown> {
   return isObject(x) && key in x;
 }
+
+export function emptyToUndefined<T>(arr: T[]): T[] | undefined {
+  return arr.length === 0 ? undefined : arr;
+}

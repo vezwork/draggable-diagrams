@@ -153,4 +153,180 @@ describe("lerpSvgNode", () => {
       />
     `);
   });
+
+  it("lerps color props", () => {
+    const a = <rect fill="red" stroke="blue" />;
+    const b = <rect fill="green" stroke="yellow" />;
+
+    const result = lerpSvgNode(a, b, 0.5);
+
+    expect(result).toMatchInlineSnapshot(`
+      <rect
+        fill="rgb(145, 116, 0)"
+        stroke="rgb(255, 0, 94)"
+      />
+    `);
+  });
+
+  it("lerps style objects with colors", () => {
+    const a = <rect style={{ fill: "red", backgroundColor: "blue" }} />;
+    const b = <rect style={{ fill: "green", backgroundColor: "yellow" }} />;
+
+    const result = lerpSvgNode(a, b, 0.5);
+
+    expect(result).toMatchInlineSnapshot(`
+      <rect
+        style={
+          {
+            "backgroundColor": "rgb(255, 0, 94)",
+            "fill": "rgb(145, 116, 0)",
+          }
+        }
+      />
+    `);
+  });
+
+  it("lerps style objects with numeric values", () => {
+    const a = <rect style={{ opacity: 0, fontSize: 10 }} />;
+    const b = <rect style={{ opacity: 1, fontSize: 20 }} />;
+
+    const result = lerpSvgNode(a, b, 0.5);
+
+    expect(result).toMatchInlineSnapshot(`
+      <rect
+        style={
+          {
+            "fontSize": 15,
+            "opacity": 0.5,
+          }
+        }
+      />
+    `);
+  });
+
+  it("lerps style objects with mixed types", () => {
+    const a = <rect style={{ opacity: 0, fill: "red" }} />;
+    const b = <rect style={{ opacity: 1, fill: "blue" }} />;
+
+    const result = lerpSvgNode(a, b, 0.5);
+
+    expect(result).toMatchInlineSnapshot(`
+      <rect
+        style={
+          {
+            "fill": "rgb(245, 0, 134)",
+            "opacity": 0.5,
+          }
+        }
+      />
+    `);
+  });
+
+  it("handles style objects with different keys", () => {
+    const a = <rect style={{ opacity: 0 }} />;
+    const b = <rect style={{ opacity: 1, fill: "blue" }} />;
+
+    const result = lerpSvgNode(a, b, 0.5);
+
+    expect(result).toMatchInlineSnapshot(`
+      <rect
+        style={
+          {
+            "fill": "blue",
+            "opacity": 0.5,
+          }
+        }
+      />
+    `);
+  });
+
+  it("lerps between fill none and fill none", () => {
+    const a = <rect fill="none" x={0} />;
+    const b = <rect fill="none" x={100} />;
+
+    const result = lerpSvgNode(a, b, 0.5);
+
+    expect(result).toMatchInlineSnapshot(`
+      <rect
+        fill="none"
+        x={50}
+      />
+    `);
+  });
+
+  it("lerps between fill none and fill red", () => {
+    const a = <rect fill="none" x={0} />;
+    const b = <rect fill="red" x={100} />;
+
+    const result = lerpSvgNode(a, b, 0.5);
+
+    expect(result).toMatchInlineSnapshot(`
+      <rect
+        fill="rgba(255, 0, 0, 0.5)"
+        x={50}
+      />
+    `);
+  });
+
+  it("lerps between fill red and fill none", () => {
+    const a = <rect fill="red" x={0} />;
+    const b = <rect fill="none" x={100} />;
+
+    const result = lerpSvgNode(a, b, 0.5);
+
+    expect(result).toMatchInlineSnapshot(`
+      <rect
+        fill="rgba(255, 0, 0, 0.5)"
+        x={50}
+      />
+    `);
+  });
+
+  it("lerps polygon points", () => {
+    const a = <polygon points="0,0 10,0 10,10" />;
+    const b = <polygon points="20,20 30,20 30,30" />;
+
+    const result = lerpSvgNode(a, b, 0.5);
+
+    expect(result).toMatchInlineSnapshot(`
+      <polygon
+        points="10,10 20,10 20,20"
+      />
+    `);
+  });
+
+  it("lerps polygon points at t=0", () => {
+    const a = <polygon points="0,0 10,0 10,10" />;
+    const b = <polygon points="20,20 30,20 30,30" />;
+
+    const result = lerpSvgNode(a, b, 0);
+
+    expect(result).toMatchInlineSnapshot(`
+      <polygon
+        points="0,0 10,0 10,10"
+      />
+    `);
+  });
+
+  it("lerps polygon points at t=1", () => {
+    const a = <polygon points="0,0 10,0 10,10" />;
+    const b = <polygon points="20,20 30,20 30,30" />;
+
+    const result = lerpSvgNode(a, b, 1);
+
+    expect(result).toMatchInlineSnapshot(`
+      <polygon
+        points="20,20 30,20 30,30"
+      />
+    `);
+  });
+
+  it("throws on mismatched point counts", () => {
+    const a = <polygon points="0,0 10,0 10,10" />;
+    const b = <polygon points="20,20 30,20" />;
+
+    expect(() => lerpSvgNode(a, b, 0.5)).toThrow(
+      "Cannot lerp points: different point counts",
+    );
+  });
 });

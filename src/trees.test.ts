@@ -254,36 +254,6 @@ describe("buildHasseDiagram", () => {
       expect(covers(diagram.nodes[from], diagram.nodes[to], tree)).toBe(true);
     }
   });
-
-  it("debug: inspect layout structure", () => {
-    const tree = addParents({
-      id: "r",
-      children: [
-        { id: "a", children: [] },
-        { id: "b", children: [] },
-      ],
-    });
-
-    const diagram = buildHasseDiagram(tree, tree);
-    const layout = layoutHasse(diagram);
-
-    console.log("\n=== Dagre Layout Debug ===");
-    console.log(
-      `Layout dimensions: ${layout.width.toFixed(1)} x ${layout.height.toFixed(1)}`,
-    );
-
-    // Sort by y position to see layers
-    const byY = Array.from(layout.positions.entries()).sort(
-      (a, b) => a[1].y - b[1].y,
-    );
-
-    for (const [morphIdx, pos] of byY) {
-      const morph = diagram.nodes[morphIdx];
-      console.log(
-        `  ${morphIdx} @ (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}): ${JSON.stringify(morph)}`,
-      );
-    }
-  });
 });
 
 describe("layoutHasse", () => {

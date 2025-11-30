@@ -2,9 +2,12 @@
  * Parses and interpolates SVG transform strings.
  */
 
+import { assert } from "vitest";
+import { Vec2, Vec2able } from "./vec2";
+
 export type Transform =
   | { type: "translate"; x: number; y: number }
-  | { type: "rotate"; angle: number; cx?: number; cy?: number }
+  | { type: "rotate"; degrees: number; cx?: number; cy?: number }
   | { type: "scale"; x: number; y: number };
 
 /**
@@ -21,7 +24,7 @@ export function parseTransform(str: string): Transform[] {
 
   while ((match = regex.exec(str)) !== null) {
     const type = match[1];
-    const args = match[2].split(/[\s,]+/).map(s => parseFloat(s.trim()));
+    const args = match[2].split(/[\s,]+/).map((s) => parseFloat(s.trim()));
 
     switch (type) {
       case "translate":
@@ -34,7 +37,7 @@ export function parseTransform(str: string): Transform[] {
       case "rotate":
         transforms.push({
           type: "rotate",
-          angle: args[0] || 0,
+          degrees: args[0] || 0,
           cx: args[1],
           cy: args[2],
         });
@@ -52,6 +55,50 @@ export function parseTransform(str: string): Transform[] {
   return transforms;
 }
 
+export function localToGlobal(transforms: Transform[], able: Vec2able): Vec2 {
+  let point = Vec2(able);
+  // Apply transforms in reverse order (SVG transforms are right-to-left)
+  for (const t of transforms.slice().reverse()) {
+    switch (t.type) {
+      case "translate":
+        point = point.add([t.x, t.y]);
+        break;
+      case "rotate":
+        point = point
+          .sub([t.cx ?? 0, t.cy ?? 0])
+          .rotate((t.degrees * Math.PI) / 180)
+          .add([t.cx ?? 0, t.cy ?? 0]);
+        break;
+      case "scale":
+        point = point.scale([t.x, t.y]);
+        break;
+    }
+  }
+  return point;
+}
+
+export function globalToLocal(transforms: Transform[], able: Vec2able): Vec2 {
+  let point = Vec2(able);
+  // Apply inverse transforms in forward order (opposite of localToGlobal)
+  for (const t of transforms) {
+    switch (t.type) {
+      case "translate":
+        point = point.sub([t.x, t.y]);
+        break;
+      case "rotate":
+        point = point
+          .sub([t.cx ?? 0, t.cy ?? 0])
+          .rotate((-t.degrees * Math.PI) / 180)
+          .add([t.cx ?? 0, t.cy ?? 0]);
+        break;
+      case "scale":
+        point = point.scale([1 / t.x, 1 / t.y]);
+        break;
+    }
+  }
+  return point;
+}
+
 /**
  * Serializes an array of transform objects back to a string.
  */
@@ -63,9 +110,9 @@ export function serializeTransform(transforms: Transform[]): string {
           return `translate(${t.x}, ${t.y})`;
         case "rotate":
           if (t.cx !== undefined && t.cy !== undefined) {
-            return `rotate(${t.angle}, ${t.cx}, ${t.cy})`;
+            return `rotate(${t.degrees}, ${t.cx}, ${t.cy})`;
           }
-          return `rotate(${t.angle})`;
+          return `rotate(${t.degrees})`;
         case "scale":
           return t.x === t.y ? `scale(${t.x})` : `scale(${t.x}, ${t.y})`;
       }
@@ -79,7 +126,7 @@ export function serializeTransform(transforms: Transform[]): string {
 export function lerpTransforms(
   a: Transform[],
   b: Transform[],
-  t: number
+  t: number,
 ): Transform[] {
   // Special case: if both are just chains of translations, collapse and lerp
   const aAllTranslate = a.every((t) => t.type === "translate");
@@ -91,14 +138,14 @@ export function lerpTransforms(
         x: acc.x + (t as any).x,
         y: acc.y + (t as any).y,
       }),
-      { x: 0, y: 0 }
+      { x: 0, y: 0 },
     );
     const bSum = b.reduce(
       (acc, t) => ({
         x: acc.x + (t as any).x,
         y: acc.y + (t as any).y,
       }),
-      { x: 0, y: 0 }
+      { x: 0, y: 0 },
     );
 
     return [
@@ -113,7 +160,7 @@ export function lerpTransforms(
   // Otherwise, lengths and types must match exactly
   if (a.length !== b.length) {
     throw new Error(
-      `Cannot lerp transforms with different lengths: ${a.length} vs ${b.length}`
+      `Cannot lerp transforms with different lengths: ${a.length} vs ${b.length}`,
     );
   }
 
@@ -126,37 +173,46 @@ export function lerpTransforms(
     // Types must match
     if (ta.type !== tb.type) {
       throw new Error(
-        `Cannot lerp transforms with different types at index ${i}: ${ta.type} vs ${tb.type}`
+        `Cannot lerp transforms with different types at index ${i}: ${ta.type} vs ${tb.type}`,
       );
     }
 
     switch (ta.type) {
       case "translate":
+        assert(tb.type === "translate");
         result.push({
           type: "translate",
-          x: lerp((ta as any).x, (tb as any).x, t),
-          y: lerp((ta as any).y, (tb as any).y, t),
+          x: lerp(ta.x, tb.x, t),
+          y: lerp(ta.y, tb.y, t),
         });
         break;
-      case "rotate":
+      case "rotate": {
+        assert(tb.type === "rotate");
         result.push({
           type: "rotate",
-          angle: lerp((ta as any).angle, (tb as any).angle, t),
-          cx: (ta as any).cx !== undefined ? lerp((ta as any).cx, (tb as any).cx, t) : undefined,
-          cy: (ta as any).cy !== undefined ? lerp((ta as any).cy, (tb as any).cy, t) : undefined,
+          degrees: lerpDegrees(ta.degrees, tb.degrees, t),
+          cx: ta.cx !== undefined ? lerp(ta.cx, tb.cx ?? ta.cx, t) : undefined,
+          cy: ta.cy !== undefined ? lerp(ta.cy, tb.cy ?? ta.cy, t) : undefined,
         });
         break;
+      }
       case "scale":
+        assert(tb.type === "scale");
         result.push({
           type: "scale",
-          x: lerp((ta as any).x, (tb as any).x, t),
-          y: lerp((ta as any).y, (tb as any).y, t),
+          x: lerp(ta.x, tb.x, t),
+          y: lerp(ta.y, tb.y, t),
         });
         break;
     }
   }
 
   return result;
+}
+
+function lerpDegrees(a: number, b: number, t: number): number {
+  const delta = ((((b - a) % 360) + 540) % 360) - 180;
+  return a + delta * t;
 }
 
 function lerp(a: number, b: number, t: number): number {
@@ -173,12 +229,26 @@ export function lerpTransformString(a: string, b: string, t: number): string {
   const transformsB = parseTransform(b);
 
   // If one is empty and the other is all translations, treat empty as translate(0,0)
-  if (transformsA.length === 0 && transformsB.every((t) => t.type === "translate")) {
-    const lerpedTransforms = lerpTransforms([{ type: "translate", x: 0, y: 0 }], transformsB, t);
+  if (
+    transformsA.length === 0 &&
+    transformsB.every((t) => t.type === "translate")
+  ) {
+    const lerpedTransforms = lerpTransforms(
+      [{ type: "translate", x: 0, y: 0 }],
+      transformsB,
+      t,
+    );
     return serializeTransform(lerpedTransforms);
   }
-  if (transformsB.length === 0 && transformsA.every((t) => t.type === "translate")) {
-    const lerpedTransforms = lerpTransforms(transformsA, [{ type: "translate", x: 0, y: 0 }], t);
+  if (
+    transformsB.length === 0 &&
+    transformsA.every((t) => t.type === "translate")
+  ) {
+    const lerpedTransforms = lerpTransforms(
+      transformsA,
+      [{ type: "translate", x: 0, y: 0 }],
+      t,
+    );
     return serializeTransform(lerpedTransforms);
   }
 

@@ -1,5 +1,6 @@
 import React, { Children, cloneElement, isValidElement } from "react";
-import { SvgElem } from "./jsx-flatten";
+import { shouldRecurseIntoChildren, SvgElem } from "./jsx-flatten";
+import { emptyToUndefined } from "./utils";
 
 const pathPropName = "data-path";
 
@@ -23,21 +24,36 @@ function assignPathsRecursive(element: SvgElem, currentPath: string): SvgElem {
   // Check if this element has an id
   const props = element.props as any;
   const id = props.id;
+
+  // Validate that id doesn't contain slashes
+  if (id && id.includes("/")) {
+    throw new Error(
+      `Element id "${id}" contains a slash, which is not allowed. IDs are used as absolute paths and cannot contain slashes.`,
+    );
+  }
+
   const elementPath: string = id ? id + "/" : currentPath;
 
-  // Process children
+  // Just to be helpful, warn against using keys
+  if (element.key !== null && !element.key.startsWith(".")) {
+    throw new Error(
+      `Element with path "${elementPath}" has a key prop (${element.key}), which is not allowed.`,
+    );
+  }
+
+  // Process children (skip foreignObject children)
   const children = React.Children.toArray(props.children) as SvgElem[];
-  const newChildren = children.map((child, index) => {
-    if (React.isValidElement(child)) {
-      const childPath = elementPath + String(index) + "/";
-      return assignPathsRecursive(child, childPath);
-    }
-    return child;
-  });
+  const newChildren = shouldRecurseIntoChildren(element)
+    ? children.map((child, index) =>
+        React.isValidElement(child)
+          ? assignPathsRecursive(child, elementPath + String(index) + "/")
+          : child,
+      )
+    : children;
 
   return cloneElement(element, {
     [pathPropName as any]: elementPath,
-    children: newChildren,
+    children: emptyToUndefined(newChildren),
   });
 }
 
@@ -46,6 +62,11 @@ export function findByPath(path: string, node: SvgElem): SvgElem | null {
   const props = node.props as any;
   if (props[pathPropName] === path) {
     return node;
+  }
+
+  // Don't recurse into foreignObject children
+  if (!shouldRecurseIntoChildren(node)) {
+    return null;
   }
 
   for (const child of Children.toArray(props.children) as SvgElem[]) {

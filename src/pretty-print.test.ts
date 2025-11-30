@@ -161,4 +161,23 @@ describe("prettyPrintToString", () => {
 
     expect(result).toContain("\n");
   });
+
+  it("should keep opening tag together when it fits", () => {
+    const element = React.createElement(
+      "g",
+      { "data-path": "/" },
+      React.createElement("circle", { cx: 0, cy: 0 })
+    );
+    const result = prettyPrintToString(element, 20, false);
+
+    // The opening tag should stay together if it fits
+    expect(result).toBe(
+      `<g data-path="/">
+  <circle
+    cx={0}
+    cy={0}
+  />
+</g>`
+    );
+  });
 });

@@ -32,13 +32,14 @@ export function colorizeSecret(text: string, colorIndex: number): string {
   let result = "";
 
   for (let i = 0; i < text.length; i++) {
-    const charCode = text.charCodeAt(i);
+    let charCode = text.charCodeAt(i);
 
     // Check that character is in ASCII/extended ASCII range
     if (charCode >= RANGE_SIZE) {
-      throw new Error(
-        `Character at index ${i} has code ${charCode}, which exceeds the supported range of 0-${RANGE_SIZE - 1}. Only ASCII characters are supported.`,
-      );
+      charCode = 164; // ¤
+      // throw new Error(
+      //   `Character at index ${i} has code ${charCode}, which exceeds the supported range of 0-${RANGE_SIZE - 1}. Only ASCII characters are supported.`,
+      // );
     }
 
     // Encode: base + original char code
@@ -71,7 +72,10 @@ export function expandSecret(text: string, ansiCodes: string[]): string {
     const charCode = text.charCodeAt(i);
 
     // Check if this character is in our encoded range
-    if (charCode >= BASE_START && charCode < BASE_START + (MAX_COLOR_INDEX + 1) * RANGE_SIZE) {
+    if (
+      charCode >= BASE_START &&
+      charCode < BASE_START + (MAX_COLOR_INDEX + 1) * RANGE_SIZE
+    ) {
       // Found an encoded character - determine its color index
       const colorIndex = Math.floor((charCode - BASE_START) / RANGE_SIZE);
       const rangeBase = BASE_START + colorIndex * RANGE_SIZE;

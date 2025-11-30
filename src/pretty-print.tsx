@@ -247,11 +247,27 @@ function prettyPrintToDoc(
           : prettyPrintToDoc(child, useColor, visited),
       );
 
-      return group([
+      // Add conditional line breaks between children
+      // When inline, no separator. When broken, each child on its own line.
+      const childDocsWithSeparators: Doc[] = [];
+      for (let i = 0; i < childDocs.length; i++) {
+        childDocsWithSeparators.push(childDocs[i]);
+        if (i < childDocs.length - 1) {
+          childDocsWithSeparators.push(ifBreak(line, ""));
+        }
+      }
+
+      // Group the opening tag separately so it can stay on one line if it fits,
+      // then group the whole element to allow compact inline formatting when possible
+      const openingTag = group([
         openTag,
         indent(propDocs),
         useColor ? colorize(">", "keyword") : ">",
-        indent([softline, ...childDocs]),
+      ]);
+
+      return group([
+        openingTag,
+        indent([softline, ...childDocsWithSeparators]),
         softline,
         closeTag,
       ]);

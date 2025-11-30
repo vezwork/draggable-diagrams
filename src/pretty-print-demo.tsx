@@ -6,7 +6,7 @@ export function PrettyPrintDemo() {
     console.log("=== Pretty Print Demo ===\n");
     prettyLog(testData);
     console.log("\n--- Narrow (width=40) ---");
-    prettyLog(testData, 40);
+    prettyLog(testData, { width: 40 });
   }, []);
 
   return (
