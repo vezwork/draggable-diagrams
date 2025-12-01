@@ -1,5 +1,5 @@
 import { ComponentType } from "react";
-import { Callout, Demo } from "./docs/components";
+import * as Components from "./docs/components";
 import { LiveEditor } from "./docs/LiveEditor";
 import { MDXPage } from "./MDXPage";
 
@@ -34,8 +34,6 @@ export function DocsPage({ slug }: { slug: string }) {
   const Content = mdxModule.default;
 
   return (
-    <MDXPage components={{ Callout, Demo, LiveEditor }}>
-      {Content}
-    </MDXPage>
+    <MDXPage components={{ ...Components, LiveEditor }}>{Content}</MDXPage>
   );
 }

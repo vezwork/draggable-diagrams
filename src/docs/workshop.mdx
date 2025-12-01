@@ -1,4 +1,6 @@
+import { demos } from '../demos';
 import { normalizeIndent } from './components';
+import { DemoContext } from '../DemoContext';
 
 # Draggable Diagrams workshop
 
@@ -167,6 +169,107 @@ From here, it's choose-your-own-adventure. There's a lot you can do with just th
 
 ### Continuous state
 
-The newest, most exciting part of Draggable Diagrams is presumably the "drag between discrete states" thing. But I also added in pretty nice "drag between continuous states" mechanism, inspired by [Apparatus](https://aprt.us/) and [g9](https://omrelli.ug/g9/). They go together pretty well!
+The most novel part of Draggable Diagrams is the "drag between discrete states" thing. But I also added in a pretty nice "drag between continuous states" mechanism, inspired by [Apparatus](https://aprt.us/) and [g9](https://omrelli.ug/g9/). Here's the classic nontrivial example: a crank.
+
+<LiveEditor
+  code={`
+    type State = {
+      angle: number;
+    }
+
+    const initialState = { angle: 0 };
+
+    const manipulable = ({ state, drag }) => (
+      <g transform={translate(150, 150)}>
+        <g transform={rotate(state.angle)}>
+          <line
+            x2={100}
+            stroke="black"
+            strokeWidth={4}
+          />
+          <circle
+            transform={translate(100, 0)}
+            r={20}
+            fill="black"
+            data-on-drag={drag(numAtPath(["angle"]))}
+          />
+        </g>
+      </g>
+    );
+  `}
+/>
+
+The new part here is `numAtPath` in the drag spec. This means "the drag should control a numeric value located at this path in the state object". Specifically, it will control the numeric value to try to make the dragged object as close to the dragged pointer as possible. (That's numeric minimization!)
+
+A single diagram can have both discrete and continuous drags. Here, edges can be moved discretely between nodes, and nodes can be moved continuously on the canvas:
+
+<DemoEmbed demoId="graph" />
+
+(Really, it should be possible for a single drag to control *both* discrete and continuous dimensions, but DD doesn't support that yet. I'd love to have a good reason to do so.)
+
+And just for fun here's a continuous drag controlling scale & rotation transforms:
+
+<DemoEmbed demoId="stretchy-rot" />
 
 ### setState
+
+If you'd like to more directly move between states, say, in response to a click, you can use `setState`, which is provided as an argument to the manipulable. It's more boring than dragging, but it does still have some tricks up its sleeve...
+
+In this example, we loop through a set of colors (& positions) by clicking:
+
+<LiveEditor
+  code={`
+    type State = {
+      colorIdx: number;
+    };
+
+    const initialState: State = { colorIdx: 0 };
+
+    const manipulable: Manipulable<State> = ({ state, setState }) => {
+      const colors = ["red", "green", "blue", "yellow"];
+
+      return (
+        <rect
+          x={50 + 40 * state.colorIdx}
+          y={50}
+          width={100}
+          height={100}
+          fill={colors[state.colorIdx]}
+          onClick={() => {
+            const nextIdx = (state.colorIdx + 1) % colors.length;
+            setState({ colorIdx: nextIdx });
+          }}
+          style={{ cursor: "pointer" }}
+        />
+      );
+    };
+  `}
+/>
+
+`setState` animates! At least by default; you can change this behavior with a second argument, of type:
+
+```
+{
+  easing?: (t: number) => number;
+  seconds?: number;
+  immediate?: boolean;
+}
+```
+
+I haven't used `setState` much. Maybe you will?
+
+### \<foreignObject\>
+
+Continuing the slide into abject normalcy, we should note that you can embed HTML inside your SVGs with `<foreignObject>`. This is probably a useful escape-hatch for, e.g., putting editable text fields into diagrams.
+
+Or for making trending apps:
+
+<DemoEmbed demoId="todo" />
+
+(To be clear: This isn't a DD feature, just a note that we haven't broken `<foreignObject>` yet.)
+
+## Challenges
+
+[TODO]
+
+<DemoEmbed demoId="inserting-removing-items" />

@@ -1,5 +1,8 @@
 // Custom React components that can be used in MDX pages
 
+import { DemoContext } from "../DemoContext";
+import { demos } from "../demos";
+
 export { normalizeIndent } from "../normalizeIndent";
 
 export function Callout({
@@ -22,10 +25,12 @@ export function Callout({
   );
 }
 
-export function Demo({ children }: { children: React.ReactNode }) {
+export function DemoEmbed({ demoId }: { demoId: string }) {
   return (
-    <div className="border border-gray-200 rounded-lg p-6 my-6 bg-gray-50">
-      {children}
+    <div className="mb-4">
+      <DemoContext.Provider value={{ debugMode: false, baseUrl: "/demos" }}>
+        {demos.find((d) => (d.props as any).id === demoId)}
+      </DemoContext.Provider>
     </div>
   );
 }
