@@ -35,7 +35,7 @@ function assignPathsRecursive(element: SvgElem, currentPath: string): SvgElem {
   const elementPath: string = id ? id + "/" : currentPath;
 
   // Just to be helpful, warn against using keys
-  if (element.key !== null && !element.key.startsWith(".")) {
+  if (typeof element.key === "string" && !element.key.startsWith(".")) {
     throw new Error(
       `Element with path "${elementPath}" has a key prop (${element.key}), which is not allowed.`,
     );

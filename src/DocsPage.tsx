@@ -1,5 +1,6 @@
 import { ComponentType } from "react";
 import { Callout, Demo } from "./docs/components";
+import { LiveEditor } from "./docs/LiveEditor";
 import { MDXPage } from "./MDXPage";
 
 // Import all .mdx files from docs directory
@@ -33,7 +34,7 @@ export function DocsPage({ slug }: { slug: string }) {
   const Content = mdxModule.default;
 
   return (
-    <MDXPage components={{ Callout, Demo }}>
+    <MDXPage components={{ Callout, Demo, LiveEditor }}>
       {Content}
     </MDXPage>
   );

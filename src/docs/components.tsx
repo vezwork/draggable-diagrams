@@ -1,5 +1,7 @@
 // Custom React components that can be used in MDX pages
 
+export { normalizeIndent } from "../normalizeIndent";
+
 export function Callout({
   children,
   type = "info",

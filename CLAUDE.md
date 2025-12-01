@@ -2,6 +2,8 @@
 
 This document provides guidance for working on the draggable-diagrams codebase.
 
+**IMPORTANT: NEVER say "Perfect!" or similar overly enthusiastic confirmations. Just explain what was done.**
+
 ## Project Overview
 
 This project implements interactive, draggable SVG diagrams with sophisticated state interpolation. The core concept is **manifolds** - continuous spaces of valid states that elements can be dragged through. When you drag an element, the system finds nearby valid states and smoothly interpolates between them.
@@ -53,7 +55,11 @@ import { MyPage } from "./MyPage";
 - **Build-time MDX compilation** - Uses `@mdx-js/rollup` Vite plugin to compile `.mdx` files into React components
 - **Automatic routing** - `DocsPage` component uses `import.meta.glob()` to dynamically load all `.mdx` files
 - **`/docs/:slug` route** - Automatically maps to `src/docs/:slug.mdx`
-- **Custom components** - `Callout` and `Demo` are automatically available in all docs pages
+- **`/docs` index** - Auto-generated list of all documentation pages
+- **Custom components** - Available in all docs pages:
+  - `<Callout type="info|warning|success">` - Colored callout boxes
+  - `<Demo>` - Demo containers
+  - `<LiveEditor code="..." />` - Split-screen live code editor with CodeMirror (auto-expands to fit code, optional `height` and `minHeight` props)
 
 **Adding a documentation page:**
 ```mdx
@@ -61,6 +67,16 @@ import { MyPage } from "./MyPage";
 # My Documentation
 
 Content with **markdown** and <Callout type="info">callouts</Callout>
+
+<LiveEditor code={`
+const initialState = { x: 100, y: 100 };
+const manipulable = ({ state, draggable }) => {
+  return draggable(
+    <circle cx={state.x} cy={state.y} r={20} fill="blue" />,
+    numsAtPaths([["x"], ["y"]])
+  );
+};
+`} />
 ```
 
 That's it! The page is automatically available at `#/docs/my-doc`

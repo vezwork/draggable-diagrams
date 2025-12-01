@@ -1,6 +1,8 @@
+import { normalizeIndent } from './components';
+
 # Draggable Diagrams workshop
 
-Hey thanks for joining the workshop and trying out Draggable Diagrams / D2 / TROGDOR / TBD. My hope is that this will be a fun and interesting and creative experience. I'm also hoping to learn some things from you, like
+Hey thanks for joining the workshop and trying out Draggable Diagrams! My hope is that this will be a fun and interesting and creative experience. I'm also hoping to learn some things from you, like...
 
 - What kind of diagrams are you dreaming of making? (And how could this system grow to help you with them?)
 - What kind of new diagrammy ideas arise from working with this system?
@@ -10,4 +12,75 @@ Let's jump in!
 
 ## What is Draggable Diagrams?
 
-Draggable Diagrams is a framework for making interactive diagrams. "Diagrams" here is potentially broad – it could include diagrams of mathematical structures, weird new controllers, direct-manipulation editors, and other interfaces besides. The unique angle of Draggable Diagrams is, as the name implies, making drag-drop interactions easier to implement. It does this with a React-y, state-centric approach. In Draggable Diagrams, you write a "render" function that turns underlying state into an SVG drawing. To make an object in this drawing draggable, you need only describe what *new states* should be accessible by dragging it. Draggable Diagrams will pre-render these possible drawings, and use them to guide a drag-drop interaction.
+Draggable Diagrams (DD) is a framework for making interactive diagrams. "Diagrams" here is potentially broad – it could include diagrams of mathematical structures, weird new controllers, direct-manipulation editors, and other interfaces besides. The unique angle of DD is, as the name implies, making drag-drop interactions easier to implement. It does this with a React-y, state-driven approach. In DD, you write a "render" function that turns underlying state into an SVG drawing. To make an object in this drawing draggable, you need only describe what *new states* should be accessible by dragging it. DD will pre-render these possible drawings, and use them to guide a drag-drop interaction.
+
+Let's build up some examples. First, a diagram that doesn't do anything.
+
+<LiveEditor
+  secretCode={`
+    const initialState = {};
+  `}
+  code={`
+    const manipulable = () => (
+      <circle
+        cx={100}
+        cy={100}
+        r={50}
+        fill="blue"
+      />
+    );
+  `}
+/>
+
+A manipulable is a function that returns React SVG elements using JSX. It looks an awful lot like a React component function – but it isn't one, sorry; no using hooks or anything like that.
+
+But this manipulable doesn't actually do anything. Let's fix that For a diagram to be interactive, it must have multiple states it can be in, so we will define a state type and an initial state too.
+
+(Note: This text-editor gadget doesn't have real TypeScript support so we will only provide types when we feel like it. You'll want to use TypeScript while editing! Copy an existing project from the repo for that.)
+
+<LiveEditor
+  code={`
+    type State = {
+      status: "off" | "on";
+    }
+
+    const initialState = { status: "off" };
+
+    const manipulable = ({ state, drag }) => (
+      <circle
+        transform={translate(state.status === "off" ? [100, 100] : [200, 100])}
+        r={50}
+        fill="blue"
+        data-on-drag={drag(span([{status: "off"}, {status: "on"}]))}
+      />
+    );
+  `}
+/>
+
+Try dragging the ball left and right! Try letting go of it in the middle! Pretty spunky, huh?
+
+There are a lot of new bits here. First a speed-run through some smaller bits:
+
+- Our diagram's state is very simple: a `status` that can be `"off"` or `"on"`. State should always be an object of some sort. We could've used a boolean but I'm feeling fancy.
+
+- We switched from `cx` and `cy` to `transform`. For something to be draggable in DD, it needs to be positioned using transforms. (This makes a lot of logic more uniform for us, and we're lazy.) To make using transforms easier, we have helpers `translate`, `rotate`, and `scale`.
+
+    In short: anywhere you might ordinarily position a shape with an x & y, you should use `transform={translate(...)}`.
+
+- Here, we use a `transform` that depends on state – `"off"` will be to the left and `"on"` will be to the right. State is provided as an argument to the manipulable.
+
+Now we're ready for the biggest bit: dragging! Dragging is what lets us move into these exciting new states we have. When you attach `data-on-drag` to an SVG element, you are telling DD you want to be able to move between states by dragging the element. You provide a "drag spec" which lists various states that should be accessible by dragging. When you start dragging the element, DD will invisibly render the diagrams of those accessible states, and see where the dragged element ends up. It will use that to synthesize a drag interaction, interpolating between accessible states as you go.
+
+Pieces of this puzzle:
+
+- Every use of `data-on-drag` should look like `data-on-drag={drag(...)}`, using the `drag` function provided as an argument to the manipulable. The `drag` function provides type assistance, and DD will throw an error if you don't use it.
+
+- The argument to `drag` can be a lot of different things. For one, it can be a callback that generates a drag spec lazily. That might be smart for performance, but we don't do that here – we just provide a pre-computed `span` object. That means "I want to be able to drag back and forth between all the states in this list". The main alternative to `span` is `straightTo`. That means "I want to drag straight from my starting state to this other state" – you can return an array of `straightTo`s to tell DD you want a couple disjoint tracks from the starting state to the targets.
+
+With this knowledge we can
+
+## Other topics
+
+### Continuous state
+
+### setState
