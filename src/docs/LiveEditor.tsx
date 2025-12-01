@@ -69,7 +69,7 @@ export function LiveEditor({
         const { translate, rotate, scale } = Manipulable;
         ${transformed}
         return { manipulable, initialState };
-        `,
+        `
       );
 
       // Execute with dependencies
@@ -78,7 +78,7 @@ export function LiveEditor({
         DragSpecModule,
         ManipulableModule,
         _,
-        produce,
+        produce
       );
 
       setError(null);

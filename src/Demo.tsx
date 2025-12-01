@@ -31,7 +31,7 @@ type DemoProps<T extends object, Config> =
   | DemoPropsWithConfig<T, Config>;
 
 export function hasConfig<T extends object, Config>(
-  props: DemoProps<T, Config>,
+  props: DemoProps<T, Config>
 ): props is DemoPropsWithConfig<T, Config> {
   return hasKey(props, "defaultConfig");
 }
@@ -42,10 +42,10 @@ export interface ConfigPanelProps<Config> {
 }
 
 export function Demo<T extends object>(
-  props: DemoPropsBase<T, undefined>,
+  props: DemoPropsBase<T, undefined>
 ): ReactElement;
 export function Demo<T extends object, Config>(
-  props: DemoPropsWithConfig<T, Config>,
+  props: DemoPropsWithConfig<T, Config>
 ): ReactElement;
 export function Demo<T extends object, Config>(props: DemoProps<T, Config>) {
   const {
@@ -64,11 +64,11 @@ export function Demo<T extends object, Config>(props: DemoProps<T, Config>) {
   const [snapRadius, setSnapRadius] = useState(initialSnapRadius);
   const [chainDrags, setChainDrags] = useState(initialChainDrags);
   const [relativePointerMotion, setRelativePointerMotion] = useState(
-    initialRelativePointerMotion,
+    initialRelativePointerMotion
   );
 
   const [diagramConfig, setDiagramConfig] = useState<Config>(
-    hasConfig(props) ? props.defaultConfig : (undefined as Config),
+    hasConfig(props) ? props.defaultConfig : (undefined as Config)
   );
 
   return (
@@ -83,7 +83,7 @@ export function Demo<T extends object, Config>(props: DemoProps<T, Config>) {
           </Link>
         </h2>
       </div>
-      {notes && <div className="mt-2 text-sm text-gray-600">{notes}</div>}
+      {notes && <div className="mt-2 mb-4 text-sm text-gray-600">{notes}</div>}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1 min-w-0" style={{ padding }}>
           <ErrorBoundary>
@@ -102,7 +102,9 @@ export function Demo<T extends object, Config>(props: DemoProps<T, Config>) {
           </ErrorBoundary>
         </div>
         <div
-          className={`${hasConfig(props) ? "w-64 md:w-52" : "w-48 md:w-32"} bg-gray-50 rounded p-3 flex flex-col gap-2`}
+          className={`${
+            hasConfig(props) ? "w-64 md:w-52" : "w-48 md:w-32"
+          } bg-gray-50 rounded p-3 flex flex-col gap-2`}
         >
           <label className="flex flex-col gap-1 text-xs">
             <span className="font-medium text-gray-700">Snap radius</span>

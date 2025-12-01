@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { HashRouter, Routes } from "react-router-dom";
 import { autoRoute } from "./autoRoute";
-import { demosCanvas } from "./canvas/demos";
+import { demosCanvas } from "./canvas/demos-canvas";
 import { DemoListPage, SingleDemoPage } from "./DemoLayout";
 import { demos } from "./demos";
 import { DocsIndexPage } from "./DocsIndexPage";
@@ -25,5 +25,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         {autoRoute("/pretty-print", PrettyPrintDemo)}
       </Routes>
     </HashRouter>
-  </React.StrictMode>,
+  </React.StrictMode>
 );

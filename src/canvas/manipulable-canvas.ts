@@ -2,6 +2,11 @@ import { Delaunay } from "d3-delaunay";
 import { easeElastic } from "d3-ease";
 import _ from "lodash";
 import { projectOntoConvexHull } from "../delaunay";
+import { minimize } from "../minimize";
+import { getAtPath, setAtPath } from "../paths";
+import { assert, assertNever, hasKey, manyToArray, pipe } from "../utils";
+import { Vec2 } from "../vec2";
+import { DragSpec, span } from "./DragSpec-canvas";
 import { layer, Layer } from "./layer";
 import { IPointerManager } from "./pointer";
 import {
@@ -12,14 +17,13 @@ import {
   lerpDiagrams3,
   transformVec2,
 } from "./shape";
-import { assert, assertNever, hasKey, manyToArray, pipe } from "../utils";
-import { Vec2 } from "../vec2";
-// @ts-ignore
-import { DragSpec, span } from "../DragSpec";
-import { minimize } from "../minimize";
-import { getAtPath, setAtPath } from "../paths";
-
-export { numAtPath, numsAtPaths, params, span, straightTo } from "../DragSpec";
+export {
+  numAtPath,
+  numsAtPaths,
+  params,
+  span,
+  straightTo,
+} from "./DragSpec-canvas";
 
 /** A manipulable (canvas version) is a way of visualizing and interacting with
  * "state" (of some type T).
@@ -29,9 +33,10 @@ export { numAtPath, numsAtPaths, params, span, straightTo } from "../DragSpec";
  * shenanigans for config-dependence that should get cleverly
  * simplified someday.
  */
-export type ManipulableCanvas<T extends object, ManipulableConfig = undefined> = [
-  ManipulableConfig,
-] extends [undefined]
+export type ManipulableCanvas<
+  T extends object,
+  ManipulableConfig = undefined
+> = [ManipulableConfig] extends [undefined]
   ? ManipulableCanvasBase<T, ManipulableConfig>
   : ManipulableCanvasWithConfig<T, ManipulableConfig>;
 
@@ -39,12 +44,12 @@ export type ManipulableCanvasBase<T extends object, ManipulableConfig> = {
   render(
     state: T,
     draggableKey: string | null,
-    config: ManipulableConfig,
+    config: ManipulableConfig
   ): Diagram;
   onDrag(
     state: T,
     draggableKey: string,
-    config: ManipulableConfig,
+    config: ManipulableConfig
   ): DragSpec<T>;
   cleanTransientState?(state: T): T;
   sourceFile?: string;
@@ -52,23 +57,23 @@ export type ManipulableCanvasBase<T extends object, ManipulableConfig> = {
 
 export type ManipulableCanvasWithConfig<
   T extends object,
-  ManipulableConfig,
+  ManipulableConfig
 > = ManipulableCanvasBase<T, ManipulableConfig> & {
   defaultConfig: ManipulableConfig;
   renderConfig: (
     config: ManipulableConfig,
-    setConfig: (config: ManipulableConfig) => void,
+    setConfig: (config: ManipulableConfig) => void
   ) => React.ReactNode;
 };
 
 export function hasConfig<T extends object, ManipulableConfig>(
-  manipulable: ManipulableCanvas<T, ManipulableConfig>,
+  manipulable: ManipulableCanvas<T, ManipulableConfig>
 ): manipulable is ManipulableCanvasWithConfig<T, ManipulableConfig> {
   return (manipulable as any).defaultConfig !== undefined;
 }
 
 export function manipulableDefaultConfig<T extends object, ManipulableConfig>(
-  manipulable: ManipulableCanvas<T, ManipulableConfig>,
+  manipulable: ManipulableCanvas<T, ManipulableConfig>
 ): ManipulableConfig {
   // this is totally well-typed I swear
   return (manipulable as any).defaultConfig;
@@ -124,14 +129,14 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
     public manipulable: ManipulableCanvas<T, Config>,
     state: T,
     public onDragStateChange?: (
-      dragState: ManipulableCanvasDrawer<T, Config>["dragState"],
-    ) => void,
+      dragState: ManipulableCanvasDrawer<T, Config>["dragState"]
+    ) => void
   ) {
     this.dragState = { type: "idle", state };
   }
 
   private setDragState(
-    newDragState: ManipulableCanvasDrawer<T, Config>["dragState"],
+    newDragState: ManipulableCanvasDrawer<T, Config>["dragState"]
   ) {
     this.dragState = newDragState;
     this.onDragStateChange?.(newDragState);
@@ -147,7 +152,7 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
       relativePointerMotion: boolean;
       animationDuration: number;
     },
-    manipulableConfig: Config,
+    manipulableConfig: Config
   ): void {
     const { dragState } = this;
     const lyrDebug = layer(lyr);
@@ -157,7 +162,7 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
 
       const { diagramToDraw, newState } = pipe(null, () => {
         const draggableDestPt = pointer.dragPointer!.sub(
-          dragState.pointerOffset,
+          dragState.pointerOffset
         );
 
         const manifoldProjections = dragState.manifolds.map((manifold) => {
@@ -173,24 +178,24 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
               proj.manifold,
               draggableDestPt,
               proj.projectedPt,
-              drawerConfig.snapRadius,
+              drawerConfig.snapRadius
             );
           }
         });
         const bestManifoldProjection = _.minBy(
           manifoldProjections,
-          (proj) => proj.dist,
+          (proj) => proj.dist
         )!;
 
         if (drawerConfig.relativePointerMotion) {
           dragState.pointerOffset = pointer.dragPointer!.sub(
-            bestManifoldProjection.projectedPt,
+            bestManifoldProjection.projectedPt
           );
         }
 
         const closestManifoldPt = _.minBy(
           dragState.manifolds.flatMap((m) => m.points),
-          (info) => draggableDestPt.dist(info.offset),
+          (info) => draggableDestPt.dist(info.offset)
         )!;
 
         // check if it's time to delete
@@ -215,7 +220,7 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
 
         const newState = pipe(
           closestManifoldPt!.state,
-          (s) => this.manipulable.cleanTransientState?.(s) ?? s,
+          (s) => this.manipulable.cleanTransientState?.(s) ?? s
         );
 
         // check if it's time to snap
@@ -228,7 +233,7 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
             newState,
             dragState.draggableKey,
             dragState.pointerOffset,
-            manipulableConfig,
+            manipulableConfig
           );
           return { diagramToDraw: closestManifoldPt!.diagram, newState };
         }
@@ -251,7 +256,7 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
             diagramToDraw: lerpDiagrams(
               bestManifoldProjection.manifold.points[ptIdx0].diagram,
               bestManifoldProjection.manifold.points[ptIdx1].diagram,
-              t,
+              t
             ),
             newState,
           };
@@ -263,7 +268,7 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
               bestManifoldProjection.manifold.points[ptIdx0].diagram,
               bestManifoldProjection.manifold.points[ptIdx1].diagram,
               bestManifoldProjection.manifold.points[ptIdx2].diagram,
-              barycentric,
+              barycentric
             ),
             newState,
           };
@@ -294,15 +299,15 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
         const diagram = this.manipulable.render(
           candidateState,
           dragState.draggableKey,
-          manipulableConfig,
+          manipulableConfig
         );
         const foundShape = flatShapeByDraggableKey(
           diagram,
-          dragState.draggableKey,
+          dragState.draggableKey
         );
         assert(!!foundShape, "Draggable key not found in rendered shape");
         return draggableDestPt.dist2(
-          transformVec2(Vec2(0), foundShape.transform),
+          transformVec2(Vec2(0), foundShape.transform)
         );
       };
 
@@ -313,7 +318,7 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
       const diagram = this.manipulable.render(
         newState,
         dragState.draggableKey,
-        manipulableConfig,
+        manipulableConfig
       );
       drawDiagram(diagram, lyr);
 
@@ -331,12 +336,12 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
       const targetDiagram = this.manipulable.render(
         dragState.targetState,
         null,
-        manipulableConfig,
+        manipulableConfig
       );
       const interpolatedDiagram = lerpDiagrams(
         dragState.startDiagram,
         targetDiagram,
-        easedProgress,
+        easedProgress
       );
 
       drawDiagram(interpolatedDiagram, lyr);
@@ -350,7 +355,7 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
       const diagram = this.manipulable.render(
         dragState.state,
         null,
-        manipulableConfig,
+        manipulableConfig
       );
       drawDiagram(diagram, lyr, {
         pointer: pointer,
@@ -359,7 +364,7 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
             dragState.state,
             key,
             pointerOffset,
-            manipulableConfig,
+            manipulableConfig
           );
         },
       });
@@ -374,14 +379,14 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
     state: T,
     draggableKey: string,
     pointerOffset: Vec2,
-    manipulableConfig: Config,
+    manipulableConfig: Config
   ) {
     // first check if the draggable has been removed from the diagram
     // TODO: perf?
     const diagram = this.manipulable.render(
       state,
       draggableKey,
-      manipulableConfig,
+      manipulableConfig
     );
     if (!flatShapeByDraggableKey(diagram, draggableKey)) {
       this.setDragState({ type: "idle", state });
@@ -391,7 +396,7 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
     const dragSpec = this.manipulable.onDrag(
       state,
       draggableKey,
-      manipulableConfig,
+      manipulableConfig
     );
 
     if (hasKey(dragSpec, "initParams")) {
@@ -424,14 +429,14 @@ export class ManipulableCanvasDrawer<T extends object, Config = unknown> {
 
     const manifoldSpecs = pipe(
       manyToArray(dragSpec),
-      (arr) => (arr.length === 0 ? [span([])] : arr), // things go wrong if no manifolds
+      (arr) => (arr.length === 0 ? [span([])] : arr) // things go wrong if no manifolds
     );
 
     const makeManifoldPoint = (state: T): ManifoldPoint<T> => {
       const diagram = this.manipulable.render(
         state,
         draggableKey,
-        manipulableConfig,
+        manipulableConfig
       );
       const foundFlatShape = flatShapeByDraggableKey(diagram, draggableKey);
       assert(!!foundFlatShape, "Draggable key not found in rendered shape");
@@ -470,7 +475,7 @@ function drawManifoldDebug(
   manifold: Manifold<unknown>,
   draggableDestPt: Vec2,
   projectedDestPt: Vec2,
-  snapRadius: number,
+  snapRadius: number
 ) {
   for (const { offset } of manifold.points) {
     lyrDebug.do(() => {

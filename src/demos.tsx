@@ -6,16 +6,20 @@ import { Angle } from "./manipulable-angle";
 import { AngleViaTransform } from "./manipulable-angle-via-transform";
 import { Braid } from "./manipulable-braid";
 import { Clock } from "./manipulable-clock";
+import { Fifteen } from "./manipulable-fifteen";
 import { Graph } from "./manipulable-graph";
 import { GridPoly } from "./manipulable-grid-poly";
+import { InsertAndRemove } from "./manipulable-insert-and-remove";
 import { NoolTree } from "./manipulable-nool-tree";
 import { OrderPreserving } from "./manipulable-order-preserving";
 import { Outline } from "./manipulable-outline";
 import { Perm } from "./manipulable-perm";
 import { PermDouble } from "./manipulable-perm-double";
+import { RushHour } from "./manipulable-rush-hour";
 import { SecondSimplest } from "./manipulable-second-simplest";
 import { Simplest } from "./manipulable-simplest";
 import { SimplestClicker } from "./manipulable-simplest-clicker";
+import { Sokoban } from "./manipulable-sokoban";
 import { Spinny } from "./manipulable-spinny";
 import { Tiles } from "./manipulable-tiles";
 import { Todo } from "./manipulable-todo";
@@ -167,7 +171,7 @@ export const demos: ReactElement[] = [
             r={50}
             fill="lightblue"
           />,
-          numsAtPaths([["scaleX"], ["scaleY"]]),
+          numsAtPaths([["scaleX"], ["scaleY"]])
         )}
         <ellipse
           cx={100}
@@ -198,7 +202,7 @@ export const demos: ReactElement[] = [
           r={50}
           fill="lightblue"
         />,
-        numsAtPaths([["angle"], ["scaleX"]]),
+        numsAtPaths([["angle"], ["scaleX"]])
       )
     }
     height={200}
@@ -239,5 +243,44 @@ export const demos: ReactElement[] = [
     padding={20}
     defaultConfig={OrderPreserving.defaultConfig}
     ConfigPanel={OrderPreserving.ConfigPanel}
+  />,
+  <Demo
+    id="rush-hour"
+    title="Rush Hour"
+    manipulable={RushHour.manipulable}
+    initialState={RushHour.state1}
+    height={300}
+    padding={20}
+    defaultConfig={RushHour.defaultConfig}
+    ConfigPanel={RushHour.ConfigPanel}
+  />,
+  <Demo
+    id="15-puzzle"
+    title="15 puzzle"
+    notes="Weird experiment: I made the blank draggable"
+    manipulable={Fifteen.manipulable}
+    initialState={Fifteen.state1}
+    height={200}
+    padding={20}
+  />,
+  <Demo
+    id="inserting-removing-items"
+    title="Inserting & removing items"
+    notes="This shows kinda-hacky ways to insert and remove items from a draggable diagram. Much to consider."
+    manipulable={InsertAndRemove.manipulable}
+    initialState={InsertAndRemove.state1}
+    height={150}
+    padding={10}
+  />,
+  <Demo
+    id="sokoban"
+    title="Sokoban"
+    manipulable={Sokoban.manipulable}
+    initialState={Sokoban.state1}
+    height={500}
+    padding={20}
+    initialRelativePointerMotion={true}
+    defaultConfig={Sokoban.defaultConfig}
+    ConfigPanel={Sokoban.ConfigPanel}
   />,
 ];
