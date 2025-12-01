@@ -11,13 +11,20 @@ export class ErrorWithJSX extends Error {
 }
 
 export class ErrorBoundary extends Component<
-  { fallback?: (error: Error, errorInfo: ErrorInfo) => ReactNode; children: ReactNode },
+  {
+    fallback?: (error: Error, errorInfo: ErrorInfo) => ReactNode;
+    children: ReactNode;
+  },
   { hasError: boolean; error: Error | null; errorInfo: ErrorInfo | null }
 > {
-  state: { hasError: boolean; error: Error | null; errorInfo: ErrorInfo | null } = {
+  state: {
+    hasError: boolean;
+    error: Error | null;
+    errorInfo: ErrorInfo | null;
+  } = {
     hasError: false,
     error: null,
-    errorInfo: null
+    errorInfo: null,
   };
 
   static getDerivedStateFromError(error: Error) {
@@ -40,15 +47,13 @@ export class ErrorBoundary extends Component<
       const isErrorWithJSX = error instanceof ErrorWithJSX;
 
       return (
-        <div className="border border-red-300 bg-red-50 rounded p-4 my-2">
+        <div className="border border-red-300 bg-red-50 rounded p-4 my-2 select-text">
           <div className="font-semibold text-red-800 mb-2 text-lg">
             Error: {error.message}
           </div>
 
           {isErrorWithJSX && (
-            <div className="mt-3 mb-3">
-              {(error as ErrorWithJSX).jsx}
-            </div>
+            <div className="mt-3 mb-3">{(error as ErrorWithJSX).jsx}</div>
           )}
 
           {error.stack && (
