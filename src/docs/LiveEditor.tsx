@@ -12,6 +12,7 @@ import { ErrorBoundary } from "../ErrorBoundary";
 import * as ManipulableModule from "../manipulable";
 import { Manipulable, ManipulableDrawer } from "../manipulable";
 import { normalizeIndent } from "../normalizeIndent";
+import { numberScrubber } from "./numberScrubber";
 
 interface LiveEditorProps {
   secretCode?: string;
@@ -165,7 +166,10 @@ export function LiveEditor({
               value={code}
               height={height ? `${height}px` : undefined}
               minHeight={`${minHeight}px`}
-              extensions={[javascript({ jsx: true, typescript: true })]}
+              extensions={[
+                javascript({ jsx: true, typescript: true }),
+                numberScrubber(),
+              ]}
               onChange={(value) => setCode(value)}
               theme="light"
               basicSetup={{
