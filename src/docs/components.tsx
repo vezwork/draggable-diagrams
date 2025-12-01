@@ -28,7 +28,9 @@ export function Callout({
 export function DemoEmbed({ demoId }: { demoId: string }) {
   return (
     <div className="mb-4">
-      <DemoContext.Provider value={{ debugMode: false, baseUrl: "/demos" }}>
+      <DemoContext.Provider
+        value={{ debugMode: false, docEmbedMode: true, baseUrl: "/demos" }}
+      >
         {demos.find((d) => (d.props as any).id === demoId)}
       </DemoContext.Provider>
     </div>

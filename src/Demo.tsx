@@ -64,7 +64,7 @@ export function Demo<T extends object, Config>(props: DemoProps<T, Config>) {
     sourceFile,
   } = props;
 
-  const { baseUrl } = useDemoContext();
+  const { baseUrl, docEmbedMode } = useDemoContext();
 
   const [snapRadius, setSnapRadius] = useState(initialSnapRadius);
   const [chainDrags, setChainDrags] = useState(initialChainDrags);
@@ -77,8 +77,13 @@ export function Demo<T extends object, Config>(props: DemoProps<T, Config>) {
   );
 
   return (
-    <div className="bg-white rounded-lg p-5 shadow-sm" id={id}>
-      <div className="flex items-center justify-between mb-4">
+    <div
+      className={`bg-white rounded-lg p-5  ${
+        docEmbedMode ? "shadow-md border border-gray-200" : "shadow-sm"
+      }`}
+      id={id}
+    >
+      <div className="flex items-start justify-between mb-4">
         <h2 className="text-xl font-semibold text-gray-900 m-0">
           {baseUrl ? (
             <Link

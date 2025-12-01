@@ -4,9 +4,12 @@ interface DemoContextValue {
   debugMode: boolean;
   onDragStateChange?: (dragState: any) => void;
   baseUrl?: string;
+  docEmbedMode?: boolean;
 }
 
-export const DemoContext = createContext<DemoContextValue | undefined>(undefined);
+export const DemoContext = createContext<DemoContextValue | undefined>(
+  undefined
+);
 
 export function useDemoContext() {
   const context = useContext(DemoContext);
