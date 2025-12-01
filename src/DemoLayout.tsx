@@ -1,11 +1,10 @@
-import { useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { ReactElement, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { DemoContext } from "./DemoContext";
-import { demos } from "./demos";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { PrettyPrint } from "./pretty-print";
 
-function DemoList() {
+export function DemoListPage({ demos }: { demos: ReactElement[] }) {
   const [debugView, setDebugView] = useState(false);
 
   return (
@@ -20,9 +19,7 @@ function DemoList() {
           const id = (demo.props as any).id;
           return (
             <DemoContext.Provider key={id} value={{ debugView }}>
-              <ErrorBoundary>
-                {demo}
-              </ErrorBoundary>
+              <ErrorBoundary>{demo}</ErrorBoundary>
             </DemoContext.Provider>
           );
         })}
@@ -41,8 +38,13 @@ function DemoList() {
   );
 }
 
-function SingleDemo() {
-  const { id } = useParams<{ id: string }>();
+export function SingleDemoPage({
+  demos,
+  id,
+}: {
+  demos: ReactElement[];
+  id: string;
+}) {
   const [debugView, setDebugView] = useState(false);
 
   const demo = demos.find((d) => (d.props as any).id === id);
@@ -59,7 +61,7 @@ function SingleDemo() {
         <div className="text-center py-10 px-5 max-w-3xl mx-auto">
           <h1 className="text-3xl font-normal text-gray-800">Demo not found</h1>
           <div className="mt-5">
-            <Link to="/" className="text-blue-600 text-sm hover:text-blue-700">
+            <Link to=".." relative="path" className="text-blue-600 text-sm hover:text-blue-700">
               ← Back to all demos
             </Link>
           </div>
@@ -77,7 +79,8 @@ function SingleDemo() {
       </div>
       <div className="text-center py-2.5 px-5 max-w-3xl mx-auto">
         <Link
-          to="/"
+          to=".."
+          relative="path"
           className="text-blue-600 text-sm hover:text-blue-700 no-underline"
         >
           ← Back to all demos
@@ -87,9 +90,7 @@ function SingleDemo() {
         <DemoContext.Provider
           value={{ debugView, onDragStateChange: setDragState }}
         >
-          <ErrorBoundary>
-            {demo}
-          </ErrorBoundary>
+          <ErrorBoundary>{demo}</ErrorBoundary>
         </DemoContext.Provider>
       </div>
       {false && debugView ? (
@@ -111,10 +112,4 @@ function SingleDemo() {
       </div>
     </div>
   );
-}
-
-export function DemoLayout() {
-  const { id } = useParams<{ id: string }>();
-
-  return id ? <SingleDemo /> : <DemoList />;
 }

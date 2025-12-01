@@ -1,8 +1,8 @@
 import { produce } from "immer";
 import _ from "lodash";
+import { span } from "./DragSpec";
 import { SvgElem } from "./jsx-flatten";
-import { span } from "./manipulable";
-import { ManipulableSvg, SetState, translate } from "./manipulable-svg";
+import { Manipulable, SetState, translate } from "./manipulable";
 
 type Todo = {
   id: string;
@@ -17,7 +17,7 @@ type State = {
 
 const TILE_SIZE = 55;
 
-export const manipulableTodo: ManipulableSvg<State> = ({
+export const manipulableTodo: Manipulable<State> = ({
   state,
   draggable,
   draggedId,

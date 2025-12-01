@@ -1,4 +1,4 @@
-import { Layer } from "./layer";
+import { Layer } from "./canvas/layer";
 import { lerp, Vec2 } from "./vec2";
 
 export type XYWH = readonly [number, number, number, number];

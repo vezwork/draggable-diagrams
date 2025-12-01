@@ -1,8 +1,8 @@
-# Migration Guide: Manipulable to ManipulableSvg
+# Migration Guide: Manipulable to Manipulable
 
 ## Overview
 
-Converting from the old `Manipulable` API to the new `ManipulableSvg` API.
+Converting from the old `Manipulable` API to the new `Manipulable` API.
 
 ## ⚠️ CRITICAL MISTAKES TO AVOID
 
@@ -45,7 +45,7 @@ import { circle, group, line } from "./shape";
 **After:**
 ```typescript
 import { straightTo } from "./DragSpec";
-import { ManipulableSvg, translate } from "./manipulable-svg";
+import { Manipulable, translate } from "./manipulable-svg";
 ```
 
 ### Type Signature
@@ -61,7 +61,7 @@ export const manipulableGridPoly: Manipulable<GridPolyState> = {
 
 **After:**
 ```typescript
-export const manipulableGridPolySvg: ManipulableSvg<GridPolyState> = ({
+export const manipulableGridPolySvg: Manipulable<GridPolyState> = ({
   state,
   draggable,
   draggedId,
@@ -403,7 +403,7 @@ export const manipulableGridPoly: Manipulable<GridPolyState> = {
 import { produce } from "immer";
 import _ from "lodash";
 import { span } from "./DragSpec";
-import { ManipulableSvg, translate } from "./manipulable-svg";
+import { Manipulable, translate } from "./manipulable-svg";
 
 type GridPolyState = {
   w: number;
@@ -411,7 +411,7 @@ type GridPolyState = {
   points: { x: number; y: number }[];
 };
 
-export const manipulableGridPolySvg: ManipulableSvg<GridPolyState> = ({
+export const manipulableGridPolySvg: Manipulable<GridPolyState> = ({
   state,
   draggable,
   draggedId,
@@ -510,7 +510,7 @@ render(state, draggableKey) {
 
 **After:**
 ```typescript
-export const manipulableExample: ManipulableSvg<State> = ({
+export const manipulableExample: Manipulable<State> = ({
   state,
   draggable,
   draggedId,
@@ -591,7 +591,7 @@ Elements are rendered in order of their `data-z-index` value (default: 0). Lower
 />
 
 // Step 2: Create new SVG demo with ALL the same settings
-<DemoSvg
+<Demo
   id="outline-svg"
   title="Outline (SVG)"
   manipulableSvg={manipulableOutlineSvg}

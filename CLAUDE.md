@@ -8,12 +8,12 @@ This project implements interactive, draggable SVG diagrams with sophisticated s
 
 ## Architecture
 
-### ManipulableSvg
+### Manipulable
 
-The main abstraction is `ManipulableSvg<T>` - a function that takes state and returns SVG JSX:
+The main abstraction is `Manipulable<T>` - a function that takes state and returns SVG JSX:
 
 ```typescript
-export type ManipulableSvg<T extends object> = (props: {
+export type Manipulable<T extends object> = (props: {
   state: T;
   draggable: (element: SvgElem, dragSpec: DragSpec<T>) => SvgElem;
   drag: (dragSpec: DragSpec<T>) => OnDragPropValue<T>;
@@ -55,7 +55,7 @@ draggable(<element />, span([state1, state2, state3, ...]))
 
 ### Transform Helpers
 
-Helper functions for SVG transforms (exported from `manipulable-svg.tsx`):
+Helper functions for SVG transforms (exported from `manipulable.tsx`):
 
 ```typescript
 translate(100, 100)  // "translate(100,100) "
@@ -97,7 +97,7 @@ The `localToGlobal` and `globalToLocal` functions in `svg-transform.ts` handle t
 ## Key Files
 
 ### Core Framework
-- `src/manipulable-svg.tsx` - ManipulableSvg type, transform helpers, drag state management
+- `src/manipulable.tsx` - Manipulable type, transform helpers, drag state management
 - `src/DragSpec.ts` - Drag specification types (`straightTo`, `span`, `numsAtPaths`, etc.)
 - `src/svg-transform.ts` - Transform parsing, interpolation, coordinate conversion
 - `src/jsx-lerp.ts` - Interpolation between SVG elements (transforms, colors, points, etc.)
@@ -105,11 +105,11 @@ The `localToGlobal` and `globalToLocal` functions in `svg-transform.ts` handle t
 - `src/vec2.ts` - 2D vector utilities
 
 ### Components
-- `src/components/DemoSvg.tsx` - Wrapper for ManipulableSvg demos
+- `src/components/Demo.tsx` - Wrapper for Manipulable demos
 - `src/demos.tsx` - All demo configurations
 
 ### Manipulables
-Each `manipulable-*-svg.tsx` file contains a ManipulableSvg implementation. Good examples:
+Each `manipulable-*.tsx` file contains a Manipulable implementation. Good examples:
 - `manipulable-clock-svg.tsx` - Simple rotating hands with transforms
 - `manipulable-graph-svg.tsx` - Complex drag specs with span()
 - `manipulable-spinny-svg.tsx` - Using element IDs for stable identity
@@ -141,7 +141,7 @@ npm run typecheck
 ### Creating a Manipulable
 
 ```typescript
-import { ManipulableSvg, translate, rotate } from "./manipulable-svg";
+import { Manipulable, translate, rotate } from "./manipulable-svg";
 import { numsAtPaths } from "./DragSpec";
 
 type MyState = {
@@ -150,7 +150,7 @@ type MyState = {
   angle: number;
 };
 
-export const myManipulable: ManipulableSvg<MyState> = ({
+export const myManipulable: Manipulable<MyState> = ({
   state,
   draggable,
 }) => {
@@ -177,7 +177,7 @@ export const initialState: MyState = { x: 100, y: 100, angle: 0 };
 ```typescript
 import { myManipulable, initialState } from "./manipulable-my-svg";
 
-<DemoSvg
+<Demo
   id="my-demo"
   title="My Demo"
   manipulableSvg={myManipulable}
@@ -212,7 +212,7 @@ When elements need stable identity across state changes (for interpolation):
 Alternative to `draggable()` - attach drag spec directly as attribute:
 
 ```typescript
-export const demo: ManipulableSvg<State> = ({ state, drag }) => (
+export const demo: Manipulable<State> = ({ state, drag }) => (
   <rect
     x={state.x}
     data-on-drag={drag(numsAtPaths([["x"]]))}
@@ -264,7 +264,7 @@ The Edit and Write tools require reading the file first. Always use Read tool be
 The codebase provides proper types for common patterns:
 - `Drag<T>` - the type of the `drag()` function
 - `Draggable<T>` - the type of the `draggable()` function
-- `ManipulableSvg<T>` - the manipulable function type
+- `Manipulable<T>` - the manipulable function type
 
 ```typescript
 // ✗ WRONG - lazy use of any

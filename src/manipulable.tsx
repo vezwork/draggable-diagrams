@@ -1,0 +1,1000 @@
+import { Delaunay } from "d3-delaunay";
+import * as d3Ease from "d3-ease";
+import _ from "lodash";
+import {
+  Children,
+  cloneElement,
+  Fragment,
+  isValidElement,
+  PointerEvent,
+  ReactElement,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { projectOntoConvexHull } from "./delaunay";
+import { useDemoContext } from "./DemoContext";
+import { DragSpec, span } from "./DragSpec";
+import { ErrorWithJSX } from "./ErrorBoundary";
+import {
+  accumulateTransforms,
+  FlattenedSvg,
+  flattenSvg,
+  getAccumulatedTransform,
+  SvgElem,
+} from "./jsx-flatten";
+import { lerpSvgNode } from "./jsx-lerp";
+import { assignPaths, findByPath, getPath } from "./jsx-path";
+import { minimize } from "./minimize";
+import { getAtPath, setAtPath } from "./paths";
+import { prettyLog, PrettyPrint } from "./pretty-print";
+import { globalToLocal, localToGlobal, parseTransform } from "./svg-transform";
+import {
+  assert,
+  assertNever,
+  emptyToUndefined,
+  hasKey,
+  isObject,
+  manyToArray,
+  pipe,
+} from "./utils";
+import { Vec2, Vec2able } from "./vec2";
+
+export function translate(v: Vec2able): string;
+export function translate(x: number, y: number): string;
+export function translate(a: Vec2able | number, b?: number): string {
+  const [x, y] = b !== undefined ? [a, b] : Vec2(a).arr();
+  return `translate(${x},${y}) `; // end in space
+}
+
+export function rotate(degrees: number, c: Vec2able = Vec2(0)): string {
+  const [cx, cy] = Vec2(c).arr();
+  return `rotate(${degrees},${cx},${cy}) `; // end in space
+}
+
+export function scale(sx: number, sy?: number): string {
+  if (sy === undefined) sy = sx;
+  return `scale(${sx},${sy}) `; // end in space
+}
+
+export function points(...pts: Vec2able[]): string {
+  return pts.map((pt) => Vec2(pt).arr().join(",")).join(" ");
+}
+
+export type SetState<T> = (
+  newState: SetStateAction<T>,
+  props?: {
+    easing?: (t: number) => number;
+    seconds?: number;
+    immediate?: boolean;
+  },
+) => void;
+
+/**
+ * A Manipulable is a function that takes state and draggable helper, returns SVG JSX.
+ */
+export type Manipulable<T extends object, Config = undefined> = (props: {
+  state: T;
+  draggable: Draggable<T>;
+  drag: typeof drag<T>;
+  draggedId: string | null;
+  setState: SetState<T>;
+  config: Config;
+}) => SvgElem;
+
+function noOp(): void {}
+
+// /**
+//  * Extracts the position from an SVG element's transform attribute.
+//  * Only supports translate transforms - throws if other transform types are present.
+//  * Returns Vec2(0, 0) if no transform.
+//  */
+// function extractPosition(element: SvgElem): Vec2 {
+//   // prettyLog(element, { label: "extractPosition element" });
+
+//   const transformStr = getAccumulatedTransform(element);
+//   assert(
+//     transformStr !== undefined,
+//     "extractPosition: no accumulated transform",
+//   );
+
+//   if (!transformStr) return Vec2(0, 0);
+
+//   const transforms = parseTransform(transformStr);
+
+//   // Only support translate transforms
+//   let x = 0;
+//   let y = 0;
+//   for (const t of transforms) {
+//     if (t.type === "translate") {
+//       x += t.x;
+//       y += t.y;
+//     } else {
+//       throw new Error(
+//         `extractPosition only supports translate transforms, found: ${t.type}`,
+//       );
+//     }
+//   }
+
+//   // console.log("extractPosition:", transformStr, "->", x, y);
+
+//   return Vec2(x, y);
+// }
+
+function lerpFlattened(
+  a: FlattenedSvg,
+  b: FlattenedSvg,
+  t: number,
+): FlattenedSvg {
+  const result: FlattenedSvg = new Map();
+  const allKeys = new Set([...a.keys(), ...b.keys()]);
+
+  for (const key of allKeys) {
+    const aVal = a.get(key);
+    const bVal = b.get(key);
+
+    if (aVal && bVal) {
+      // console.log("lerpFlattened is lerping key:", key);
+      result.set(key, lerpSvgNode(aVal, bVal, t));
+    } else if (aVal) {
+      result.set(key, aVal);
+    } else if (bVal) {
+      result.set(key, bVal);
+    }
+  }
+
+  return result;
+}
+
+function lerpFlattened3(
+  a: FlattenedSvg,
+  b: FlattenedSvg,
+  c: FlattenedSvg,
+  { l0, l1, l2 }: { l0: number; l1: number; l2: number },
+): FlattenedSvg {
+  if (l0 + l1 < 1e-6) return c;
+  const ab = lerpFlattened(a, b, l1 / (l0 + l1));
+  return lerpFlattened(ab, c, l2);
+}
+
+type ManifoldPoint<T> = {
+  state: T;
+  flattened: FlattenedSvg;
+  dragSpecCallbackAtNewState: (() => DragSpec<T>) | undefined;
+  position: Vec2;
+};
+
+type Manifold<T> = {
+  points: ManifoldPoint<T>[];
+  delaunay: Delaunay<Delaunay.Point>;
+};
+
+type DragState<T> =
+  | { type: "idle"; state: T }
+  | {
+      type: "dragging";
+      draggedPath: string;
+      draggedId: string | null;
+      pointerLocal: Vec2;
+      startingPoint: ManifoldPoint<T>;
+      manifolds: Manifold<T>[];
+    }
+  | {
+      type: "dragging-params";
+      draggedPath: string;
+      draggedId: string | null;
+      pointerLocal: Vec2;
+      curParams: number[];
+      stateFromParams: (...params: number[]) => T;
+    }
+  | {
+      type: "animating";
+      startFlattened: FlattenedSvg;
+      targetFlattened: FlattenedSvg;
+      targetState: T;
+      easing: (t: number) => number;
+      startTime: number;
+      duration: number;
+    };
+
+function findByPathInFlattened(
+  path: string,
+  flattened: FlattenedSvg,
+): SvgElem | null {
+  for (const element of flattened.values()) {
+    const found = findByPath(path, element);
+    if (found) return found;
+  }
+  return null;
+}
+
+const onDragPropName = "data-on-drag";
+
+const onDragPropValueSymbol: unique symbol = Symbol();
+
+export type OnDragPropValue<T> = {
+  type: typeof onDragPropValueSymbol;
+  value: () => DragSpec<T>;
+};
+
+function isOnDragPropValue<T>(value: unknown): value is OnDragPropValue<T> {
+  return isObject(value) && value.type === onDragPropValueSymbol;
+}
+
+function drag<T>(
+  dragSpec: (() => DragSpec<T>) | DragSpec<T>,
+): OnDragPropValue<T> {
+  return {
+    type: onDragPropValueSymbol,
+    value: typeof dragSpec === "function" ? dragSpec : () => dragSpec,
+  };
+}
+
+export type Drag<T> = typeof drag<T>;
+
+function draggable<T>(
+  element: SvgElem,
+  dragSpec: (() => DragSpec<T>) | DragSpec<T>,
+): SvgElem {
+  return cloneElement(element, {
+    [onDragPropName as any]: drag(
+      typeof dragSpec === "function" ? dragSpec : () => dragSpec,
+    ),
+  });
+}
+
+export type Draggable<T> = typeof draggable<T>;
+
+function getDragSpecCallbackOnElement<T>(
+  element: ReactElement,
+): (() => DragSpec<T>) | undefined {
+  const props = element.props as any;
+  const maybeOnDragPropValue = props[onDragPropName];
+  // it's ok for it to be missing
+  if (!maybeOnDragPropValue) return undefined;
+  // it's ok for it to be the right type
+  if (isOnDragPropValue<T>(maybeOnDragPropValue)) {
+    return maybeOnDragPropValue.value;
+  }
+  // otherwise, error
+  throw new ErrorWithJSX(
+    `${onDragPropName} can only be set by drag() helper.`,
+    (
+      <>
+        <p className="mb-2">
+          When you set <span className="font-mono">{onDragPropName}</span>, the
+          argument must be wrapped in a call to{" "}
+          <span className="font-mono">drag()</span>.
+        </p>
+        {typeof maybeOnDragPropValue === "function" ? (
+          <p className="mb-2">
+            It looks like you set{" "}
+            <span className="font-mono">{onDragPropName}</span> to a function.
+            Callbacks should be wrapped in{" "}
+            <span className="font-mono">drag()</span> too!
+          </p>
+        ) : (
+          <>
+            <p className="mb-2">Got value:</p>
+            <PrettyPrint value={maybeOnDragPropValue} />
+          </>
+        )}
+      </>
+    ),
+  );
+}
+
+// Recurse through the SVG tree, applying a desired function to all draggable elements
+function mapDraggables<T>(
+  node: SvgElem,
+  fn: (el: SvgElem, dragSpecCallback: () => DragSpec<T>) => SvgElem,
+): SvgElem {
+  const props = node.props as any;
+
+  const newElement = cloneElement(node, {
+    children: emptyToUndefined(
+      Children.toArray(props.children).map((child) =>
+        isValidElement(child) ? mapDraggables(child as SvgElem, fn) : child,
+      ),
+    ),
+  });
+
+  const dragSpecCallback = getDragSpecCallbackOnElement<T>(node);
+  return dragSpecCallback ? fn(newElement, dragSpecCallback) : newElement;
+}
+
+function stripDraggables<T>(node: SvgElem): SvgElem {
+  return mapDraggables<T>(node, (el) =>
+    cloneElement(el, {
+      [onDragPropName as any]: undefined,
+    }),
+  );
+}
+
+function postProcessForDrawing(element: SvgElem): FlattenedSvg {
+  return pipe(element, assignPaths, accumulateTransforms, flattenSvg);
+}
+
+function computeEnterDraggingMode<T extends object, Config>(
+  state: T,
+  draggedPath: string,
+  draggedId: string | null,
+  dragSpec: DragSpec<T>,
+  pointerLocal: Vec2,
+  manipulable: Manipulable<T, Config>,
+  diagramConfig: Config,
+): DragState<T> {
+  console.log("enterDraggingMode", state, draggedPath);
+
+  if (hasKey(dragSpec, "initParams")) {
+    return {
+      type: "dragging-params",
+      draggedPath,
+      draggedId,
+      pointerLocal,
+      curParams: dragSpec.initParams,
+      stateFromParams: dragSpec.stateFromParams,
+    };
+  }
+
+  if (hasKey(dragSpec, "paramPaths")) {
+    return {
+      type: "dragging-params",
+      draggedPath,
+      draggedId,
+      pointerLocal,
+      curParams: dragSpec.paramPaths.map((path) => getAtPath(state, path)),
+      stateFromParams: (...params: number[]) => {
+        let newState = state;
+        dragSpec.paramPaths.forEach((path, idx) => {
+          newState = setAtPath(newState, path, params[idx]);
+        });
+        return newState;
+      },
+    };
+  }
+
+  const manifoldSpecs = pipe(
+    manyToArray(dragSpec),
+    (arr) => (arr.length === 0 ? [span([])] : arr), // things go wrong if no manifolds
+  );
+
+  console.log("dragSpec", dragSpec);
+
+  console.log("manifoldSpecs");
+  // prettyLog(manifoldSpecs);
+
+  const makeManifoldPoint = (s: T): ManifoldPoint<T> => {
+    console.log("makeManifoldPoint", s);
+    // Use a no-op draggable to avoid attaching event handlers
+    const content = manipulable({
+      state: s,
+      // draggable: makeDraggable(draggablePath),
+      draggable,
+      drag,
+      draggedId,
+      setState: noOp,
+      config: diagramConfig,
+    });
+    const flattened = postProcessForDrawing(content);
+    // prettyLog(flattened, { label: "flattened in makeManifoldPoint" });
+    console.log("gonna find", draggedPath, "in flattened:");
+    // prettyLog(flattened);
+    const element = findByPathInFlattened(draggedPath, flattened);
+    assert(
+      !!element,
+      "makeManifoldPoint: can't find draggable element in flattened SVG",
+    );
+
+    console.log("making manifold point; element:");
+    prettyLog(element);
+
+    const accumulatedTransform = getAccumulatedTransform(element);
+    const transforms = parseTransform(accumulatedTransform || "");
+
+    return {
+      state: s,
+      flattened,
+      position: localToGlobal(transforms, pointerLocal),
+      dragSpecCallbackAtNewState: getDragSpecCallbackOnElement<T>(element),
+    };
+  };
+
+  const startingPoint = makeManifoldPoint(state);
+
+  const manifolds = manifoldSpecs.map(({ states }) => {
+    const points = [
+      startingPoint,
+      ...states
+        .filter((s) => !_.isEqual(s, state))
+        .map((state) => makeManifoldPoint(state)),
+    ];
+    const delaunay = Delaunay.from(points.map((info) => info.position.arr()));
+    return { points, delaunay };
+  });
+
+  return {
+    type: "dragging",
+    draggedPath,
+    draggedId,
+    pointerLocal,
+    startingPoint,
+    manifolds,
+  };
+}
+
+function computeRenderState<T extends object, Config>(
+  dragState: DragState<T>,
+  pointer: { x: number; y: number } | null,
+  drawerConfig: {
+    snapRadius: number;
+    chainDrags: boolean;
+    relativePointerMotion: boolean;
+    animationDuration: number;
+  },
+  manipulable: Manipulable<T, Config>,
+  postProcessForInteraction: (element: SvgElem, state: T) => FlattenedSvg,
+  setDragState: (newDragState: DragState<T>) => void,
+  diagramConfig: Config,
+): {
+  flattenedToRender: FlattenedSvg;
+  currentFlattened: FlattenedSvg;
+  newState: T | null;
+  pendingTransition: DragState<T> | null;
+  debugRender: React.ReactNode;
+} {
+  let flattenedToRender: FlattenedSvg;
+  let currentFlattened: FlattenedSvg = new Map();
+  let newState: T | null = null;
+  let pendingTransition: DragState<T> | null = null;
+  let debugRender: React.ReactElement[] = [];
+
+  if (dragState.type === "idle") {
+    // console.log("rendering while idle");
+    const content = manipulable({
+      state: dragState.state,
+      // draggable: makeDraggable(undefined),
+      draggable,
+      drag,
+      draggedId: null,
+      setState: (
+        newState: SetStateAction<T>,
+        {
+          easing = d3Ease.easeCubicInOut,
+          seconds = 0.4,
+          immediate = false,
+        } = {},
+      ) => {
+        newState =
+          typeof newState === "function" ? newState(dragState.state) : newState;
+
+        if (immediate) {
+          setDragState({
+            type: "idle",
+            state: newState,
+          });
+          return;
+        }
+
+        // animate to new state
+        const endContent = manipulable({
+          state: newState,
+          draggable,
+          drag,
+          draggedId: null,
+          setState: noOp,
+          config: diagramConfig,
+        });
+        setDragState({
+          type: "animating",
+          startFlattened: postProcessForDrawing(content),
+          targetFlattened: postProcessForDrawing(endContent),
+          targetState: newState,
+          startTime: Date.now(),
+          easing,
+          duration: seconds * 1000,
+        });
+      },
+      config: diagramConfig,
+    });
+    // console.log("content from idle state:", content);
+    flattenedToRender = postProcessForInteraction(content, dragState.state);
+    currentFlattened = flattenedToRender;
+  } else if (dragState.type === "animating") {
+    const now = Date.now();
+    const elapsed = now - dragState.startTime;
+    const progress = Math.min(elapsed / dragState.duration, 1);
+    const easedProgress = dragState.easing(progress);
+
+    flattenedToRender = lerpFlattened(
+      dragState.startFlattened,
+      dragState.targetFlattened,
+      easedProgress,
+    );
+  } else if (dragState.type === "dragging") {
+    assert(!!pointer, "Pointer must be defined while dragging");
+
+    const draggableDestPt = Vec2(pointer);
+
+    const manifoldProjections = dragState.manifolds.map((manifold) => ({
+      ...projectOntoConvexHull(manifold.delaunay, draggableDestPt),
+      manifold,
+    }));
+
+    // Compute debug visualization
+    manifoldProjections.forEach((proj, manifoldIdx) => {
+      const { manifold, projectedPt } = proj;
+
+      // Draw red circles at manifold points
+      manifold.points.forEach((pt, ptIdx) => {
+        debugRender.push(
+          <circle
+            key={`manifold-${manifoldIdx}-point-${ptIdx}`}
+            cx={pt.position.x}
+            cy={pt.position.y}
+            r={drawerConfig.snapRadius}
+            fill="red"
+            opacity={0.3}
+          />,
+        );
+      });
+
+      // Draw red triangulation edges
+      const { triangles, points } = manifold.delaunay;
+      for (let i = 0; i < triangles.length; i += 3) {
+        const ax = points[2 * triangles[i]];
+        const ay = points[2 * triangles[i] + 1];
+        const bx = points[2 * triangles[i + 1]];
+        const by = points[2 * triangles[i + 1] + 1];
+        const cx = points[2 * triangles[i + 2]];
+        const cy = points[2 * triangles[i + 2] + 1];
+
+        debugRender.push(
+          <path
+            key={`manifold-${manifoldIdx}-tri-${i / 3}`}
+            d={`M ${ax} ${ay} L ${bx} ${by} L ${cx} ${cy} Z`}
+            stroke="red"
+            strokeWidth={2}
+            fill="none"
+          />,
+        );
+      }
+
+      // Draw blue circle at projected point
+      debugRender.push(
+        <circle
+          key={`manifold-${manifoldIdx}-projection`}
+          cx={projectedPt.x}
+          cy={projectedPt.y}
+          r={10}
+          stroke="blue"
+          strokeWidth={2}
+          fill="none"
+        />,
+      );
+
+      // Draw blue line from draggable dest to projected point
+      debugRender.push(
+        <line
+          key={`manifold-${manifoldIdx}-line`}
+          x1={draggableDestPt.x}
+          y1={draggableDestPt.y}
+          x2={projectedPt.x}
+          y2={projectedPt.y}
+          stroke="blue"
+          strokeWidth={2}
+        />,
+      );
+    });
+
+    const bestManifoldProjection = _.minBy(
+      manifoldProjections,
+      (proj) => proj.dist,
+    )!;
+
+    if (drawerConfig.relativePointerMotion) {
+      // TODO: implement relative pointer motion
+      // dragState.pointerOffset = Vec2(pointer).sub(
+      //   bestManifoldProjection.projectedPt,
+      // );
+    }
+
+    const closestManifoldPt = _.minBy(
+      dragState.manifolds.flatMap((m) => m.points),
+      (info) => draggableDestPt.dist(info.position),
+    )!;
+
+    newState = closestManifoldPt.state;
+
+    // Check if it's time to snap
+    if (
+      drawerConfig.chainDrags &&
+      bestManifoldProjection.projectedPt.dist(closestManifoldPt.position) <
+        drawerConfig.snapRadius
+    ) {
+      if (!_.isEqual(newState, dragState.startingPoint.state)) {
+        // time to snap!
+
+        const dragSpecCallback = closestManifoldPt.dragSpecCallbackAtNewState;
+
+        // console.log("snapping to new state", newState, dragSpecCallback);
+
+        // special case: the thing we're snapping to doesn't have a drag spec at all
+        if (!dragSpecCallback) {
+          pendingTransition = { type: "idle", state: newState };
+        } else {
+          // normal case
+          pendingTransition = computeEnterDraggingMode(
+            newState,
+            dragState.draggedPath,
+            dragState.draggedId,
+            dragSpecCallback(),
+            dragState.pointerLocal,
+            manipulable,
+            diagramConfig,
+          );
+        }
+      }
+      flattenedToRender = closestManifoldPt.flattened;
+    } else {
+      // Interpolate based on projection type
+      if (bestManifoldProjection.type === "vertex") {
+        const { ptIdx } = bestManifoldProjection;
+        flattenedToRender =
+          bestManifoldProjection.manifold.points[ptIdx].flattened;
+      } else if (bestManifoldProjection.type === "edge") {
+        const { ptIdx0, ptIdx1, t } = bestManifoldProjection;
+        flattenedToRender = lerpFlattened(
+          bestManifoldProjection.manifold.points[ptIdx0].flattened,
+          bestManifoldProjection.manifold.points[ptIdx1].flattened,
+          t,
+        );
+      } else {
+        const { ptIdx0, ptIdx1, ptIdx2, barycentric } = bestManifoldProjection;
+        flattenedToRender = lerpFlattened3(
+          bestManifoldProjection.manifold.points[ptIdx0].flattened,
+          bestManifoldProjection.manifold.points[ptIdx1].flattened,
+          bestManifoldProjection.manifold.points[ptIdx2].flattened,
+          barycentric,
+        );
+      }
+    }
+    // console.log("render while dragging");
+  } else if (dragState.type === "dragging-params") {
+    assert(!!pointer, "Pointer must be defined while dragging-params");
+
+    const objectiveFn = (params: number[]) => {
+      const candidateState = dragState.stateFromParams(...params);
+      const content = pipe(
+        manipulable({
+          state: candidateState,
+          // draggable: makeDraggable(dragState.draggablePath),
+          draggable,
+          drag,
+          draggedId: dragState.draggedId,
+          setState: noOp,
+          config: diagramConfig,
+        }),
+        assignPaths,
+        accumulateTransforms,
+      );
+      const element = findByPath(dragState.draggedPath, content);
+      if (!element) return Infinity;
+      const accumulateTransform = getAccumulatedTransform(element);
+      const transforms = parseTransform(accumulateTransform || "");
+      const pos = localToGlobal(transforms, dragState.pointerLocal);
+      return pos.dist2(pointer);
+    };
+
+    const r = minimize(objectiveFn, dragState.curParams);
+    dragState.curParams = r.solution;
+
+    newState = dragState.stateFromParams(...dragState.curParams);
+    const content = manipulable({
+      state: newState,
+      // draggable: makeDraggable(dragState.draggablePath),
+      draggable,
+      drag,
+      draggedId: dragState.draggedId,
+      setState: noOp,
+      config: diagramConfig,
+    });
+    flattenedToRender = postProcessForDrawing(content);
+
+    // Debug rendering for dragging-params
+    const processedContent = pipe(content, assignPaths, accumulateTransforms);
+    const element = findByPath(dragState.draggedPath, processedContent);
+    if (element) {
+      const accumulateTransform = getAccumulatedTransform(element);
+      const transforms = parseTransform(accumulateTransform || "");
+      const achievedPos = localToGlobal(transforms, dragState.pointerLocal);
+
+      debugRender.push(
+        <circle
+          key="dragging-params-achieved"
+          cx={achievedPos.x}
+          cy={achievedPos.y}
+          r={5}
+          fill="green"
+          stroke="darkgreen"
+          strokeWidth={2}
+        />,
+      );
+
+      debugRender.push(
+        <line
+          key="dragging-params-line"
+          x1={achievedPos.x}
+          y1={achievedPos.y}
+          x2={pointer.x}
+          y2={pointer.y}
+          stroke="orange"
+          strokeWidth={2}
+          strokeDasharray="4 4"
+        />,
+      );
+    }
+  } else {
+    assertNever(dragState);
+  }
+
+  return {
+    flattenedToRender,
+    currentFlattened,
+    newState,
+    pendingTransition,
+    debugRender,
+  };
+}
+
+interface ManipulableProps<T extends object, Config> {
+  manipulable: Manipulable<T, Config>;
+  initialState: T;
+  width?: number;
+  height?: number;
+  drawerConfig?: {
+    snapRadius?: number;
+    chainDrags?: boolean;
+    relativePointerMotion?: boolean;
+    animationDuration?: number;
+  };
+  diagramConfig: Config;
+}
+
+export function ManipulableDrawer<T extends object, Config>({
+  manipulable,
+  initialState,
+  width,
+  height,
+  drawerConfig = {},
+  diagramConfig,
+}: ManipulableProps<T, Config>) {
+  // console.log("ManipulableDrawer render");
+
+  const { onDragStateChange, debugView } = useDemoContext();
+
+  const [dragState, setDragStateRaw] = useState<DragState<T>>({
+    type: "idle",
+    state: initialState,
+  });
+  const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
+  const pendingStateTransition = useRef<DragState<T> | null>(null);
+
+  const drawerConfigWithDefaults = {
+    snapRadius: drawerConfig.snapRadius ?? 10,
+    chainDrags: drawerConfig.chainDrags ?? true,
+    relativePointerMotion: drawerConfig.relativePointerMotion ?? false,
+    animationDuration: drawerConfig.animationDuration ?? 300,
+  };
+
+  const setDragState = useCallback(
+    (newDragState: DragState<T>) => {
+      // console.log("setDragState", newDragState);
+      setDragStateRaw(newDragState);
+      onDragStateChange?.(newDragState);
+    },
+    [onDragStateChange],
+  );
+
+  // Animation loop
+  useEffect(() => {
+    let rafId: number;
+    const animate = () => {
+      if (dragState.type === "animating") {
+        const now = Date.now();
+        const elapsed = now - dragState.startTime;
+        const progress = Math.min(elapsed / dragState.duration, 1);
+
+        if (progress >= 1) {
+          setDragState({ type: "idle", state: dragState.targetState });
+        } else {
+          setDragStateRaw({ ...dragState });
+          rafId = requestAnimationFrame(animate);
+        }
+      }
+    };
+    if (dragState.type === "animating") {
+      rafId = requestAnimationFrame(animate);
+    }
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [dragState, setDragState]);
+
+  // Handle pending state transitions from render
+  useLayoutEffect(() => {
+    if (pendingStateTransition.current) {
+      setDragState(pendingStateTransition.current);
+      pendingStateTransition.current = null;
+    }
+  });
+
+  const [svgElem, setSvgElem] = useState<SVGSVGElement | null>(null);
+
+  function postProcessForInteraction(element: SvgElem, state: T): FlattenedSvg {
+    return pipe(
+      element,
+      (el) => {
+        // prettyLog(el, { label: "original element" });
+        return el;
+      },
+      assignPaths,
+      (el) => {
+        // prettyLog(el, { label: "postProcessForInteraction element" });
+        return el;
+      },
+      accumulateTransforms,
+      (el) =>
+        mapDraggables<T>(el, (el, dragSpecCallback) => {
+          return cloneElement(el, {
+            style: { cursor: "grab", ...(el.props.style || {}) },
+            onPointerDown: (e: PointerEvent) => {
+              // console.log("onPointerDown");
+              e.stopPropagation();
+              assert(!!svgElem, "SVG element must be set");
+              const rect = svgElem.getBoundingClientRect();
+              const pointerPos = Vec2(
+                e.clientX - rect.left,
+                e.clientY - rect.top,
+              );
+              setPointer(pointerPos);
+              const accumulatedTransform = getAccumulatedTransform(el);
+              const transforms = parseTransform(accumulatedTransform || "");
+              const pointerLocal = globalToLocal(transforms, pointerPos);
+              const path = getPath(el);
+              assert(!!path, "Draggable element must have a path");
+              setDragState(
+                computeEnterDraggingMode(
+                  state,
+                  path,
+                  el.props.id || null,
+                  dragSpecCallback(),
+                  pointerLocal,
+                  manipulable,
+                  diagramConfig,
+                ),
+              );
+            },
+          });
+        }),
+      flattenSvg,
+    );
+  }
+
+  const renderState = computeRenderState(
+    dragState,
+    pointer,
+    drawerConfigWithDefaults,
+    manipulable,
+    postProcessForInteraction,
+    setDragState,
+    diagramConfig,
+  );
+  const { flattenedToRender, newState, pendingTransition, debugRender } =
+    renderState;
+
+  if (pendingTransition) {
+    pendingStateTransition.current = pendingTransition;
+  }
+
+  useEffect(() => {
+    if (dragState.type === "dragging" || dragState.type === "dragging-params") {
+      document.body.style.cursor = "grabbing";
+    } else {
+      document.body.style.cursor = "default";
+    }
+  }, [dragState.type]);
+
+  // Attach document-level event listeners during drag
+  useEffect(() => {
+    if (!svgElem) return;
+
+    if (dragState.type !== "dragging" && dragState.type !== "dragging-params") {
+      return;
+    }
+
+    const handlePointerMove = (e: globalThis.PointerEvent) => {
+      const rect = svgElem.getBoundingClientRect();
+      setPointer({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    };
+
+    const handlePointerUp = () => {
+      if (dragState.type === "dragging" && newState) {
+        const targetContent = manipulable({
+          state: newState,
+          // draggable: makeDraggable(undefined),
+          draggable,
+          drag,
+          draggedId: null,
+          setState: noOp,
+          config: diagramConfig,
+        });
+        setDragState({
+          type: "animating",
+          startFlattened: flattenedToRender,
+          targetFlattened: postProcessForDrawing(targetContent),
+          targetState: newState,
+          startTime: Date.now(),
+          easing: d3Ease.easeElastic,
+          duration: drawerConfigWithDefaults.animationDuration,
+        });
+      } else if (dragState.type === "dragging-params" && newState) {
+        setDragState({ type: "idle", state: newState });
+      }
+    };
+
+    const handlePointerCancel = () => {
+      setPointer(null);
+    };
+
+    document.addEventListener("pointermove", handlePointerMove);
+    document.addEventListener("pointerup", handlePointerUp);
+    document.addEventListener("pointercancel", handlePointerCancel);
+
+    return () => {
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerup", handlePointerUp);
+      document.removeEventListener("pointercancel", handlePointerCancel);
+    };
+  }, [
+    drawerConfig,
+    diagramConfig,
+    dragState.type,
+    drawerConfig.animationDuration,
+    flattenedToRender,
+    manipulable,
+    newState,
+    setDragState,
+    svgElem,
+    drawerConfigWithDefaults.animationDuration,
+  ]);
+
+  // Sort by data-z-index for rendering order
+  const sortedEntries = Array.from(flattenedToRender.entries()).sort(
+    ([_keyA, elemA], [_keyB, elemB]) => {
+      const zIndexA = parseInt((elemA.props as any)["data-z-index"]) || 0;
+      const zIndexB = parseInt((elemB.props as any)["data-z-index"]) || 0;
+      return zIndexA - zIndexB;
+    },
+  );
+
+  // prettyLog(sortedEntries, { label: "sortedEntries for rendering" });
+
+  return (
+    <svg
+      ref={setSvgElem}
+      width={width}
+      height={height}
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ overflow: "visible" }}
+    >
+      {sortedEntries.map(([key, element]) => (
+        <Fragment key={key}>{stripDraggables(element)}</Fragment>
+      ))}
+      {debugView && debugRender}
+    </svg>
+  );
+}

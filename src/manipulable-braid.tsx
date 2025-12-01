@@ -1,7 +1,7 @@
 import { produce } from "immer";
 import _ from "lodash";
-import { span } from "./manipulable";
-import { ManipulableSvg, translate } from "./manipulable-svg";
+import { span } from "./DragSpec";
+import { Manipulable, translate } from "./manipulable";
 
 type State = {
   n: number;
@@ -9,7 +9,7 @@ type State = {
   buds: boolean;
 };
 
-export const manipulableBraid: ManipulableSvg<State> = ({
+export const manipulableBraid: Manipulable<State> = ({
   state,
   draggable,
   draggedId,

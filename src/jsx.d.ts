@@ -1,5 +1,5 @@
 import "react";
-import type { OnDragPropValue } from "./manipulable-svg";
+import type { OnDragPropValue } from "./manipulable";
 
 declare module "react" {
   interface SVGAttributes<T> {

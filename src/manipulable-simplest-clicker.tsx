@@ -1,12 +1,12 @@
-import { ManipulableSvg } from "./manipulable-svg";
+import { Manipulable } from "./manipulable";
 
 type State = {
   colorIdx: number;
 };
 
-export const stateSimplestClickerSvg: State = { colorIdx: 0 };
+export const stateSimplestClicker: State = { colorIdx: 0 };
 
-export const manipulableSimplestClickerSvg: ManipulableSvg<State> = ({
+export const manipulableSimplestClicker: Manipulable<State> = ({
   state,
   setState,
 }) => {
