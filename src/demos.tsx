@@ -2,50 +2,28 @@ import { ReactElement } from "react";
 import { Demo } from "./Demo";
 import { numsAtPaths, straightTo } from "./DragSpec";
 import { rotate, scale, translate } from "./manipulable";
-import { manipulableAngle, stateAngle } from "./manipulable-angle";
-import {
-  manipulableAngleViaTransform,
-  stateAngleViaTransform,
-} from "./manipulable-angle-via-transform";
-import { manipulableBraid } from "./manipulable-braid";
-import { manipulableClock, stateClock } from "./manipulable-clock";
-import { manipulableGraph, stateGraph } from "./manipulable-graph";
-import { manipulableGridPoly, stateGridPoly1 } from "./manipulable-grid-poly";
-import {
-  ConfigPanelNoolTree,
-  defaultConfigNool,
-  manipulableNoolTree,
-  stateNoolTree1,
-  stateNoolTree2,
-} from "./manipulable-nool-tree";
-import {
-  manipulableOutline,
-  stateOutline1,
-  stateOutlineTreeOfLife,
-} from "./manipulable-outline";
-import { manipulablePerm, statePerm1 } from "./manipulable-perm";
-import {
-  manipulablePermDouble,
-  statePermDouble1,
-} from "./manipulable-perm-double";
-import {
-  manipulableSecondSimplest,
-  stateSecondSimplest,
-} from "./manipulable-second-simplest";
-import {
-  manipulableSimplestClicker,
-  stateSimplestClicker,
-} from "./manipulable-simplest-clicker";
-import { manipulableSpinny, stateSpinny1 } from "./manipulable-spinny";
-import { manipulableTiles, stateTilesLonely } from "./manipulable-tiles";
-import { manipulableTodo, stateTodo1 } from "./manipulable-todo";
+import { Angle } from "./manipulable-angle";
+import { AngleViaTransform } from "./manipulable-angle-via-transform";
+import { Braid } from "./manipulable-braid";
+import { Clock } from "./manipulable-clock";
+import { Graph } from "./manipulable-graph";
+import { GridPoly } from "./manipulable-grid-poly";
+import { NoolTree } from "./manipulable-nool-tree";
+import { Outline } from "./manipulable-outline";
+import { Perm } from "./manipulable-perm";
+import { PermDouble } from "./manipulable-perm-double";
+import { SecondSimplest } from "./manipulable-second-simplest";
+import { SimplestClicker } from "./manipulable-simplest-clicker";
+import { Spinny } from "./manipulable-spinny";
+import { Tiles } from "./manipulable-tiles";
+import { Todo } from "./manipulable-todo";
 
 export const demos: ReactElement[] = [
   <Demo
     id="second-simplest"
     title="Second simplest"
-    manipulable={manipulableSecondSimplest}
-    initialState={stateSecondSimplest}
+    manipulable={SecondSimplest.manipulable}
+    initialState={SecondSimplest.state1}
     height={200}
     padding={20}
   />,
@@ -73,16 +51,16 @@ export const demos: ReactElement[] = [
   <Demo
     id="simplest-clicker"
     title="Simplest clicker"
-    manipulable={manipulableSimplestClicker}
-    initialState={stateSimplestClicker}
+    manipulable={SimplestClicker.manipulable}
+    initialState={SimplestClicker.state1}
     height={200}
     padding={20}
   />,
   <Demo
     id="todo"
     title="Todo"
-    manipulable={manipulableTodo}
-    initialState={stateTodo1}
+    manipulable={Todo.manipulable}
+    initialState={Todo.state1}
     height={400}
     padding={20}
   />,
@@ -90,8 +68,8 @@ export const demos: ReactElement[] = [
     id="lonely-tile-on-a-grid"
     title="Lonely tile on a grid"
     notes="I'm trying to make dragging feel right here. Goal is for the tile to only drag orthogonally, AND to not jump discontinuously. This seems to require 'Relative Pointer Motion' mode (or divergent approaches)."
-    manipulable={manipulableTiles}
-    initialState={stateTilesLonely}
+    manipulable={Tiles.manipulable}
+    initialState={Tiles.stateLonely}
     height={300}
     padding={20}
     initialRelativePointerMotion={true}
@@ -99,31 +77,31 @@ export const demos: ReactElement[] = [
   <Demo
     id="grid-polygon"
     title="Grid polygon"
-    manipulable={manipulableGridPoly}
-    initialState={stateGridPoly1}
+    manipulable={GridPoly.manipulable}
+    initialState={GridPoly.state1}
     height={300}
     padding={20}
   />,
   <Demo
     id="permutation"
     title="Permutation"
-    manipulable={manipulablePerm}
-    initialState={statePerm1}
+    manipulable={Perm.manipulable}
+    initialState={Perm.state1}
     height={100}
     padding={15}
   />,
   <Demo
     id="permutation-of-permutations"
     title="Permutation of permutations"
-    manipulable={manipulablePermDouble}
-    initialState={statePermDouble1}
+    manipulable={PermDouble.manipulable}
+    initialState={PermDouble.state1}
     height={200}
   />,
   <Demo
     id="spinny"
     title="Spinny"
-    manipulable={manipulableSpinny}
-    initialState={stateSpinny1}
+    manipulable={Spinny.manipulable}
+    initialState={Spinny.state1}
     height={200}
     padding={30}
     initialRelativePointerMotion={false}
@@ -131,32 +109,32 @@ export const demos: ReactElement[] = [
   <Demo
     id="nool-tree"
     title="Nool tree"
-    manipulable={manipulableNoolTree}
-    initialState={stateNoolTree1}
+    manipulable={NoolTree.manipulable}
+    initialState={NoolTree.state1}
     height={350}
     padding={20}
     initialSnapRadius={1}
     initialRelativePointerMotion={true}
-    defaultConfig={defaultConfigNool}
-    ConfigPanel={ConfigPanelNoolTree}
+    defaultConfig={NoolTree.defaultConfig}
+    ConfigPanel={NoolTree.ConfigPanel}
   />,
   <Demo
     id="nool-tree-simpler"
     title="Nool tree, simpler"
-    manipulable={manipulableNoolTree}
-    initialState={stateNoolTree2}
+    manipulable={NoolTree.manipulable}
+    initialState={NoolTree.state2}
     height={200}
     padding={20}
     initialSnapRadius={1}
     initialRelativePointerMotion={true}
-    defaultConfig={defaultConfigNool}
-    ConfigPanel={ConfigPanelNoolTree}
+    defaultConfig={NoolTree.defaultConfig}
+    ConfigPanel={NoolTree.ConfigPanel}
   />,
   <Demo
     id="outline"
     title="Outline"
-    manipulable={manipulableOutline}
-    initialState={stateOutline1}
+    manipulable={Outline.manipulable}
+    initialState={Outline.state1}
     height={400}
     padding={20}
     initialSnapRadius={5}
@@ -164,8 +142,8 @@ export const demos: ReactElement[] = [
   <Demo
     id="tree-of-life"
     title="Tree of Life"
-    manipulable={manipulableOutline}
-    initialState={stateOutlineTreeOfLife}
+    manipulable={Outline.manipulable}
+    initialState={Outline.stateTreeOfLife}
     height={1100}
     padding={20}
     initialSnapRadius={5}
@@ -173,24 +151,24 @@ export const demos: ReactElement[] = [
   <Demo
     id="graph"
     title="Graph"
-    manipulable={manipulableGraph}
-    initialState={stateGraph}
+    manipulable={Graph.manipulable}
+    initialState={Graph.state1}
     height={200}
     padding={20}
   />,
   <Demo
     id="angle"
     title="Angle"
-    manipulable={manipulableAngle}
-    initialState={stateAngle}
+    manipulable={Angle.manipulable}
+    initialState={Angle.state1}
     height={200}
     padding={20}
   />,
   <Demo
     id="angle-via-transform"
     title="Angle (via transform)"
-    manipulable={manipulableAngleViaTransform}
-    initialState={stateAngleViaTransform}
+    manipulable={AngleViaTransform.manipulable}
+    initialState={AngleViaTransform.state1}
     height={200}
     padding={20}
   />,
@@ -248,15 +226,15 @@ export const demos: ReactElement[] = [
   <Demo
     id="clock"
     title="Clock"
-    manipulable={manipulableClock}
-    initialState={stateClock}
+    manipulable={Clock.manipulable}
+    initialState={Clock.state1}
     height={200}
     padding={20}
   />,
   <Demo
     id="braids"
     title="Braids"
-    manipulable={manipulableBraid}
+    manipulable={Braid.manipulable}
     initialState={{ n: 2, seq: [] as const, buds: true }}
     height={200}
     padding={20}
