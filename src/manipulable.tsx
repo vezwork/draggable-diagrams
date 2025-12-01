@@ -806,6 +806,7 @@ export function ManipulableDrawer<T extends object, Config>({
     state: initialState,
   });
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
+  const [paused, setPaused] = useState(false);
   const pendingStateTransition = useRef<DragState<T> | null>(null);
 
   const drawerConfigWithDefaults = {
@@ -856,6 +857,20 @@ export function ManipulableDrawer<T extends object, Config>({
       pendingStateTransition.current = null;
     }
   });
+
+  // Handle pause keyboard shortcut (cmd-p or ctrl-p)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "p") {
+        e.preventDefault();
+        setPaused((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const [svgElem, setSvgElem] = useState<SVGSVGElement | null>(null);
 
@@ -946,11 +961,13 @@ export function ManipulableDrawer<T extends object, Config>({
     }
 
     const handlePointerMove = (e: globalThis.PointerEvent) => {
+      if (paused) return;
       const rect = svgElem.getBoundingClientRect();
       setPointer({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     };
 
     const handlePointerUp = () => {
+      if (paused) return;
       if (dragState.type === "dragging" && newState) {
         const targetContent = manipulable({
           state: newState,
@@ -996,6 +1013,7 @@ export function ManipulableDrawer<T extends object, Config>({
     flattenedToRender,
     manipulable,
     newState,
+    paused,
     setDragState,
     svgElem,
     drawerConfigWithDefaults.animationDuration,
