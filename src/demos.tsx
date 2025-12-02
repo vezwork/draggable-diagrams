@@ -27,16 +27,6 @@ import { Todo } from "./manipulable-todo";
 
 export const demos: ReactElement[] = [
   <Demo
-    id="bezier"
-    title="Bezier Curve Editor"
-    notes="Drag the endpoints (red) or control points (yellow) orrrrr the curve (??)."
-    manipulable={Bezier.manipulable}
-    initialState={Bezier.state2}
-    height={200}
-    padding={20}
-    sourceFile="manipulable-bezier.tsx"
-  />,
-  <Demo
     id="simplest"
     title="Simplest"
     manipulable={Simplest.manipulable}
@@ -182,6 +172,16 @@ export const demos: ReactElement[] = [
     height={200}
     padding={20}
     sourceFile="manipulable-angle-via-transform.tsx"
+  />,
+  <Demo
+    id="bezier"
+    title="Bezier Curve Editor"
+    notes="Drag the endpoints (red) or control points (yellow) orrrrr the curve (??)."
+    manipulable={Bezier.manipulable}
+    initialState={Bezier.state2}
+    height={200}
+    padding={20}
+    sourceFile="manipulable-bezier.tsx"
   />,
   <Demo
     id="stretchy-xy"
