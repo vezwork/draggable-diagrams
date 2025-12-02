@@ -4,6 +4,7 @@ import { numsAtPaths } from "./DragSpec";
 import { rotate, scale, translate } from "./manipulable";
 import { Angle } from "./manipulable-angle";
 import { AngleViaTransform } from "./manipulable-angle-via-transform";
+import { Bezier } from "./manipulable-bezier";
 import { Braid } from "./manipulable-braid";
 import { Clock } from "./manipulable-clock";
 import { Fifteen } from "./manipulable-fifteen";
@@ -25,6 +26,16 @@ import { Tiles } from "./manipulable-tiles";
 import { Todo } from "./manipulable-todo";
 
 export const demos: ReactElement[] = [
+  <Demo
+    id="bezier"
+    title="Bezier Curve Editor"
+    notes="Drag the endpoints (red) or control points (yellow) orrrrr the curve (??)."
+    manipulable={Bezier.manipulable}
+    initialState={Bezier.state2}
+    height={200}
+    padding={20}
+    sourceFile="manipulable-bezier.tsx"
+  />,
   <Demo
     id="simplest"
     title="Simplest"
