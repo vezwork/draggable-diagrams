@@ -3,6 +3,8 @@ import { configurable, Configurable, ConfigurableProps } from "./configurable";
 import { Angle } from "./demo-diagrams/angle";
 import { AngleViaTransform } from "./demo-diagrams/angle-via-transform";
 import { Bezier } from "./demo-diagrams/bezier";
+import { BluefishPerm } from "./demo-diagrams/bluefish-perm";
+import { BluefishStatic } from "./demo-diagrams/bluefish-static";
 import { Braid } from "./demo-diagrams/braid";
 import { Clock } from "./demo-diagrams/clock";
 import { Dragon } from "./demo-diagrams/dragon";
@@ -419,5 +421,23 @@ export const demos: SomeDemoData[] = [
     padding: 20,
     initialDrawerConfig: { relativePointerMotion: true },
     sourceFile: "dragon.tsx",
+  }),
+  demoData({
+    id: "bluefish-static",
+    title: "Bluefish test (non-interactive)",
+    manipulable: BluefishStatic.manipulable,
+    initialStates: [BluefishStatic.state1],
+    height: 200,
+    padding: 20,
+    sourceFile: "manipulable-bluefish.tsx",
+  }),
+  demoData({
+    id: "bluefish-perm",
+    title: "Permutation (Bluefish)",
+    manipulable: BluefishPerm.manipulable,
+    initialStates: [BluefishPerm.state1],
+    height: 100,
+    padding: 15,
+    sourceFile: "manipulable-bluefish-perm.tsx",
   }),
 ];

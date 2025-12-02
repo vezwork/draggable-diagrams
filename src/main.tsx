@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { HashRouter, Routes } from "react-router-dom";
 import { autoRoute } from "./autoRoute";
+import { BluefishDemo } from "./bluefish-demo";
 import { DemoListPage, SingleDemoPage } from "./DemoLayout";
 import { DocsIndexPage } from "./DocsIndexPage";
 import { DocsPage } from "./DocsPage";
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         {autoRoute("/demos/:id/inspect/:stateIndex", InspectPage)}
         {autoRoute("/demos/:id", SingleDemoPage)}
         {autoRoute("/pretty-print", PrettyPrintDemo)}
+        {autoRoute("/bluefish", BluefishDemo)}
       </Routes>
     </HashRouter>
   </React.StrictMode>
