@@ -1,7 +1,7 @@
 import { produce } from "immer";
 import _ from "lodash";
+import { Vec2 } from "../math/vec2";
 import { assert } from "../utils";
-import { Vec2 } from "../vec2";
 import { ManipulableCanvas, span } from "./manipulable-canvas";
 import { circle, group, line } from "./shape";
 

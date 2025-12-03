@@ -1,5 +1,5 @@
-import { numsAtPaths } from "./DragSpec";
-import { Manipulable, translate } from "./manipulable";
+import { numsAtPaths } from "../DragSpec";
+import { Manipulable, translate } from "../manipulable";
 
 export namespace Bezier {
   export type State = {

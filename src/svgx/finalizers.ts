@@ -1,7 +1,7 @@
 import React from "react";
 import { Svgx } from ".";
+import { Vec2, Vec2able } from "../math/vec2";
 import { assert, assertDefined } from "../utils";
-import { Vec2, Vec2able } from "../vec2";
 import { accumulateTransforms, shouldRecurseIntoChildren } from "./hoist";
 import { localToGlobal, parseTransform } from "./transform";
 

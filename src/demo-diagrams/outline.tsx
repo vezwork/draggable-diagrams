@@ -1,6 +1,6 @@
-import { span } from "./DragSpec";
-import { Drag, Manipulable, translate } from "./manipulable";
-import { Svgx } from "./svgx";
+import { span } from "../DragSpec";
+import { Drag, Manipulable, translate } from "../manipulable";
+import { Svgx } from "../svgx";
 
 export namespace Outline {
   export type Tree = {

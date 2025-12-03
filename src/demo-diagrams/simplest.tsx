@@ -1,5 +1,5 @@
-import { span } from "./DragSpec";
-import { Manipulable, translate } from "./manipulable";
+import { span } from "../DragSpec";
+import { Manipulable, translate } from "../manipulable";
 
 export namespace Simplest {
   export type State = {

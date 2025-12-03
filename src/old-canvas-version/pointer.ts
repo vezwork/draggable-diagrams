@@ -1,6 +1,6 @@
 import _ from "lodash";
-import { Vec2 } from "../vec2";
-import { debugPoly, pointInPoly, polyArea } from "../xywh";
+import { Vec2 } from "../math/vec2";
+import { debugPoly, pointInPoly, polyArea } from "../math/xywh";
 import { Layer } from "./layer";
 
 // Coordinates statement: In PointerManager, all coordinates are in

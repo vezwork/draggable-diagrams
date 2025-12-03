@@ -1,8 +1,15 @@
 import * as d3 from "d3-shape";
 import _ from "lodash";
+import { lerp, Vec2, Vec2able } from "../math/vec2";
+import {
+  fromCenter,
+  lerpXYWH,
+  mm,
+  pointInPoly,
+  polyXYWH,
+  XYWH,
+} from "../math/xywh";
 import { assert, assertNever, defined, Many, manyToArray } from "../utils";
-import { lerp, Vec2, Vec2able } from "../vec2";
-import { fromCenter, lerpXYWH, mm, pointInPoly, polyXYWH, XYWH } from "../xywh";
 import { Layer } from "./layer";
 import { IPointerManager } from "./pointer";
 

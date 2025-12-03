@@ -1,6 +1,6 @@
 import { produce } from "immer";
-import { straightTo } from "./DragSpec";
-import { Manipulable, rotate, translate } from "./manipulable";
+import { straightTo } from "../DragSpec";
+import { Manipulable, rotate, translate } from "../manipulable";
 
 export namespace Spinny {
   export type State = {

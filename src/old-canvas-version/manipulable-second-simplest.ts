@@ -1,4 +1,4 @@
-import { XYWH } from "../xywh";
+import { XYWH } from "../math/xywh";
 import { ManipulableCanvas, straightTo } from "./manipulable-canvas";
 import { rectangle } from "./shape";
 

@@ -1,7 +1,7 @@
 import _ from "lodash";
+import { Vec2 } from "../math/vec2";
+import { inXYWH, XYWH } from "../math/xywh";
 import { defined } from "../utils";
-import { Vec2 } from "../vec2";
-import { inXYWH, XYWH } from "../xywh";
 import { ManipulableCanvas, straightTo } from "./manipulable-canvas";
 import { group, rectangle } from "./shape";
 

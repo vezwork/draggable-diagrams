@@ -1,7 +1,7 @@
 import { produce } from "immer";
 import _ from "lodash";
-import { andThen, span, straightTo } from "./DragSpec";
-import { Manipulable, translate } from "./manipulable";
+import { andThen, span, straightTo } from "../DragSpec";
+import { Manipulable, translate } from "../manipulable";
 
 type Tile = { key: string; label: string };
 

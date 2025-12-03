@@ -1,7 +1,7 @@
 import _ from "lodash";
-import { ConfigCheckbox } from "./config-controls";
-import { span } from "./DragSpec";
-import { Manipulable, translate } from "./manipulable";
+import { ConfigCheckbox } from "../config-controls";
+import { span } from "../DragSpec";
+import { Manipulable, translate } from "../manipulable";
 
 type Car = {
   x: number;

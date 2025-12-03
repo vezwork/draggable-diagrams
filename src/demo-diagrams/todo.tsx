@@ -1,8 +1,8 @@
 import { produce } from "immer";
 import _ from "lodash";
-import { span } from "./DragSpec";
-import { Manipulable, SetState, translate } from "./manipulable";
-import { Svgx } from "./svgx";
+import { span } from "../DragSpec";
+import { Manipulable, SetState, translate } from "../manipulable";
+import { Svgx } from "../svgx";
 
 export namespace Todo {
   export type TodoItem = {

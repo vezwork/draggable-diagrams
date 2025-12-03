@@ -1,5 +1,5 @@
-import { numAtPath } from "./DragSpec";
-import { Manipulable, rotate, translate } from "./manipulable";
+import { numAtPath } from "../DragSpec";
+import { Manipulable, rotate, translate } from "../manipulable";
 
 export namespace Clock {
   export type State = {

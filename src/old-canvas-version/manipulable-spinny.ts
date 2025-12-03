@@ -1,5 +1,5 @@
-import { Vec2 } from "../vec2";
-import { XYWH } from "../xywh";
+import { Vec2 } from "../math/vec2";
+import { XYWH } from "../math/xywh";
 import { ManipulableCanvas, straightTo } from "./manipulable-canvas";
 import { circle, group, rectangle } from "./shape";
 

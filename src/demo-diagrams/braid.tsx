@@ -1,7 +1,7 @@
 import { produce } from "immer";
 import _ from "lodash";
-import { span } from "./DragSpec";
-import { Manipulable, translate } from "./manipulable";
+import { span } from "../DragSpec";
+import { Manipulable, translate } from "../manipulable";
 
 export namespace Braid {
   export type State = {

@@ -1,4 +1,4 @@
-import { Vec2 } from "../vec2";
+import { Vec2 } from "../math/vec2";
 import { ManipulableCanvas, numAtPath } from "./manipulable-canvas";
 import { circle, Diagram, group, line } from "./shape";
 

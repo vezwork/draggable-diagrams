@@ -1,11 +1,11 @@
 import { Delaunay } from "d3-delaunay";
 import { easeElastic } from "d3-ease";
 import _ from "lodash";
-import { projectOntoConvexHull } from "../delaunay";
-import { minimize } from "../minimize";
+import { projectOntoConvexHull } from "../math/delaunay";
+import { minimize } from "../math/minimize";
+import { Vec2 } from "../math/vec2";
 import { getAtPath, setAtPath } from "../paths";
 import { assert, assertNever, hasKey, manyToArray, pipe } from "../utils";
-import { Vec2 } from "../vec2";
 import { DragSpec, span } from "./DragSpec-canvas";
 import { layer, Layer } from "./layer";
 import { IPointerManager } from "./pointer";

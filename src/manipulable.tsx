@@ -15,11 +15,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { projectOntoConvexHull } from "./delaunay";
 import { useDemoContext } from "./DemoContext";
 import { DragSpec, span, TargetStateLike, toTargetState } from "./DragSpec";
 import { ErrorWithJSX } from "./ErrorBoundary";
-import { minimize } from "./minimize";
+import { projectOntoConvexHull } from "./math/delaunay";
+import { minimize } from "./math/minimize";
+import { Vec2, Vec2able } from "./math/vec2";
 import { getAtPath, setAtPath } from "./paths";
 import { prettyLog, PrettyPrint } from "./pretty-print";
 import { Svgx } from "./svgx";
@@ -43,7 +44,6 @@ import {
   manyToArray,
   pipe,
 } from "./utils";
-import { Vec2, Vec2able } from "./vec2";
 
 export function translate(v: Vec2able): string;
 export function translate(x: number, y: number): string;

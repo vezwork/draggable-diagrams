@@ -1,6 +1,7 @@
 import _ from "lodash";
 import { ConfigCheckbox } from "../config-controls";
 import { overlapIntervals } from "../layout";
+import { Vec2 } from "../math/vec2";
 import {
   buildHasseDiagram,
   HasseDiagram,
@@ -9,7 +10,6 @@ import {
   TreeMorph,
   TreeNode,
 } from "../trees";
-import { Vec2 } from "../vec2";
 import { Finalizers } from "./finalizers-canvas";
 import { ManipulableCanvas, span } from "./manipulable-canvas";
 import {

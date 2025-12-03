@@ -1,5 +1,5 @@
-import { straightTo } from "./DragSpec";
-import { Manipulable, translate } from "./manipulable";
+import { straightTo } from "../DragSpec";
+import { Manipulable, translate } from "../manipulable";
 
 export namespace SecondSimplest {
   export type State = {

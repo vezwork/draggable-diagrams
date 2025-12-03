@@ -1,4 +1,4 @@
-import { Manipulable } from "./manipulable";
+import { Manipulable } from "../manipulable";
 
 export namespace SimplestClicker {
   export type State = {

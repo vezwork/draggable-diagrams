@@ -2,7 +2,7 @@ import { ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ConfigCheckbox } from "../config-controls";
 import { useDemoContext } from "../DemoContext";
-import { Vec2 } from "../vec2";
+import { Vec2 } from "../math/vec2";
 import { Canvas } from "./Canvas";
 import { layer } from "./layer";
 import {

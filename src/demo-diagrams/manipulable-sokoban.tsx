@@ -1,10 +1,10 @@
 import _ from "lodash";
-import { ConfigCheckbox } from "./config-controls";
-import { straightTo } from "./DragSpec";
-import { Manipulable, translate } from "./manipulable";
-import { defined } from "./utils";
-import { Vec2 } from "./vec2";
-import { inXYWH } from "./xywh";
+import { ConfigCheckbox } from "../config-controls";
+import { straightTo } from "../DragSpec";
+import { Manipulable, translate } from "../manipulable";
+import { Vec2 } from "../math/vec2";
+import { inXYWH } from "../math/xywh";
+import { defined } from "../utils";
 
 type GameObject = {
   type: "wall" | "box" | "goal";

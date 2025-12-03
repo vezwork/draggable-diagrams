@@ -1,6 +1,6 @@
-import { numAtPath } from "./DragSpec";
-import { Manipulable, translate } from "./manipulable";
-import { Vec2 } from "./vec2";
+import { numAtPath } from "../DragSpec";
+import { Manipulable, translate } from "../manipulable";
+import { Vec2 } from "../math/vec2";
 
 export namespace Angle {
   export type State = {

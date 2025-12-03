@@ -1,6 +1,6 @@
 import { SVGProps } from "react";
 import { points, translate } from "./manipulable";
-import { Vec2, Vec2able } from "./vec2";
+import { Vec2, Vec2able } from "./math/vec2";
 
 /**
  * Creates a triangular arrowhead polygon.

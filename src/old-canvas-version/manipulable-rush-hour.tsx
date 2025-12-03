@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { ConfigCheckbox } from "../config-controls";
-import { Vec2 } from "../vec2";
-import { XYWH } from "../xywh";
+import { Vec2 } from "../math/vec2";
+import { XYWH } from "../math/xywh";
 import { ManipulableCanvas, span } from "./manipulable-canvas";
 import { group, line, rectangle } from "./shape";
 

@@ -1,4 +1,4 @@
-import { Vec2 } from "../vec2";
+import { Vec2 } from "../math/vec2";
 
 /**
  * Properties that return (or directly are) values that don't depend

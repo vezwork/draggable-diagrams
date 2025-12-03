@@ -1,6 +1,6 @@
 import _ from "lodash";
-import { Vec2 } from "../vec2";
-import { XYWH } from "../xywh";
+import { Vec2 } from "../math/vec2";
+import { XYWH } from "../math/xywh";
 import { ManipulableCanvas, straightTo } from "./manipulable-canvas";
 import { circle, group, line, rectangle } from "./shape";
 

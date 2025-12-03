@@ -1,9 +1,9 @@
 import _ from "lodash";
-import { straightTo } from "./DragSpec";
-import { Manipulable, translate } from "./manipulable";
-import { defined } from "./utils";
-import { Vec2 } from "./vec2";
-import { inXYWH } from "./xywh";
+import { straightTo } from "../DragSpec";
+import { Manipulable, translate } from "../manipulable";
+import { Vec2 } from "../math/vec2";
+import { inXYWH } from "../math/xywh";
+import { defined } from "../utils";
 
 export namespace Fifteen {
   export type State = {

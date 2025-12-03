@@ -1,8 +1,8 @@
 import { produce } from "immer";
 import _ from "lodash";
+import { Vec2 } from "../math/vec2";
+import { XYWH } from "../math/xywh";
 import { assert } from "../utils";
-import { Vec2 } from "../vec2";
-import { XYWH } from "../xywh";
 import { ManipulableCanvas, span } from "./manipulable-canvas";
 import { group, rectangle } from "./shape";
 

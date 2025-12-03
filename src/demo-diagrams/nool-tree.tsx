@@ -1,10 +1,10 @@
 import _ from "lodash";
-import { ConfigCheckbox } from "./config-controls";
-import { ConfigPanelProps } from "./Demo";
-import { DragSpec, straightTo } from "./DragSpec";
-import { Drag, Manipulable, translate } from "./manipulable";
-import { Svgx } from "./svgx";
-import { insertImm, removeImm, setImm } from "./utils";
+import { ConfigCheckbox } from "../config-controls";
+import { ConfigPanelProps } from "../Demo";
+import { DragSpec, straightTo } from "../DragSpec";
+import { Drag, Manipulable, translate } from "../manipulable";
+import { Svgx } from "../svgx";
+import { insertImm, removeImm, setImm } from "../utils";
 
 export namespace NoolTree {
   // # trees

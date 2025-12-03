@@ -1,13 +1,14 @@
 import { curveCardinal, line } from "d3-shape";
 import _ from "lodash";
-import { arrowhead } from "./arrows";
-import { ConfigCheckbox } from "./config-controls";
-import { ConfigPanelProps } from "./Demo";
-import { span } from "./DragSpec";
-import { overlapIntervals } from "./layout";
-import { Drag, Manipulable, translate } from "./manipulable";
-import { Svgx } from "./svgx";
-import { Finalizers, pointRef, PointRef } from "./svgx/finalizers";
+import { arrowhead } from "../arrows";
+import { ConfigCheckbox } from "../config-controls";
+import { ConfigPanelProps } from "../Demo";
+import { span } from "../DragSpec";
+import { overlapIntervals } from "../layout";
+import { Drag, Manipulable, translate } from "../manipulable";
+import { Vec2 } from "../math/vec2";
+import { Svgx } from "../svgx";
+import { Finalizers, pointRef, PointRef } from "../svgx/finalizers";
 import {
   getAllMorphs,
   getNodeById,
@@ -15,8 +16,7 @@ import {
   tree7,
   TreeMorph,
   TreeNode,
-} from "./trees";
-import { Vec2 } from "./vec2";
+} from "../trees";
 
 // returns the path from `node` to another node `n` such that `pred(n)==true`.
 function traverseUntilPred<T>(

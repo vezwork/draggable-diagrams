@@ -1,6 +1,6 @@
 import { Delaunay } from "d3-delaunay";
 import _ from "lodash";
-import { assert } from "./utils";
+import { assert } from "../utils";
 import { Vec2 } from "./vec2";
 
 export function findTriangle(

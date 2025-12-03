@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { Vec2 } from "../vec2";
+import { Vec2 } from "../math/vec2";
 import { ManipulableCanvas, numsAtPaths, span } from "./manipulable-canvas";
 import { circle, group, line, polygon } from "./shape";
 

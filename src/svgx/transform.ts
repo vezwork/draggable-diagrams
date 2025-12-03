@@ -1,5 +1,5 @@
 import { assert } from "vitest";
-import { Vec2, Vec2able } from "../vec2";
+import { Vec2, Vec2able } from "../math/vec2";
 
 /**
  * Parses and interpolates SVG transform strings.

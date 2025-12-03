@@ -1,8 +1,8 @@
 import _ from "lodash";
-import { arrowhead } from "./arrows";
-import { numsAtPaths, span } from "./DragSpec";
-import { Manipulable, translate } from "./manipulable";
-import { Vec2 } from "./vec2";
+import { arrowhead } from "../arrows";
+import { numsAtPaths, span } from "../DragSpec";
+import { Manipulable, translate } from "../manipulable";
+import { Vec2 } from "../math/vec2";
 
 export namespace Graph {
   export type State = {
