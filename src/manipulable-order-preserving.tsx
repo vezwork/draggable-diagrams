@@ -487,6 +487,7 @@ export namespace OrderPreserving {
               fill="none"
               stroke="black"
               strokeWidth={2}
+              data-z-index={-1}
             />
           );
         });

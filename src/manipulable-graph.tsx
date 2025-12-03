@@ -89,6 +89,7 @@ export namespace Graph {
                   }
                   return span(newStates);
                 })}
+                data-z-index={1}
               />
               <circle
                 id={`tail-${key}`}
@@ -123,6 +124,7 @@ export namespace Graph {
                   }
                   return span(newStates);
                 })}
+                data-z-index={1}
               />
             </g>
           );
