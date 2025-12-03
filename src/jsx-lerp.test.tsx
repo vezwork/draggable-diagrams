@@ -326,7 +326,7 @@ describe("lerpSvgNode", () => {
     const b = <polygon points="20,20 30,20" />;
 
     expect(() => lerpSvgNode(a, b, 0.5)).toThrow(
-      "Cannot lerp points: different point counts",
+      "Cannot lerp points: different point counts"
     );
   });
 

@@ -190,7 +190,7 @@ describe("findByPath", () => {
       <g>
         <rect />
         <circle />
-      </g>,
+      </g>
     );
 
     const found = findByPath("/", tree);
@@ -204,7 +204,7 @@ describe("findByPath", () => {
       <g>
         <rect />
         <circle />
-      </g>,
+      </g>
     );
 
     const found = findByPath("/1/", tree);
@@ -219,7 +219,7 @@ describe("findByPath", () => {
           <rect />
           <circle />
         </g>
-      </g>,
+      </g>
     );
 
     const found = findByPath("/0/1/", tree);
@@ -232,7 +232,7 @@ describe("findByPath", () => {
       <g>
         <rect id="my-rect" />
         <circle />
-      </g>,
+      </g>
     );
 
     const found = findByPath("my-rect/", tree);
@@ -248,7 +248,7 @@ describe("findByPath", () => {
           <rect />
           <circle />
         </g>
-      </g>,
+      </g>
     );
 
     const found = findByPath("container/1/", tree);
@@ -260,7 +260,7 @@ describe("findByPath", () => {
     const tree = assignPaths(
       <g>
         <rect />
-      </g>,
+      </g>
     );
 
     const found = findByPath("/99/", tree);
@@ -271,7 +271,7 @@ describe("findByPath", () => {
     const tree = assignPaths(
       <g>
         <rect id="real" />
-      </g>,
+      </g>
     );
 
     const found = findByPath("fake/", tree);

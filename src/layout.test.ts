@@ -8,7 +8,7 @@ describe("overlapIntervals", () => {
     bLength: number,
     bAnchor: number,
     aOffset: number,
-    bOffset: number,
+    bOffset: number
   ) {
     expect(overlapIntervals({ aLength, aAnchor, bLength, bAnchor })).toEqual({
       aOffset,
@@ -20,7 +20,7 @@ describe("overlapIntervals", () => {
         aAnchor: bAnchor,
         bLength: aLength,
         bAnchor: aAnchor,
-      }),
+      })
     ).toEqual({ aOffset: bOffset, bOffset: aOffset });
   }
 

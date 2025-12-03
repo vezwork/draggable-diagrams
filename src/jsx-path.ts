@@ -28,7 +28,7 @@ function assignPathsRecursive(element: SvgElem, currentPath: string): SvgElem {
   // Validate that id doesn't contain slashes
   if (id && id.includes("/")) {
     throw new Error(
-      `Element id "${id}" contains a slash, which is not allowed. IDs are used as absolute paths and cannot contain slashes.`,
+      `Element id "${id}" contains a slash, which is not allowed. IDs are used as absolute paths and cannot contain slashes.`
     );
   }
 
@@ -37,7 +37,7 @@ function assignPathsRecursive(element: SvgElem, currentPath: string): SvgElem {
   // Just to be helpful, warn against using keys
   if (typeof element.key === "string" && !element.key.startsWith(".")) {
     throw new Error(
-      `Element with path "${elementPath}" has a key prop (${element.key}), which is not allowed.`,
+      `Element with path "${elementPath}" has a key prop (${element.key}), which is not allowed.`
     );
   }
 
@@ -47,7 +47,7 @@ function assignPathsRecursive(element: SvgElem, currentPath: string): SvgElem {
     ? children.map((child, index) =>
         React.isValidElement(child)
           ? assignPathsRecursive(child, elementPath + String(index) + "/")
-          : child,
+          : child
       )
     : children;
 

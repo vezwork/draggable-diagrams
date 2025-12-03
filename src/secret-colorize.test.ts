@@ -104,10 +104,10 @@ describe("colorizeSecret and expandSecret", () => {
 
   it("should throw error for color index out of range", () => {
     expect(() => colorizeSecret("test", -1)).toThrow(
-      "colorIndex must be between 0 and 15",
+      "colorIndex must be between 0 and 15"
     );
     expect(() => colorizeSecret("test", 16)).toThrow(
-      "colorIndex must be between 0 and 15",
+      "colorIndex must be between 0 and 15"
     );
   });
 
@@ -122,10 +122,10 @@ describe("colorizeSecret and expandSecret", () => {
 
   it("should throw error for non-ASCII characters", () => {
     expect(() => colorizeSecret("hello™", 0)).toThrow(
-      "Character at index 5 has code 8482",
+      "Character at index 5 has code 8482"
     );
     expect(() => colorizeSecret("hello\u0100", 0)).toThrow(
-      "Character at index 5 has code 256",
+      "Character at index 5 has code 256"
     );
     expect(() => colorizeSecret("🎉", 0)).toThrow("Character at index 0");
   });

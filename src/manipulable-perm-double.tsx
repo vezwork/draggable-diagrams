@@ -32,16 +32,16 @@ export namespace PermDouble {
                   p === draggedId
                     ? 2
                     : draggedRow && row.includes(draggedId!)
-                      ? 1
-                      : 0
+                    ? 1
+                    : 0
                 }
                 transform={translate(
                   idx * TILE_SIZE + ROW_PADDING,
-                  ROW_PADDING,
+                  ROW_PADDING
                 )}
                 data-on-drag={drag(() => {
                   const draggedRowIdx = state.rows.findIndex((r) =>
-                    r.includes(p),
+                    r.includes(p)
                   );
                   const draggedRow = state.rows[draggedRowIdx];
                   const draggedColIdx = draggedRow.indexOf(p);
@@ -56,7 +56,7 @@ export namespace PermDouble {
                           row.splice(colIdx, 0, p);
                           draft.rows.splice(draggedRowIdx, 1);
                           draft.rows.splice(rowIdx, 0, row);
-                        }),
+                        })
                       );
                     }
                   }

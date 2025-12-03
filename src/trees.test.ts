@@ -64,7 +64,7 @@ describe("allMorphs", () => {
 
     for (const testMorph of testMorphs) {
       const isValid = allValidMorphs.some(
-        (m) => JSON.stringify(m) === JSON.stringify(testMorph),
+        (m) => JSON.stringify(m) === JSON.stringify(testMorph)
       );
       expect(isValid).toBe(true);
     }

@@ -35,12 +35,12 @@ export namespace Spinny {
                 // we use immer's `produce` to make immutable updates easier
                 produce(state, (s) => {
                   s.perm.push(s.perm.shift()!);
-                }),
+                })
               ),
               straightTo(
                 produce(state, (s) => {
                   s.perm.unshift(s.perm.pop()!);
-                }),
+                })
               ),
             ])}
           >

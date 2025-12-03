@@ -4,16 +4,16 @@
 export type PathIn<T, V> = T extends V
   ? []
   : T extends object
-    ? {
-        [K in keyof T]-?: PathIn<T[K], V> extends infer P
-          ? P extends []
-            ? [K]
-            : P extends [infer First, ...infer Rest]
-              ? [K, First, ...Rest]
-              : never
-          : never;
-      }[keyof T]
-    : never;
+  ? {
+      [K in keyof T]-?: PathIn<T[K], V> extends infer P
+        ? P extends []
+          ? [K]
+          : P extends [infer First, ...infer Rest]
+          ? [K, First, ...Rest]
+          : never
+        : never;
+    }[keyof T]
+  : never;
 
 // Get value at path with type safety
 export function getAtPath<T, V>(obj: T, path: PathIn<T, V>): V {
@@ -45,7 +45,7 @@ export function setAtPath<T, V>(obj: T, path: PathIn<T, V>, value: V): T {
     newArr[first as number] = setAtPath(
       obj[first as number],
       rest as any,
-      value,
+      value
     );
     return newArr as T;
   }

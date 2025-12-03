@@ -42,7 +42,7 @@ class LayerImpl {
 
   constructor(
     private ctx: CanvasRenderingContext2D,
-    private drawable: boolean,
+    private drawable: boolean
   ) {
     if (ctx instanceof LayerImpl) {
       ctx = ctx.ctx;
@@ -140,7 +140,7 @@ class LayerImpl {
   static commandCount(lyr: LayerImpl): number {
     return lyr.commands
       .map((cmd) =>
-        cmd instanceof LayerImpl ? LayerImpl.commandCount(cmd) : 1,
+        cmd instanceof LayerImpl ? LayerImpl.commandCount(cmd) : 1
       )
       .reduce((a, b) => a + b, 0);
   }

@@ -32,13 +32,13 @@ export function accumulateTransforms(element: SvgElem): SvgElem {
 
 function walkAndAccumulateTransforms(
   element: SvgElem,
-  accumulatedTransform: string,
+  accumulatedTransform: string
 ): SvgElem {
   const props = element.props as any;
   const elementTransform = props.transform || "";
   const newAccumulatedTransform = combineTransforms(
     accumulatedTransform,
-    elementTransform,
+    elementTransform
   );
 
   // Process children recursively (skip foreignObject children)
@@ -50,7 +50,7 @@ function walkAndAccumulateTransforms(
       if (isValidElement(child)) {
         const processedChild = walkAndAccumulateTransforms(
           child as SvgElem,
-          newAccumulatedTransform,
+          newAccumulatedTransform
         );
         newChildren.push(processedChild);
       } else {
@@ -101,7 +101,7 @@ function extractIdNodes(element: SvgElem, flatNodes: FlattenedSvg): SvgElem {
   // Validate: data-z-index can only be set on nodes with ids
   if (props["data-z-index"] !== undefined && !props.id) {
     throw new Error(
-      `data-z-index can only be set on elements with an id attribute. Found data-z-index="${props["data-z-index"]}" on <${element.type}> without id.`,
+      `data-z-index can only be set on elements with an id attribute. Found data-z-index="${props["data-z-index"]}" on <${element.type}> without id.`
     );
   }
 
@@ -134,7 +134,7 @@ function extractIdNodes(element: SvgElem, flatNodes: FlattenedSvg): SvgElem {
     // Check for duplicate IDs
     if (flatNodes.has(props.id)) {
       throw new Error(
-        `Duplicate id "${props.id}" found in SVG tree. Each element must have a unique id.`,
+        `Duplicate id "${props.id}" found in SVG tree. Each element must have a unique id.`
       );
     }
 

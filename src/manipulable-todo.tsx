@@ -42,7 +42,7 @@ export namespace Todo {
                   produce(state, (s) => {
                     s.todoDraft.text = e.target.value;
                   }),
-                  { immediate: true },
+                  { immediate: true }
                 );
               }}
               placeholder="What needs to be done?"
@@ -60,7 +60,7 @@ export namespace Todo {
                       completed: false,
                       text: "",
                     };
-                  }),
+                  })
                 );
               }}
             >
@@ -78,7 +78,7 @@ export namespace Todo {
               translate(10 - (isDragged ? 5 : 0), 80 + idx * TILE_SIZE),
               isDragged ? 1 : 0,
               1,
-              setState,
+              setState
             ),
             () =>
               span(
@@ -86,9 +86,9 @@ export namespace Todo {
                   produce(state, (s) => {
                     const [removed] = s.todos.splice(idx, 1);
                     s.todos.splice(newIdx, 0, removed);
-                  }),
-                ),
-              ),
+                  })
+                )
+              )
           );
         })}
       </g>
@@ -100,7 +100,7 @@ export namespace Todo {
     transform: string,
     zIndex: number,
     opacity = 1,
-    setState: SetState<State>,
+    setState: SetState<State>
   ): SvgElem {
     return (
       <foreignObject
@@ -127,7 +127,7 @@ export namespace Todo {
                     t.completed = e.target.checked;
                   }
                 }),
-                { immediate: true },
+                { immediate: true }
               );
             }}
             className="w-5 h-5 rounded border-2 border-gray-300 text-blue-500 focus:ring-2 focus:ring-blue-400 focus:ring-offset-0 cursor-pointer"

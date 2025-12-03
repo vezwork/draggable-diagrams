@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import React from "react";
+import { describe, expect, it } from "vitest";
 import { prettyPrintToString } from "./pretty-print";
 
 describe("prettyPrintToString", () => {
@@ -104,7 +104,7 @@ describe("prettyPrintToString", () => {
     const result = prettyPrintToString(parent, 80, false);
 
     expect(result).toBe(
-      '{name: "parent", children: [{name: "child", parent: [Circular]}]}',
+      '{name: "parent", children: [{name: "child", parent: [Circular]}]}'
     );
   });
 
@@ -132,7 +132,10 @@ describe("prettyPrintToString", () => {
   });
 
   it("should print JSX elements with props and no children", () => {
-    const element = React.createElement("img", { src: "test.png", alt: "test" });
+    const element = React.createElement("img", {
+      src: "test.png",
+      alt: "test",
+    });
     const result = prettyPrintToString(element, 80, false);
 
     expect(result).toBe('<img src="test.png" alt="test" />');

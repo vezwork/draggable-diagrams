@@ -126,7 +126,7 @@ export function serializeTransform(transforms: Transform[]): string {
 export function lerpTransforms(
   a: Transform[],
   b: Transform[],
-  t: number,
+  t: number
 ): Transform[] {
   // Special case: if both are just chains of translations, collapse and lerp
   const aAllTranslate = a.every((t) => t.type === "translate");
@@ -138,14 +138,14 @@ export function lerpTransforms(
         x: acc.x + (t as any).x,
         y: acc.y + (t as any).y,
       }),
-      { x: 0, y: 0 },
+      { x: 0, y: 0 }
     );
     const bSum = b.reduce(
       (acc, t) => ({
         x: acc.x + (t as any).x,
         y: acc.y + (t as any).y,
       }),
-      { x: 0, y: 0 },
+      { x: 0, y: 0 }
     );
 
     return [
@@ -160,7 +160,7 @@ export function lerpTransforms(
   // Otherwise, lengths and types must match exactly
   if (a.length !== b.length) {
     throw new Error(
-      `Cannot lerp transforms with different lengths: ${a.length} vs ${b.length}`,
+      `Cannot lerp transforms with different lengths: ${a.length} vs ${b.length}`
     );
   }
 
@@ -173,7 +173,7 @@ export function lerpTransforms(
     // Types must match
     if (ta.type !== tb.type) {
       throw new Error(
-        `Cannot lerp transforms with different types at index ${i}: ${ta.type} vs ${tb.type}`,
+        `Cannot lerp transforms with different types at index ${i}: ${ta.type} vs ${tb.type}`
       );
     }
 
@@ -236,7 +236,7 @@ export function lerpTransformString(a: string, b: string, t: number): string {
     const lerpedTransforms = lerpTransforms(
       [{ type: "translate", x: 0, y: 0 }],
       transformsB,
-      t,
+      t
     );
     return serializeTransform(lerpedTransforms);
   }
@@ -247,7 +247,7 @@ export function lerpTransformString(a: string, b: string, t: number): string {
     const lerpedTransforms = lerpTransforms(
       transformsA,
       [{ type: "translate", x: 0, y: 0 }],
-      t,
+      t
     );
     return serializeTransform(lerpedTransforms);
   }

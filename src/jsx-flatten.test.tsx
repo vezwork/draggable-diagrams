@@ -413,7 +413,7 @@ describe("flattenSvg", () => {
     );
 
     expect(() => flattenSvg(accumulateTransforms(tree))).toThrow(
-      /data-z-index can only be set on elements with an id attribute/,
+      /data-z-index can only be set on elements with an id attribute/
     );
   });
 
@@ -436,7 +436,7 @@ describe("flattenSvg", () => {
     );
 
     expect(() => flattenSvg(accumulateTransforms(tree))).toThrow(
-      /Duplicate id "duplicate" found in SVG tree/,
+      /Duplicate id "duplicate" found in SVG tree/
     );
   });
 
@@ -451,7 +451,7 @@ describe("flattenSvg", () => {
     );
 
     expect(() => flattenSvg(accumulateTransforms(tree))).toThrow(
-      /Duplicate id "duplicate" found in SVG tree/,
+      /Duplicate id "duplicate" found in SVG tree/
     );
   });
 
@@ -468,7 +468,7 @@ describe("flattenSvg", () => {
     );
 
     expect(() => flattenSvg(accumulateTransforms(tree))).toThrow(
-      /Duplicate id "inner" found in SVG tree/,
+      /Duplicate id "inner" found in SVG tree/
     );
   });
 });

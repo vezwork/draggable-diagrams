@@ -30,10 +30,7 @@ export function Vec2(xOrXY: number | Vec2able, y?: number): Vec2 {
 }
 
 class Vec2Class {
-  constructor(
-    readonly x: number,
-    readonly y: number,
-  ) {}
+  constructor(readonly x: number, readonly y: number) {}
 
   arr(): [number, number] {
     return [this.x, this.y];

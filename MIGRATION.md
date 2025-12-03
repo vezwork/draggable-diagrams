@@ -13,6 +13,7 @@ When porting manipulables, there are two common mistakes that will break behavio
 **ALWAYS copy ALL settings from the original demo!**
 
 When you port a manipulable, find the original demo entry in `demos.tsx` and copy every setting:
+
 - `height` - copy exactly
 - `padding` - copy exactly
 - `initialSnapRadius` - copy exactly (if present) ← **Most commonly forgotten!**
@@ -27,6 +28,7 @@ See the "Adding Demos to demos.tsx" section below for detailed examples.
 **DON'T change `span(states)` to `states.map(straightTo)`!**
 
 These have different behavior:
+
 - `span(states)` - creates a single manifold from an array of states
 - `states.map(straightTo)` - creates an array of individual manifolds
 
@@ -37,12 +39,14 @@ Always check what the original uses and match it exactly. See "Drag Specificatio
 ### File Setup
 
 **Before:**
+
 ```typescript
 import { Manipulable, span } from "./manipulable";
 import { circle, group, line } from "./shape";
 ```
 
 **After:**
+
 ```typescript
 import { straightTo } from "./DragSpec";
 import { Manipulable, translate } from "./manipulable";
@@ -51,6 +55,7 @@ import { Manipulable, translate } from "./manipulable";
 ### Type Signature
 
 **Before:**
+
 ```typescript
 export const manipulableGridPoly: Manipulable<GridPolyState> = {
   sourceFile: "manipulable-grid-poly.ts",
@@ -60,6 +65,7 @@ export const manipulableGridPoly: Manipulable<GridPolyState> = {
 ```
 
 **After:**
+
 ```typescript
 export const manipulableGridPolySvg: Manipulable<GridPolyState> = ({
   state,
@@ -74,27 +80,25 @@ export const manipulableGridPolySvg: Manipulable<GridPolyState> = ({
 ### Rendering Shapes
 
 **Before:**
+
 ```typescript
 circle({
   center: Vec2(x * TILE_SIZE, y * TILE_SIZE),
   radius: 5,
   fillStyle: "gray",
-})
+});
 ```
 
 **After:**
+
 ```typescript
-<circle
-  cx={x * TILE_SIZE}
-  cy={y * TILE_SIZE}
-  r={5}
-  fill="gray"
-/>
+<circle cx={x * TILE_SIZE} cy={y * TILE_SIZE} r={5} fill="gray" />
 ```
 
 ### Making Elements Draggable
 
 **Before:**
+
 ```typescript
 circle({
   center: Vec2(0),
@@ -102,10 +106,11 @@ circle({
   fillStyle: "black",
 })
   .draggable(`${idx}`)
-  .translate(Vec2(pt.x * TILE_SIZE, pt.y * TILE_SIZE))
+  .translate(Vec2(pt.x * TILE_SIZE, pt.y * TILE_SIZE));
 ```
 
 **After:**
+
 ```typescript
 draggable(
   <circle
@@ -114,14 +119,15 @@ draggable(
     cy={0}
     r={10}
     fill="black"
-  />,
+  />
   // drag spec here
-)
+);
 ```
 
 ### Drag Specifications
 
 **Before:**
+
 ```typescript
 onDrag(state, draggableKey) {
   const idx = parseInt(draggableKey, 10);
@@ -132,28 +138,24 @@ onDrag(state, draggableKey) {
 ```
 
 **After:**
+
 ```typescript
-draggable(
-  <element />,
-  () => {
-    const states = [];
-    // ... compute states
-    return span(states);
-  }
-)
+draggable(<element />, () => {
+  const states = [];
+  // ... compute states
+  return span(states);
+});
 ```
 
 **Note:** `span()` is still used the same way - it takes an array of states and creates a manifold. Import it from `"./DragSpec"`.
 
 For simple transitions to specific states, use `straightTo()`:
+
 ```typescript
-draggable(
-  <element />,
-  [
-    state.value > 0 && straightTo({ value: state.value - 1 }),
-    state.value < 3 && straightTo({ value: state.value + 1 }),
-  ]
-)
+draggable(<element />, [
+  state.value > 0 && straightTo({ value: state.value - 1 }),
+  state.value < 3 && straightTo({ value: state.value + 1 }),
+]);
 ```
 
 **⚠️ CRITICAL: Don't change span() to straightTo() when porting!**
@@ -161,6 +163,7 @@ draggable(
 A common mistake is to change `span(states)` to `states.map(straightTo)` when porting. **DON'T DO THIS!**
 
 **Wrong ❌:**
+
 ```typescript
 // Original uses span
 onDrag(state, draggableKey) {
@@ -176,15 +179,17 @@ draggable(<element />, () => {
 ```
 
 **Correct ✓:**
+
 ```typescript
 // Correct port - keep using span
 draggable(<element />, () => {
   const states = computeAllStates();
-  return span(states);  // ✓ Correct - matches original
-})
+  return span(states); // ✓ Correct - matches original
+});
 ```
 
 **Why this matters:**
+
 - `span(states)` - creates a single manifold from an array of states
 - `states.map(straightTo)` - creates an array of individual manifolds
 
@@ -193,45 +198,42 @@ These have different behavior! Always check what the original uses and match it 
 ### Grouping Elements
 
 **Before:**
+
 ```typescript
 group(
   element1,
   element2,
-  array.map(item => makeElement(item))
-)
+  array.map((item) => makeElement(item))
+);
 ```
 
 **After:**
+
 ```typescript
 <g>
   {element1}
   {element2}
-  {array.map(item => makeElement(item))}
+  {array.map((item) => makeElement(item))}
 </g>
 ```
 
 ### Lines
 
 **Before:**
+
 ```typescript
 line({
   from: Vec2(x1, y1),
   to: Vec2(x2, y2),
   strokeStyle: "black",
   lineWidth: 2,
-})
+});
 ```
 
 **After:**
+
 ```typescript
-<line
-  x1={x1}
-  y1={y1}
-  x2={x2}
-  y2={y2}
-  stroke="black"
-  strokeWidth={2}
-/>
+<line x1={x1} y1={y1} x2={x2} y2={y2} stroke="black" strokeWidth={2} />
 ```
 
 ### Text (rectangle with label only)
@@ -239,14 +241,16 @@ line({
 In the old API, `rectangle()` with only a `label` property (no fill/stroke) renders just text, not an actual rectangle.
 
 **Before:**
+
 ```typescript
 rectangle({
   xywh: [x, y, width, height],
   label: "Hello",
-})
+});
 ```
 
 **After:**
+
 ```typescript
 <text
   x={x + width / 2}
@@ -264,27 +268,27 @@ rectangle({
 
 ### Property Name Changes
 
-| Old API | New API (SVG) |
-|---------|---------------|
-| `fillStyle` | `fill` |
-| `strokeStyle` | `stroke` |
-| `lineWidth` | `strokeWidth` |
-| `center` (circle) | `cx`, `cy` |
-| `radius` | `r` |
-| `.zIndex(n)` | `data-z-index={n}` |
+| Old API           | New API (SVG)      |
+| ----------------- | ------------------ |
+| `fillStyle`       | `fill`             |
+| `strokeStyle`     | `stroke`           |
+| `lineWidth`       | `strokeWidth`      |
+| `center` (circle) | `cx`, `cy`         |
+| `radius`          | `r`                |
+| `.zIndex(n)`      | `data-z-index={n}` |
 
 ### Absolute Keys Become IDs
 
 The old API used `.absoluteKey()` to give elements stable identities across state changes. In SVG, this becomes the `id` attribute:
 
 **Before:**
+
 ```typescript
-element
-  .draggable(key)
-  .absoluteKey(key)
+element.draggable(key).absoluteKey(key);
 ```
 
 **After:**
+
 ```typescript
 <element id={key} />
 ```
@@ -294,6 +298,7 @@ element
 **DO NOT use slashes in IDs:** Element IDs cannot contain forward slashes (`/`). The framework uses slashes internally for path tracking, and IDs with slashes will cause errors. Use hyphens or other separators instead.
 
 **Examples:**
+
 ```typescript
 // ✓ Good - uses hyphens
 <g id="root-1-2" />
@@ -311,16 +316,19 @@ element
 The old API used `.translate()` method chaining. The new API uses the `transform` attribute with the `translate()` helper:
 
 **Before:**
+
 ```typescript
-element.translate(Vec2(x, y))
+element.translate(Vec2(x, y));
 ```
 
 **After:**
+
 ```typescript
 <element transform={translate(x, y)} />
 ```
 
 Or:
+
 ```typescript
 <element transform={translate(Vec2(x, y))} />
 ```
@@ -328,6 +336,7 @@ Or:
 ## Complete Example: manipulable-grid-poly
 
 **Before (manipulable-grid-poly.ts):**
+
 ```typescript
 import { produce } from "immer";
 import _ from "lodash";
@@ -354,8 +363,8 @@ export const manipulableGridPoly: Manipulable<GridPolyState> = {
             center: Vec2(x * TILE_SIZE, y * TILE_SIZE),
             radius: 5,
             fillStyle: "gray",
-          }),
-        ),
+          })
+        )
       ),
       state.points.map((pt, idx) =>
         circle({
@@ -364,7 +373,7 @@ export const manipulableGridPoly: Manipulable<GridPolyState> = {
           fillStyle: "black",
         })
           .draggable(`${idx}`)
-          .translate(Vec2(pt.x * TILE_SIZE, pt.y * TILE_SIZE)),
+          .translate(Vec2(pt.x * TILE_SIZE, pt.y * TILE_SIZE))
       ),
       state.points.map((pt, idx) => {
         const nextPt = state.points[(idx + 1) % state.points.length];
@@ -374,7 +383,7 @@ export const manipulableGridPoly: Manipulable<GridPolyState> = {
           strokeStyle: "black",
           lineWidth: 2,
         });
-      }),
+      })
     );
   },
 
@@ -388,7 +397,7 @@ export const manipulableGridPoly: Manipulable<GridPolyState> = {
           states.push(
             produce(state, (draft) => {
               draft.points[idx] = { x, y };
-            }),
+            })
           );
         }
       }
@@ -399,6 +408,7 @@ export const manipulableGridPoly: Manipulable<GridPolyState> = {
 ```
 
 **After (manipulable-grid-poly-svg.tsx):**
+
 ```typescript
 import { produce } from "immer";
 import _ from "lodash";
@@ -423,13 +433,8 @@ export const manipulableGridPolySvg: Manipulable<GridPolyState> = ({
       {/* Grid points */}
       {_.range(state.w).map((x) =>
         _.range(state.h).map((y) => (
-          <circle
-            cx={x * TILE_SIZE}
-            cy={y * TILE_SIZE}
-            r={5}
-            fill="gray"
-          />
-        )),
+          <circle cx={x * TILE_SIZE} cy={y * TILE_SIZE} r={5} fill="gray" />
+        ))
       )}
 
       {/* Polygon edges */}
@@ -471,8 +476,8 @@ export const manipulableGridPolySvg: Manipulable<GridPolyState> = ({
               }
             }
             return span(states);
-          },
-        ),
+          }
+        )
       )}
     </g>
   );
@@ -496,6 +501,7 @@ export const manipulableGridPolySvg: Manipulable<GridPolyState> = ({
 In the old API, `render(state, draggableKey)` received the currently dragged element's key, allowing custom visual feedback. The new API provides similar functionality via the `draggedId` parameter:
 
 **Before:**
+
 ```typescript
 render(state, draggableKey) {
   return group(
@@ -509,6 +515,7 @@ render(state, draggableKey) {
 ```
 
 **After:**
+
 ```typescript
 export const manipulableExample: Manipulable<State> = ({
   state,
@@ -524,7 +531,7 @@ export const manipulableExample: Manipulable<State> = ({
             transform={translate(x, item.id === draggedId ? -10 : 0)}
           >
             {/* element content */}
-          </g>,
+          </g>
           // drag spec
         )
       )}
@@ -534,6 +541,7 @@ export const manipulableExample: Manipulable<State> = ({
 ```
 
 **Key points:**
+
 - `draggedId` contains the `id` of the element currently being dragged (or `undefined` if nothing is being dragged)
 - To use this feature, elements must have an `id` attribute
 - You can use `draggedId` to provide visual feedback like lifting, highlighting, or changing appearance during drag
@@ -544,11 +552,13 @@ export const manipulableExample: Manipulable<State> = ({
 The old API had `.zIndex()` for controlling stacking order:
 
 **Before:**
+
 ```typescript
-element.zIndex(10)
+element.zIndex(10);
 ```
 
 **After:**
+
 ```typescript
 <element data-z-index={10} />
 ```
@@ -558,12 +568,13 @@ Elements are rendered in order of their `data-z-index` value (default: 0). Lower
 **Important:** `data-z-index` can only be set on elements that have an `id` attribute. Setting it on an element without an `id` will throw an error.
 
 **Example:**
+
 ```typescript
 <g>
-  <rect id="r1" data-z-index={10} fill="red" />   {/* ✓ Valid: has id */}
-  <rect id="r2" data-z-index={5} fill="blue" />    {/* ✓ Valid: has id */}
-  <rect id="r3" fill="green" />                    {/* ✓ Valid: data-z-index defaults to 0 */}
-  <rect data-z-index={1} fill="yellow" />          {/* ✗ Error: no id! */}
+  <rect id="r1" data-z-index={10} fill="red" /> {/* ✓ Valid: has id */}
+  <rect id="r2" data-z-index={5} fill="blue" /> {/* ✓ Valid: has id */}
+  <rect id="r3" fill="green" /> {/* ✓ Valid: data-z-index defaults to 0 */}
+  <rect data-z-index={1} fill="yellow" /> {/* ✗ Error: no id! */}
 </g>
 ```
 
@@ -578,6 +589,7 @@ Elements are rendered in order of their `data-z-index` value (default: 0). Lower
 3. **Double-check** you didn't miss any
 
 **Example - migrating "outline":**
+
 ```typescript
 // Step 1: Find the original demo
 <Demo
@@ -603,6 +615,7 @@ Elements are rendered in order of their `data-z-index` value (default: 0). Lower
 ```
 
 **Common settings that MUST be copied:**
+
 - `height` - Canvas height in pixels - **ALWAYS copy**
 - `padding` - Padding around the diagram - **ALWAYS copy**
 - `initialSnapRadius` - Snap radius for dragging - **ALWAYS copy if present**
@@ -611,6 +624,7 @@ Elements are rendered in order of their `data-z-index` value (default: 0). Lower
 - Any other props - **COPY EVERYTHING**
 
 **Common mistakes to avoid:**
+
 - ❌ Forgetting `initialSnapRadius` (this is the most common mistake!)
 - ❌ Copying some settings but not all
 - ❌ Assuming a setting isn't needed for SVG

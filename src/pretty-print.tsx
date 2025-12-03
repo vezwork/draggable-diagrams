@@ -25,12 +25,12 @@ const ANSI_CODES = COLORS.map((c) => c.ansi);
 
 // Derived: name -> index lookup
 const COLOR_NAME_TO_INDEX = Object.fromEntries(
-  COLORS.map((c, i) => [c.name, i]),
+  COLORS.map((c, i) => [c.name, i])
 ) as Record<ColorType, number>;
 
 // Derived: ANSI code -> hex color lookup
 const ANSI_TO_HEX = Object.fromEntries(
-  COLORS.map((c) => [c.ansi.match(/\d+/)?.[0] || "", c.hex]),
+  COLORS.map((c) => [c.ansi.match(/\d+/)?.[0] || "", c.hex])
 ) as Record<string, string>;
 
 function colorize(text: string, colorType: ColorType): string {
@@ -42,7 +42,7 @@ function colorize(text: string, colorType: ColorType): string {
  */
 export function prettyPrintForBrowser(
   value: unknown,
-  printWidth: number = 80,
+  printWidth: number = 80
 ): [string, ...string[]] {
   const textWithAnsi = prettyPrintToString(value, printWidth, true);
   const ansiRegex = /\x1b\[(\d+)m/g;
@@ -78,7 +78,7 @@ export function prettyPrintForBrowser(
  */
 export function prettyLog(
   value: unknown,
-  { label, width = 120 }: { label?: string; width?: number } = {},
+  { label, width = 120 }: { label?: string; width?: number } = {}
 ): void {
   if (label) {
     console.group(label);
@@ -145,7 +145,7 @@ export function PrettyPrint({
       elements.push(
         <span key={key++} style={{ color: currentColor || "inherit" }}>
           {textBefore}
-        </span>,
+        </span>
       );
     }
     currentColor = ANSI_TO_HEX[match[1]] || "";
@@ -157,7 +157,7 @@ export function PrettyPrint({
     elements.push(
       <span key={key++} style={{ color: currentColor || "inherit" }}>
         {remaining}
-      </span>,
+      </span>
     );
   }
 
@@ -190,7 +190,7 @@ export function PrettyPrint({
 function prettyPrintToDoc(
   value: unknown,
   useColor: boolean = true,
-  visited: Set<unknown> = new Set(),
+  visited: Set<unknown> = new Set()
 ): Doc {
   // Handle JSX elements
   if (true) {
@@ -244,7 +244,7 @@ function prettyPrintToDoc(
       const childDocs = childrenArray.map((child) =>
         typeof child === "string" || typeof child === "number"
           ? String(child)
-          : prettyPrintToDoc(child, useColor, visited),
+          : prettyPrintToDoc(child, useColor, visited)
       );
 
       // Add conditional line breaks between children
@@ -324,7 +324,7 @@ function prettyPrintToDoc(
     }
 
     const elements = value.map((item) =>
-      prettyPrintToDoc(item, useColor, visited),
+      prettyPrintToDoc(item, useColor, visited)
     );
 
     // Use commas when inline, line breaks when multi-line
@@ -400,7 +400,7 @@ function prettyPrintToDoc(
       const keyword = useColor ? colorize("new", "keyword") : "new";
       const ctor = useColor ? colorize("Set", "keyword") : "Set";
       const items = Array.from(value).map((v) =>
-        prettyPrintToDoc(v, useColor, visited),
+        prettyPrintToDoc(v, useColor, visited)
       );
 
       const withSeparators: Doc[] = [];
@@ -436,7 +436,7 @@ function prettyPrintToDoc(
     const idValue = idEntry?.[1];
 
     const remainingEntries = entries.filter(
-      ([key]) => key !== "type" && key !== "id",
+      ([key]) => key !== "type" && key !== "id"
     );
 
     const props = remainingEntries.map(([key, val]) => {
@@ -488,7 +488,7 @@ function prettyPrintToDoc(
 export function prettyPrintToString(
   value: unknown,
   printWidth: number = 80,
-  useColor: boolean = true,
+  useColor: boolean = true
 ): string {
   const doc = prettyPrintToDoc(value, useColor);
   const formatted = prettier.doc.printer.printDocToString(doc, {

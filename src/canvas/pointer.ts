@@ -1,7 +1,7 @@
 import _ from "lodash";
-import { Layer } from "./layer";
 import { Vec2 } from "../vec2";
 import { debugPoly, pointInPoly, polyArea } from "../xywh";
+import { Layer } from "./layer";
 
 // Coordinates statement: In PointerManager, all coordinates are in
 // canvas space. Using withOffset produces a PointerManager where
@@ -64,7 +64,7 @@ export class PointerManager implements IPointerManager {
       // get smalleset clickable containing hoverPointer
       _.minBy(
         this.clickables.filter((c) => pointInPoly(this.hoverPointer, c.poly)),
-        ({ poly }) => polyArea(poly),
+        ({ poly }) => polyArea(poly)
       )
     );
   }
@@ -95,16 +95,13 @@ export class PointerManager implements IPointerManager {
 
 export function pointerManagerWithOffset(
   pointer: IPointerManager,
-  offset: Vec2,
+  offset: Vec2
 ): IPointerManager {
   return new PointerManagerOffset(pointer, offset);
 }
 
 export class PointerManagerOffset implements IPointerManager {
-  constructor(
-    private pointer: IPointerManager,
-    private offset: Vec2,
-  ) {}
+  constructor(private pointer: IPointerManager, private offset: Vec2) {}
 
   get isDragging() {
     return this.pointer.isDragging;
@@ -120,7 +117,7 @@ export class PointerManagerOffset implements IPointerManager {
   addClickHandler(poly: Vec2[], onClick: () => void): void {
     this.pointer.addClickHandler(
       poly.map((p) => p.add(this.offset)),
-      onClick,
+      onClick
     );
   }
   addPointerUpHandler(onUp: () => void): void {

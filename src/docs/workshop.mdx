@@ -1,6 +1,6 @@
-import { demos } from '../demos';
-import { normalizeIndent } from './components';
-import { DemoContext } from '../DemoContext';
+import { demos } from "../demos";
+import { normalizeIndent } from "./components";
+import { DemoContext } from "../DemoContext";
 
 # Draggable Diagrams workshop
 
@@ -14,7 +14,7 @@ Let's jump in!
 
 ## Introduction to Draggable Diagrams
 
-Draggable Diagrams (DD) is a framework for making interactive diagrams. "Diagrams" here is potentially broad – it could include diagrams of mathematical structures, weird new controllers, direct-manipulation editors, and other interfaces besides. The unique angle of DD is, as the name implies, making drag-drop interactions easier to implement. It does this with a React-y, state-driven approach. In DD, you write a "render" function that turns underlying state into an SVG drawing. To make an object in this drawing draggable, you need only describe what *new states* should be accessible by dragging it. DD will pre-render these possible drawings, and use them to guide a drag-drop interaction.
+Draggable Diagrams (DD) is a framework for making interactive diagrams. "Diagrams" here is potentially broad – it could include diagrams of mathematical structures, weird new controllers, direct-manipulation editors, and other interfaces besides. The unique angle of DD is, as the name implies, making drag-drop interactions easier to implement. It does this with a React-y, state-driven approach. In DD, you write a "render" function that turns underlying state into an SVG drawing. To make an object in this drawing draggable, you need only describe what _new states_ should be accessible by dragging it. DD will pre-render these possible drawings, and use them to guide a drag-drop interaction.
 
 Let's build up some examples. First, a diagram that doesn't do anything.
 
@@ -56,7 +56,8 @@ But this manipulable doesn't actually do anything. Let's fix that. For a diagram
         data-on-drag={drag(span([{status: "off"}, {status: "on"}]))}
       />
     );
-  `}
+
+`}
 />
 
 Try dragging the ball left and right! Try letting go of it in the middle! Pretty spunky, huh?
@@ -67,7 +68,7 @@ There are a lot of new bits here. First a speed-run through some smaller bits:
 
 - We switched from `cx` and `cy` to `transform`. For something to be draggable in DD, it needs to be positioned using transforms. (This makes a lot of infrastructural logic more uniform, and the system authors are lazy.) To make using transforms easier, we have helpers `translate`, `rotate`, and `scale`.
 
-    In short: anywhere you might ordinarily position a shape with an x & y, you should use `transform={translate(...)}`.
+  In short: anywhere you might ordinarily position a shape with an x & y, you should use `transform={translate(...)}`.
 
 - Here, we use a `transform` that depends on state – `"off"` will be to the left and `"on"` will be to the right. State is provided as an argument to the manipulable.
 
@@ -144,18 +145,19 @@ With this knowledge we can take on a more involved example: reordering objects.
         </g>
       );
     };
-  `}
+
+`}
 />
 
 Some important aspects, top to bottom:
 
 - This diagram "lifts" a tile a bit when it's getting dragged. That's possible because DD provides `draggedId` as a function argument, which is set to the `id` attribute of the currently-dragged element, or `null`. The diagram uses this to calculate `isDragged` in a loop and apply effects conditionally.
 
-- `id` is a much bigger deal than just powering `draggedId`. DD uses `id` to connect elements across renderings of different states. If `id` is not provided, DD will use position in the tree structure, which sometimes is all you need. But here, that would fail – we're rendering tiles in order of position, which means the tile in tree position *i* will change over time. To get drag control and interpolation between positions, you need `id`s!
+- `id` is a much bigger deal than just powering `draggedId`. DD uses `id` to connect elements across renderings of different states. If `id` is not provided, DD will use position in the tree structure, which sometimes is all you need. But here, that would fail – we're rendering tiles in order of position, which means the tile in tree position _i_ will change over time. To get drag control and interpolation between positions, you need `id`s!
 
-   - Note that elements are sometimes identified using a combination of `id` & tree position. For instance, the C tile's `<text>` will be identified via the path `C/1`.
+  - Note that elements are sometimes identified using a combination of `id` & tree position. For instance, the C tile's `<text>` will be identified via the path `C/1`.
 
-   - `id` acts like a global version of React's `key`. I considered adding `key` as a local version, but I haven't run into a need for it yet. Let me know what you think!
+  - `id` acts like a global version of React's `key`. I considered adding `key` as a local version, but I haven't run into a need for it yet. Let me know what you think!
 
 - SVG doesn't have z-index. But because elements with `id`s end up "ripped out" of the SVG structure, we can put z-indices on them (with `data-z-index`) to determine their ultimate ordering. Here, we use that to make sure the dragged tile is on top of the others.
 
@@ -196,7 +198,8 @@ The most novel part of Draggable Diagrams is the "drag between discrete states" 
         </g>
       </g>
     );
-  `}
+
+`}
 />
 
 The new part here is `numAtPath` in the drag spec. This means "the drag should control a numeric value located at this path in the state object". Specifically, it will control the numeric value to try to make the dragged object as close to the dragged pointer as possible. (That's numeric minimization!)
@@ -205,7 +208,7 @@ A single diagram can have both discrete and continuous drags. Here, edges can be
 
 <DemoEmbed demoId="graph" />
 
-(Really, it should be possible for a single drag to control *both* discrete and continuous dimensions, but DD doesn't support that yet. I'd love to have a good reason to do so.)
+(Really, it should be possible for a single drag to control _both_ discrete and continuous dimensions, but DD doesn't support that yet. I'd love to have a good reason to do so.)
 
 And just for fun here's a continuous drag controlling scale & rotation transforms:
 
@@ -243,7 +246,8 @@ In this example, we loop through a set of colors (& positions) by clicking:
         />
       );
     };
-  `}
+
+`}
 />
 
 `setState` animates! At least by default; you can change this behavior with a second argument, of type:

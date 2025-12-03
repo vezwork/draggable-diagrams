@@ -20,7 +20,7 @@ const MAX_COLOR_INDEX = 15; // Support 0-15 (16 colors)
 export function colorizeSecret(text: string, colorIndex: number): string {
   if (colorIndex < 0 || colorIndex > MAX_COLOR_INDEX) {
     throw new Error(
-      `colorIndex must be between 0 and ${MAX_COLOR_INDEX}, got ${colorIndex}`,
+      `colorIndex must be between 0 and ${MAX_COLOR_INDEX}, got ${colorIndex}`
     );
   }
 

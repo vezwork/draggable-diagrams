@@ -24,12 +24,15 @@ export namespace Graph {
           // Draw a triangular arrowhead
           const arrowHeadAngle = Math.PI / 8;
           const arrowHeadLength = 20;
-          const backFromTip = toArrow.sub(fromArrow).norm().mul(-arrowHeadLength);
+          const backFromTip = toArrow
+            .sub(fromArrow)
+            .norm()
+            .mul(-arrowHeadLength);
 
           // Is the opposite edge present?
           const oppositeEdgeKey = _.findKey(
             state.edges,
-            (e) => e.from === edge.to && e.to === edge.from,
+            (e) => e.from === edge.to && e.to === edge.from
           );
           let offset = Vec2(0);
           if (oppositeEdgeKey) {
@@ -60,7 +63,7 @@ export namespace Graph {
                 points={points(
                   Vec2(0),
                   backFromTip.rotate(arrowHeadAngle),
-                  backFromTip.rotate(-arrowHeadAngle),
+                  backFromTip.rotate(-arrowHeadAngle)
                 )}
                 fill="black"
                 data-on-drag={drag(() => {
@@ -72,7 +75,7 @@ export namespace Graph {
                     if (
                       _.findKey(
                         state.edges,
-                        (e) => e.from === edge.from && e.to === newToNodeKey,
+                        (e) => e.from === edge.from && e.to === newToNodeKey
                       )
                     )
                       continue;
@@ -106,7 +109,7 @@ export namespace Graph {
                     if (
                       _.findKey(
                         state.edges,
-                        (e) => e.from === newFromNodeKey && e.to === edge.to,
+                        (e) => e.from === newFromNodeKey && e.to === edge.to
                       )
                     )
                       continue;
@@ -138,7 +141,7 @@ export namespace Graph {
               numsAtPaths([
                 ["nodes", key, "x"],
                 ["nodes", key, "y"],
-              ]),
+              ])
             )}
           />
         ))}

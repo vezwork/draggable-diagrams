@@ -1,6 +1,6 @@
 import mdx from "@mdx-js/rollup";
-import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { qrcodePlugin } from "./vite-plugin-qrcode";
 

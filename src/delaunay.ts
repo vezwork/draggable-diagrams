@@ -10,7 +10,7 @@ export function findTriangle(
     edge = 0,
     // visit = null,
     limit = Infinity,
-  } = {},
+  } = {}
 ): number {
   // JAH: special case
   if (delaunay.points.length / 2 < 3) return -1;
@@ -38,7 +38,7 @@ export function findTriangle(
       points[pn],
       points[pn + 1],
       pt.x,
-      pt.y,
+      pt.y
     );
 
     if (o >= 0) {
@@ -62,7 +62,7 @@ function orientation(
   bx: number,
   by: number,
   cx: number,
-  cy: number,
+  cy: number
 ) {
   // Determinant of vectors of the line segments AB and BC:
   // [ cx - bx ][ bx - ax ]
@@ -112,7 +112,7 @@ type ConvexHullProjection =
 
 export function projectOntoConvexHull(
   delaunay: Delaunay<Delaunay.Point>,
-  pt: Vec2,
+  pt: Vec2
 ): ConvexHullProjection {
   const delPt = (idx: number) =>
     Vec2(delaunay.points[2 * idx], delaunay.points[2 * idx + 1]);
@@ -155,7 +155,7 @@ export function projectOntoConvexHull(
           pt,
           delPt(ptIdx0),
           delPt(ptIdx1),
-          delPt(ptIdx2),
+          delPt(ptIdx2)
         ),
         projectedPt: pt,
         dist: 0,

@@ -1,5 +1,9 @@
 import React from "react";
-import { accumulateTransforms, shouldRecurseIntoChildren, SvgElem } from "./jsx-flatten";
+import {
+  accumulateTransforms,
+  shouldRecurseIntoChildren,
+  SvgElem,
+} from "./jsx-flatten";
 import { localToGlobal, parseTransform } from "./svg-transform";
 import { assert } from "./utils";
 import { Vec2, Vec2able } from "./vec2";

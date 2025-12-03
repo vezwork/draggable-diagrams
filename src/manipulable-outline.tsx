@@ -19,7 +19,7 @@ export namespace Outline {
     tree: Tree,
     rootState: Tree,
     draggedId: string | null,
-    drag: Drag<Tree>,
+    drag: Drag<Tree>
   ): {
     elem: SvgElem;
     h: number;

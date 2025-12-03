@@ -11,17 +11,20 @@ This project implements interactive, draggable SVG diagrams with sophisticated s
 ## Project Infrastructure
 
 ### Build System
+
 - **Vite** - Fast build tool and dev server
 - **TypeScript** - Type-safe JavaScript with strict mode enabled
 - **React 19** - UI framework
 - **Vitest** - Unit testing
 
 ### Routing
+
 - **React Router DOM** with `HashRouter` - All routes use hash-based navigation (`#/path`)
 - **Custom `autoRoute()` helper** (`src/autoRoute.tsx`) - Type-safe route definitions that automatically inject URL params
 - Routes defined in `src/main.tsx`
 
 **Adding a new route:**
+
 ```typescript
 // 1. Create page component (e.g., src/MyPage.tsx)
 export function MyPage() {
@@ -30,19 +33,25 @@ export function MyPage() {
 
 // 2. Add to src/main.tsx
 import { MyPage } from "./MyPage";
-{autoRoute("/my-page", MyPage)}
+{
+  autoRoute("/my-page", MyPage);
+}
 
 // 3. Access at http://localhost:5173/#/my-page
 ```
 
 **Routes with parameters:**
+
 ```typescript
 // Type-safe params extraction
-{autoRoute("/demos/:id", SingleDemoPage, { demos })}
+{
+  autoRoute("/demos/:id", SingleDemoPage, { demos });
+}
 // Component automatically receives { id: string, demos: Demo[] }
 ```
 
 ### Styling
+
 - **Tailwind CSS 4** - Utility-first CSS framework
 - Imported via `@import "tailwindcss"` in `src/index.css`
 - **Design system patterns** (from `IndexPage.tsx`):
@@ -52,6 +61,7 @@ import { MyPage } from "./MyPage";
   - Links: `text-blue-600 hover:text-blue-800 underline`
 
 ### MDX Documentation Pages
+
 - **Build-time MDX compilation** - Uses `@mdx-js/rollup` Vite plugin to compile `.mdx` files into React components
 - **Automatic routing** - `DocsPage` component uses `import.meta.glob()` to dynamically load all `.mdx` files
 - **`/docs/:slug` route** - Automatically maps to `src/docs/:slug.mdx`
@@ -62,13 +72,16 @@ import { MyPage } from "./MyPage";
   - `<LiveEditor code="..." />` - Split-screen live code editor with CodeMirror (auto-expands to fit code, optional `height` and `minHeight` props)
 
 **Adding a documentation page:**
+
 ```mdx
 <!-- src/docs/my-doc.mdx -->
+
 # My Documentation
 
 Content with **markdown** and <Callout type="info">callouts</Callout>
 
-<LiveEditor code={`
+<LiveEditor
+  code={`
 const initialState = { x: 100, y: 100 };
 const manipulable = ({ state, draggable }) => {
   return draggable(
@@ -76,12 +89,14 @@ const manipulable = ({ state, draggable }) => {
     numsAtPaths([["x"], ["y"]])
   );
 };
-`} />
+`}
+/>
 ```
 
 That's it! The page is automatically available at `#/docs/my-doc`
 
 ### Project Structure
+
 ```
 src/
   main.tsx              - App entry point, routes
@@ -119,6 +134,7 @@ export type Manipulable<T extends object> = (props: {
 ```
 
 **Key props:**
+
 - `state` - Current state of the diagram
 - `draggable()` - Wraps an element to make it draggable (returns modified JSX)
 - `drag()` - Alternative API that returns a value for `data-on-drag` attribute
@@ -146,6 +162,7 @@ draggable(<element />, span([state1, state2, state3, ...]))
 ```
 
 **Important:** Use `span(states)` not `states.map(straightTo)` - these have different behavior:
+
 - `span(states)` - single manifold from array of states
 - `states.map(straightTo)` - array of individual manifolds
 
@@ -154,19 +171,20 @@ draggable(<element />, span([state1, state2, state3, ...]))
 Helper functions for SVG transforms (exported from `manipulable.tsx`):
 
 ```typescript
-translate(100, 100)  // "translate(100,100) "
-translate(Vec2(x, y)) // also accepts Vec2able
+translate(100, 100); // "translate(100,100) "
+translate(Vec2(x, y)); // also accepts Vec2able
 
-rotate(45)  // "rotate(45,0,0) " (degrees)
-rotate(45, Vec2(100, 100))  // rotate around point
+rotate(45); // "rotate(45,0,0) " (degrees)
+rotate(45, Vec2(100, 100)); // rotate around point
 
-scale(2)  // "scale(2,2) "
-scale(2, 0.5)  // "scale(2,0.5) "
+scale(2); // "scale(2,2) "
+scale(2, 0.5); // "scale(2,0.5) "
 
-points(Vec2(0, 0), Vec2(10, 5), Vec2(20, 10))  // "0,0 10,5 20,10"
+points(Vec2(0, 0), Vec2(10, 5), Vec2(20, 10)); // "0,0 10,5 20,10"
 ```
 
 **Combine with `+`:**
+
 ```typescript
 transform={translate(100, 100) + rotate(45) + scale(2)}
 // Generates: "translate(100,100) rotate(45,0,0) scale(2,2) "
@@ -193,6 +211,7 @@ The `localToGlobal` and `globalToLocal` functions in `svg-transform.ts` handle t
 ## Key Files
 
 ### Core Framework
+
 - `src/manipulable.tsx` - Manipulable type, transform helpers, drag state management
 - `src/DragSpec.ts` - Drag specification types (`straightTo`, `span`, `numsAtPaths`, etc.)
 - `src/svg-transform.ts` - Transform parsing, interpolation, coordinate conversion
@@ -201,11 +220,14 @@ The `localToGlobal` and `globalToLocal` functions in `svg-transform.ts` handle t
 - `src/vec2.ts` - 2D vector utilities
 
 ### Components
+
 - `src/components/Demo.tsx` - Wrapper for Manipulable demos
 - `src/demos.tsx` - All demo configurations
 
 ### Manipulables
+
 Each `manipulable-*.tsx` file contains a Manipulable implementation. Good examples:
+
 - `manipulable-clock-svg.tsx` - Simple rotating hands with transforms
 - `manipulable-graph-svg.tsx` - Complex drag specs with span()
 - `manipulable-spinny-svg.tsx` - Using element IDs for stable identity
@@ -245,10 +267,7 @@ type MyState = {
   angle: number;
 };
 
-export const myManipulable: Manipulable<MyState> = ({
-  state,
-  draggable,
-}) => {
+export const myManipulable: Manipulable<MyState> = ({ state, draggable }) => {
   return (
     <g>
       {draggable(
@@ -258,7 +277,7 @@ export const myManipulable: Manipulable<MyState> = ({
           height={50}
           fill="blue"
         />,
-        numsAtPaths([["x"], ["y"], ["angle"]]),
+        numsAtPaths([["x"], ["y"], ["angle"]])
       )}
     </g>
   );
@@ -279,7 +298,7 @@ import { myManipulable, initialState } from "./manipulable-my-svg";
   initialState={initialState}
   height={200}
   padding={20}
-/>
+/>;
 ```
 
 ### Using Element IDs for Stable Identity
@@ -288,17 +307,20 @@ When elements need stable identity across state changes (for interpolation):
 
 ```typescript
 // ✓ Good - uses id for tracking
-{items.map((item) =>
-  <rect id={`item-${item.id}`} x={item.x} y={item.y} />
-)}
+{
+  items.map((item) => <rect id={`item-${item.id}`} x={item.x} y={item.y} />);
+}
 
 // ✗ Bad - uses React key (not supported)
-{items.map((item) =>
-  <rect key={item.id} x={item.x} y={item.y} />  // Error!
-)}
+{
+  items.map(
+    (item) => <rect key={item.id} x={item.x} y={item.y} /> // Error!
+  );
+}
 ```
 
 **Important:**
+
 - NO React `key` props (framework doesn't use them)
 - NO slashes in IDs (use hyphens: `"node-1-2"` not `"node/1/2"`)
 
@@ -308,10 +330,7 @@ Alternative to `draggable()` - attach drag spec directly as attribute:
 
 ```typescript
 export const demo: Manipulable<State> = ({ state, drag }) => (
-  <rect
-    x={state.x}
-    data-on-drag={drag(numsAtPaths([["x"]]))}
-  />
+  <rect x={state.x} data-on-drag={drag(numsAtPaths([["x"]]))} />
 );
 ```
 
@@ -320,7 +339,9 @@ This is useful for inline demos in `demos.tsx`.
 ## Important Gotchas
 
 ### 1. Transform Ordering
+
 SVG transforms are right-to-left. Always put `translate()` first in your string:
+
 ```typescript
 // ✓ Correct
 transform={translate(x, y) + rotate(angle)}
@@ -330,7 +351,9 @@ transform={rotate(angle) + translate(x, y)}
 ```
 
 ### 2. No React Keys
+
 The framework uses `id` attributes for element tracking, not React's `key`:
+
 ```typescript
 // ✓ Correct
 <rect id="my-element" />
@@ -340,7 +363,9 @@ The framework uses `id` attributes for element tracking, not React's `key`:
 ```
 
 ### 3. No Slashes in IDs
+
 IDs cannot contain `/` - use hyphens or other separators:
+
 ```typescript
 // ✓ Correct
 <g id="node-1-2" />
@@ -350,6 +375,7 @@ IDs cannot contain `/` - use hyphens or other separators:
 ```
 
 ### 4. Read Before Edit/Write
+
 The Edit and Write tools require reading the file first. Always use Read tool before modifying files.
 
 ### 5. TypeScript Type Safety
@@ -357,6 +383,7 @@ The Edit and Write tools require reading the file first. Always use Read tool be
 **NEVER use `any` as a lazy workaround for type errors.** Only use `any` when it is truly called for (e.g., interfacing with untyped external code, or when the type system genuinely cannot express the constraint).
 
 The codebase provides proper types for common patterns:
+
 - `Drag<T>` - the type of the `drag()` function
 - `Draggable<T>` - the type of the `draggable()` function
 - `Manipulable<T>` - the manipulable function type
@@ -380,6 +407,7 @@ const value = typed.propertyName;
 ## Testing
 
 ### Transform Tests
+
 Test coordinate transformations with `localToGlobal` and `globalToLocal`:
 
 ```typescript
@@ -390,6 +418,7 @@ expect(global.y).toBeCloseTo(10);
 ```
 
 ### Lerp Tests
+
 Test interpolation with `lerpSvgNode`:
 
 ```typescript
@@ -402,6 +431,7 @@ expect(result.props.x).toBe(50);
 ## Debug Features
 
 Enable debug view by clicking the eye icon in the demo UI. This shows:
+
 - Red circles at manifold points
 - Red triangles for manifold triangulation
 - Blue circles at projection points

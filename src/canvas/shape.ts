@@ -1,10 +1,10 @@
 import * as d3 from "d3-shape";
 import _ from "lodash";
-import { Layer } from "./layer";
-import { IPointerManager } from "./pointer";
 import { assert, assertNever, defined, Many, manyToArray } from "../utils";
 import { lerp, Vec2, Vec2able } from "../vec2";
 import { fromCenter, lerpXYWH, mm, pointInPoly, polyXYWH, XYWH } from "../xywh";
+import { Layer } from "./layer";
+import { IPointerManager } from "./pointer";
 
 // # what's a diagram?
 
@@ -69,7 +69,7 @@ function lerpTransform(a: Transform, b: Transform, t: number): Transform {
             type: "translate",
             offset: (as as { type: "translate"; offset: Vec2 }).offset.lerp(
               (bs as { type: "translate"; offset: Vec2 }).offset,
-              t,
+              t
             ),
           };
         } else if (as.type === "rotate") {
@@ -79,12 +79,12 @@ function lerpTransform(a: Transform, b: Transform, t: number): Transform {
               as as { type: "rotate"; center: Vec2; angle: number }
             ).center.lerp(
               (bs as { type: "rotate"; center: Vec2; angle: number }).center,
-              t,
+              t
             ),
             angle: lerpAngles(
               (as as { type: "rotate"; center: Vec2; angle: number }).angle,
               (bs as { type: "rotate"; center: Vec2; angle: number }).angle,
-              t,
+              t
             ),
           };
         } else {
@@ -102,12 +102,12 @@ function lerpTransform(a: Transform, b: Transform, t: number): Transform {
     const aTotal = a.reduce(
       (acc, step) =>
         acc.add((step as { type: "translate"; offset: Vec2 }).offset),
-      Vec2(0, 0),
+      Vec2(0, 0)
     );
     const bTotal = b.reduce(
       (acc, step) =>
         acc.add((step as { type: "translate"; offset: Vec2 }).offset),
-      Vec2(0, 0),
+      Vec2(0, 0)
     );
     return [
       {
@@ -160,17 +160,14 @@ export class Diagram {
   id: string;
   frames: DiagramFrame[];
 
-  constructor(
-    readonly flatShapes: FlatShape[],
-    framesIn: DiagramFrame[],
-  ) {
+  constructor(readonly flatShapes: FlatShape[], framesIn: DiagramFrame[]) {
     this.id = _.uniqueId("diagram_");
     this.frames = [...framesIn, { id: this.id, transform: [] }];
   }
 
   protected mapFlatShapes(
     fn: (fs: FlatShape) => FlatShape,
-    newFrames?: DiagramFrame[],
+    newFrames?: DiagramFrame[]
   ): Diagram {
     return new Diagram(this.flatShapes.map(fn), newFrames ?? this.frames);
   }
@@ -190,7 +187,7 @@ export class Diagram {
           ...f.transform,
           { type: "translate", offset: Vec2(offset) },
         ],
-      })),
+      }))
     );
   }
 
@@ -209,7 +206,7 @@ export class Diagram {
           ...f.transform,
           { type: "rotate", center: Vec2(center), angle },
         ],
-      })),
+      }))
     );
   }
 
@@ -251,7 +248,7 @@ export class GroupBuilderDiagram extends Diagram {
       ...diagram.flatShapes.map((fs) => ({
         ...fs,
         path: prependRelative(fs.path, `${this.nextIdx}`),
-      })),
+      }))
     );
     this.frames.push(...diagram.frames);
     this.nextIdx++;
@@ -314,7 +311,7 @@ function drawStroke(attrs: Optional<StrokeAttributes>, lyr: Layer) {
 
 function assertSameFill(
   attrsA: Optional<FillAttributes>,
-  attrsB: Optional<FillAttributes>,
+  attrsB: Optional<FillAttributes>
 ) {
   if ("fillStyle" in attrsA || "fillStyle" in attrsB) {
     assert("fillStyle" in attrsA && "fillStyle" in attrsB);
@@ -324,7 +321,7 @@ function assertSameFill(
 
 function assertSameStroke(
   attrsA: Optional<StrokeAttributes>,
-  attrsB: Optional<StrokeAttributes>,
+  attrsB: Optional<StrokeAttributes>
 ) {
   if ("strokeStyle" in attrsA || "strokeStyle" in attrsB) {
     assert("strokeStyle" in attrsA && "strokeStyle" in attrsB);
@@ -351,7 +348,7 @@ class Circle implements Shape {
       center: Vec2;
       radius: number;
     } & Optional<FillAttributes> &
-      Optional<StrokeAttributes>,
+      Optional<StrokeAttributes>
   ) {}
 
   draw({ lyr }: ShapeDrawProps) {
@@ -364,7 +361,7 @@ class Circle implements Shape {
     return fromCenter(
       this.attrs.center,
       this.attrs.radius * 2,
-      this.attrs.radius * 2,
+      this.attrs.radius * 2
     );
   }
 
@@ -387,7 +384,7 @@ export class Rectangle implements Shape {
       xywh: XYWH;
       label?: string;
     } & Optional<FillAttributes> &
-      Optional<StrokeAttributes>,
+      Optional<StrokeAttributes>
   ) {}
 
   draw({ lyr }: ShapeDrawProps) {
@@ -430,7 +427,7 @@ export class Line implements Shape {
     private attrs: {
       from: Vec2;
       to: Vec2;
-    } & StrokeAttributes,
+    } & StrokeAttributes
   ) {}
 
   draw({ lyr }: ShapeDrawProps) {
@@ -461,7 +458,7 @@ export class Polygon implements Shape {
     private attrs: {
       points: Vec2[];
     } & Optional<FillAttributes> &
-      Optional<StrokeAttributes>,
+      Optional<StrokeAttributes>
   ) {}
 
   draw({ lyr }: ShapeDrawProps) {
@@ -499,7 +496,7 @@ export class Curve implements Shape {
   constructor(
     private attrs: {
       points: Vec2[];
-    } & StrokeAttributes,
+    } & StrokeAttributes
   ) {}
 
   draw({ lyr }: ShapeDrawProps) {
@@ -533,7 +530,7 @@ export const curve = shapeFactory(Curve);
 export function drawDiagram(
   diagram: Diagram,
   lyr: Layer,
-  interactiveCtx?: InteractiveContext,
+  interactiveCtx?: InteractiveContext
 ): void {
   const sortedFlatShapes = _.sortBy(diagram.flatShapes, (s) => s.zIndex);
 
@@ -552,7 +549,7 @@ export function drawDiagram(
       interactiveCtx.pointer.addClickHandler(polyAbsolute, () => {
         const pointerLocal = transformVec2(
           interactiveCtx.pointer.dragPointer!,
-          invertTransform(flatShape.transform),
+          invertTransform(flatShape.transform)
         );
         interactiveCtx.onDragStart(flatShape.draggableKey!, pointerLocal);
       });
@@ -589,7 +586,7 @@ export function lerpDiagrams3(
   a: Diagram,
   b: Diagram,
   c: Diagram,
-  { l0, l1, l2 }: { l0: number; l1: number; l2: number },
+  { l0, l1, l2 }: { l0: number; l1: number; l2: number }
 ) {
   if (l0 + l1 < 1e-6) {
     return c;
@@ -600,7 +597,7 @@ export function lerpDiagrams3(
 
 export function flatShapeByDraggableKey(
   diagram: Diagram,
-  draggableKey: string,
+  draggableKey: string
 ) {
   return diagram.flatShapes.find((fs) => fs.draggableKey === draggableKey);
 }
@@ -618,10 +615,10 @@ export function pointInDiagram(diagram: Diagram, point: Vec2): PointInDiagram {
 
 export function resolvePointInDiagram(
   pointInDiagram: PointInDiagram,
-  diagram: Diagram,
+  diagram: Diagram
 ): Vec2 {
   const fs = diagram.frames.find(
-    (frame) => frame.id === pointInDiagram.diagramId,
+    (frame) => frame.id === pointInDiagram.diagramId
   );
   assert(!!fs, "Frame ID must exist in diagram");
   return transformVec2(pointInDiagram.point, fs.transform);

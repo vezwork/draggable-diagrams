@@ -26,7 +26,7 @@ export namespace Tiles {
               strokeWidth={1}
               fill="none"
             />
-          )),
+          ))
         )}
         {Object.entries(state.tiles).map(([key, tile]) => (
           <g
@@ -42,11 +42,12 @@ export namespace Tiles {
               ).map((d) => {
                 const adjLoc = Vec2(tile).add(d);
                 if (!inXYWH(adjLoc, [0, 0, state.w - 1, state.h - 1])) return;
-                if (Object.values(state.tiles).some((t) => adjLoc.eq(t))) return;
+                if (Object.values(state.tiles).some((t) => adjLoc.eq(t)))
+                  return;
                 const newState = structuredClone(state);
                 newState.tiles[key] = { x: adjLoc.x, y: adjLoc.y };
                 return straightTo(newState);
-              }),
+              })
             )}
           >
             <rect

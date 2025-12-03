@@ -31,8 +31,8 @@ export namespace Perm {
                     produce(state, (draft) => {
                       draft.perm.splice(draggedIdx, 1);
                       draft.perm.splice(idx, 0, p);
-                    }),
-                  ),
+                    })
+                  )
                 );
               })}
             >

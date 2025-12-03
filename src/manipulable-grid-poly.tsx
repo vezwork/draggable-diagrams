@@ -22,7 +22,7 @@ export namespace GridPoly {
         {_.range(state.w).map((x) =>
           _.range(state.h).map((y) => (
             <circle cx={x * TILE_SIZE} cy={y * TILE_SIZE} r={5} fill="gray" />
-          )),
+          ))
         )}
 
         {/* Polygon edges */}
@@ -57,7 +57,7 @@ export namespace GridPoly {
                     states.push(
                       produce(state, (draft) => {
                         draft.points[idx] = { x, y };
-                      }),
+                      })
                     );
                   }
                 }
