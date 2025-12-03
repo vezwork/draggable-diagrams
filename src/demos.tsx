@@ -176,7 +176,18 @@ export const demos: ReactElement[] = [
   <Demo
     id="bezier"
     title="Bezier Curve Editor"
-    notes="Drag the endpoints (red) or control points (yellow) orrrrr the curve (??)."
+    notes={
+      <>
+        Drag the endpoints (red) or control points (yellow) orrrrr the curve
+        (??). –{" "}
+        <a
+          href="https://www.orionreed.com/"
+          className="hover:text-gray-700 hover:underline"
+        >
+          Orion Reed
+        </a>
+      </>
+    }
     manipulable={Bezier.manipulable}
     initialState={Bezier.state2}
     height={200}

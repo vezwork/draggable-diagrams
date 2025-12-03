@@ -88,7 +88,7 @@ export function Demo<T extends object, Config>(props: DemoProps<T, Config>) {
           {baseUrl ? (
             <Link
               to={`${baseUrl}/${id}`}
-              className="no-underline text-gray-900 hover:text-gray-700 transition-colors"
+              className="no-underline text-gray-900 hover:text-gray-700 hover:underline"
             >
               {title}
             </Link>
@@ -101,7 +101,7 @@ export function Demo<T extends object, Config>(props: DemoProps<T, Config>) {
             href={`https://github.com/joshuahhh/draggable-diagrams/blob/main/src/${sourceFile}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-gray-500 hover:text-gray-700 no-underline"
+            className="text-sm text-gray-500 hover:text-gray-700 no-underline hover:underline"
           >
             source
           </a>
