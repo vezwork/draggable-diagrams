@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { lerpSvgNode } from "./lerp";
+import { lerpSvgx } from "./lerp";
 
 describe("lerpSvgNode", () => {
   it("lerps numeric props", () => {
     const a = <rect x={0} y={0} width={100} height={100} />;
     const b = <rect x={100} y={50} width={200} height={150} />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -22,7 +22,7 @@ describe("lerpSvgNode", () => {
     const a = <rect x={0} width={100} />;
     const b = <rect x={100} width={200} />;
 
-    const result = lerpSvgNode(a, b, 0);
+    const result = lerpSvgx(a, b, 0);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -36,7 +36,7 @@ describe("lerpSvgNode", () => {
     const a = <rect x={0} width={100} />;
     const b = <rect x={100} width={200} />;
 
-    const result = lerpSvgNode(a, b, 1);
+    const result = lerpSvgx(a, b, 1);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -50,7 +50,7 @@ describe("lerpSvgNode", () => {
     const a = <rect x={0} fill="red" id="r1" />;
     const b = <rect x={100} fill="red" id="r1" />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -65,7 +65,7 @@ describe("lerpSvgNode", () => {
     const a = <rect transform="translate(0, 0)" />;
     const b = <rect transform="translate(100, 100)" />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -88,7 +88,7 @@ describe("lerpSvgNode", () => {
       </g>
     );
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <g>
@@ -118,7 +118,7 @@ describe("lerpSvgNode", () => {
       </g>
     );
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <g>
@@ -135,7 +135,7 @@ describe("lerpSvgNode", () => {
     const a = <rect />;
     const b = <circle />;
 
-    expect(() => lerpSvgNode(a, b, 0.5)).toThrow(
+    expect(() => lerpSvgx(a, b, 0.5)).toThrow(
       "Cannot lerp between different element types"
     );
   });
@@ -144,7 +144,7 @@ describe("lerpSvgNode", () => {
     const a = <rect x={0} />;
     const b = <rect x={100} y={50} />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -158,7 +158,7 @@ describe("lerpSvgNode", () => {
     const a = <rect fill="red" stroke="blue" />;
     const b = <rect fill="green" stroke="yellow" />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -172,7 +172,7 @@ describe("lerpSvgNode", () => {
     const a = <rect style={{ fill: "red", backgroundColor: "blue" }} />;
     const b = <rect style={{ fill: "green", backgroundColor: "yellow" }} />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -190,7 +190,7 @@ describe("lerpSvgNode", () => {
     const a = <rect style={{ opacity: 0, fontSize: 10 }} />;
     const b = <rect style={{ opacity: 1, fontSize: 20 }} />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -208,7 +208,7 @@ describe("lerpSvgNode", () => {
     const a = <rect style={{ opacity: 0, fill: "red" }} />;
     const b = <rect style={{ opacity: 1, fill: "blue" }} />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -226,7 +226,7 @@ describe("lerpSvgNode", () => {
     const a = <rect style={{ opacity: 0 }} />;
     const b = <rect style={{ opacity: 1, fill: "blue" }} />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -244,7 +244,7 @@ describe("lerpSvgNode", () => {
     const a = <rect fill="none" x={0} />;
     const b = <rect fill="none" x={100} />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -258,7 +258,7 @@ describe("lerpSvgNode", () => {
     const a = <rect fill="none" x={0} />;
     const b = <rect fill="red" x={100} />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -272,7 +272,7 @@ describe("lerpSvgNode", () => {
     const a = <rect fill="red" x={0} />;
     const b = <rect fill="none" x={100} />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <rect
@@ -286,7 +286,7 @@ describe("lerpSvgNode", () => {
     const a = <polygon points="0,0 10,0 10,10" />;
     const b = <polygon points="20,20 30,20 30,30" />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result).toMatchInlineSnapshot(`
       <polygon
@@ -299,7 +299,7 @@ describe("lerpSvgNode", () => {
     const a = <polygon points="0,0 10,0 10,10" />;
     const b = <polygon points="20,20 30,20 30,30" />;
 
-    const result = lerpSvgNode(a, b, 0);
+    const result = lerpSvgx(a, b, 0);
 
     expect(result).toMatchInlineSnapshot(`
       <polygon
@@ -312,7 +312,7 @@ describe("lerpSvgNode", () => {
     const a = <polygon points="0,0 10,0 10,10" />;
     const b = <polygon points="20,20 30,20 30,30" />;
 
-    const result = lerpSvgNode(a, b, 1);
+    const result = lerpSvgx(a, b, 1);
 
     expect(result).toMatchInlineSnapshot(`
       <polygon
@@ -325,7 +325,7 @@ describe("lerpSvgNode", () => {
     const a = <polygon points="0,0 10,0 10,10" />;
     const b = <polygon points="20,20 30,20" />;
 
-    expect(() => lerpSvgNode(a, b, 0.5)).toThrow(
+    expect(() => lerpSvgx(a, b, 0.5)).toThrow(
       "Cannot lerp points: different point counts"
     );
   });
@@ -334,7 +334,7 @@ describe("lerpSvgNode", () => {
     const a = <path d="M 0 0 L 10 10" />;
     const b = <path d="M 20 20 L 30 30" />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     expect(result.props.d).toBe("M10,10L20,20");
   });
@@ -343,7 +343,7 @@ describe("lerpSvgNode", () => {
     const a = <path d="M 0 0 L 10 10" />;
     const b = <path d="M 20 20 L 30 30" />;
 
-    const result = lerpSvgNode(a, b, 0);
+    const result = lerpSvgx(a, b, 0);
 
     expect(result.props.d).toBe("M0,0L10,10");
   });
@@ -352,7 +352,7 @@ describe("lerpSvgNode", () => {
     const a = <path d="M 0 0 L 10 10" />;
     const b = <path d="M 20 20 L 30 30" />;
 
-    const result = lerpSvgNode(a, b, 1);
+    const result = lerpSvgx(a, b, 1);
 
     // At t=1, d3-interpolate-path returns the original format of b
     expect(result.props.d).toBe("M 20 20 L 30 30");
@@ -362,7 +362,7 @@ describe("lerpSvgNode", () => {
     const a = <path d="M 0 0 Q 5 10 10 0" />;
     const b = <path d="M 20 20 Q 25 30 30 20" />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     // d3-interpolate-path handles curved paths
     expect(result.props.d).toBeTruthy();
@@ -374,7 +374,7 @@ describe("lerpSvgNode", () => {
     const a = <path d="M 0 0 L 10 10" />;
     const b = <path d="M 20 20 C 25 25 25 25 30 30" />;
 
-    const result = lerpSvgNode(a, b, 0.5);
+    const result = lerpSvgx(a, b, 0.5);
 
     // Should produce a valid path
     expect(result.props.d).toBeTruthy();

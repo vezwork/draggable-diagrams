@@ -1,11 +1,9 @@
-import React, { Children, cloneElement, isValidElement } from "react";
-import { Svgx } from ".";
-import { emptyToUndefined } from "../utils";
-import { shouldRecurseIntoChildren } from "./hoist";
+import { findElement, Svgx, updateElement } from ".";
+import { assert } from "../utils";
 
 const pathPropName = "data-path";
 
-export function getPath(element: React.ReactElement): string | undefined {
+export function getPath(element: Svgx): string | undefined {
   const props = element.props as any;
   return props[pathPropName];
 }
@@ -22,60 +20,31 @@ export function assignPaths(element: Svgx): Svgx {
 }
 
 function assignPathsRecursive(element: Svgx, currentPath: string): Svgx {
-  // Check if this element has an id
-  const props = element.props as any;
-  const id = props.id;
+  const { id } = element.props;
 
-  // Validate that id doesn't contain slashes
-  if (id && id.includes("/")) {
-    throw new Error(
-      `Element id "${id}" contains a slash, which is not allowed. IDs are used as absolute paths and cannot contain slashes.`
-    );
-  }
+  assert(
+    !id || !id.includes("/"),
+    `Element id "${id}" contains a slash, which is not allowed.`
+  );
 
   const elementPath: string = id ? id + "/" : currentPath;
 
-  // Just to be helpful, warn against using keys
-  if (typeof element.key === "string" && !element.key.startsWith(".")) {
-    throw new Error(
-      `Element with path "${elementPath}" has a key prop (${element.key}), which is not allowed.`
-    );
-  }
+  assert(
+    !(typeof element.key === "string" && !element.key.startsWith(".")),
+    `Element with path "${elementPath}" has a key prop (${element.key}), which is not allowed.`
+  );
 
-  // Process children (skip foreignObject children)
-  const children = React.Children.toArray(props.children) as Svgx[];
-  const newChildren = shouldRecurseIntoChildren(element)
-    ? children.map((child, index) =>
-        React.isValidElement(child)
-          ? assignPathsRecursive(child, elementPath + String(index) + "/")
-          : child
-      )
-    : children;
-
-  return cloneElement(element, {
-    [pathPropName as any]: elementPath,
-    children: emptyToUndefined(newChildren),
-  });
+  return updateElement(
+    element,
+    (child, index) =>
+      assignPathsRecursive(child, elementPath + String(index) + "/"),
+    {
+      [pathPropName as any]: elementPath,
+    }
+  );
 }
 
 // TODO: actually follow paths rather than searching the whole tree
 export function findByPath(path: string, node: Svgx): Svgx | null {
-  const props = node.props as any;
-  if (props[pathPropName] === path) {
-    return node;
-  }
-
-  // Don't recurse into foreignObject children
-  if (!shouldRecurseIntoChildren(node)) {
-    return null;
-  }
-
-  for (const child of Children.toArray(props.children) as Svgx[]) {
-    if (isValidElement(child)) {
-      const found = findByPath(path, child);
-      if (found) return found;
-    }
-  }
-
-  return null;
+  return findElement(node, (el) => getPath(el) === path);
 }

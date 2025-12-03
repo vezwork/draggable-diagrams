@@ -2,11 +2,10 @@ import { rgb } from "d3-color";
 import { interpolateHcl } from "d3-interpolate";
 import { interpolatePath } from "d3-interpolate-path";
 import React from "react";
-import { Svgx } from ".";
+import { shouldRecurseIntoChildren, Svgx } from ".";
 import { ErrorWithJSX } from "../ErrorBoundary";
 import { prettyLog, PrettyPrint } from "../pretty-print";
 import { emptyToUndefined } from "../utils";
-import { shouldRecurseIntoChildren } from "./hoist";
 import { lerpTransformString } from "./transform";
 
 // SVG properties that should be interpolated as colors
@@ -144,7 +143,7 @@ function lerpValue(key: string, valA: any, valB: any, t: number): any {
  * Lerps between two SVG JSX nodes.
  * Interpolates transforms and recursively lerps children.
  */
-export function lerpSvgNode(a: Svgx, b: Svgx, t: number): Svgx {
+export function lerpSvgx(a: Svgx, b: Svgx, t: number): Svgx {
   // console.log("Lerping SVG nodes:", a, b, t);
 
   // Elements should be the same type
@@ -239,7 +238,7 @@ export function lerpSvgNode(a: Svgx, b: Svgx, t: number): Svgx {
     lerpedChildren = childrenA.map((childA, i) => {
       const childB = childrenB[i];
       if (React.isValidElement(childA) && React.isValidElement(childB)) {
-        return lerpSvgNode(childA, childB, t);
+        return lerpSvgx(childA, childB, t);
       }
       // For text nodes or other non-element children, just use A
       return childA;

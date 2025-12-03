@@ -1,8 +1,7 @@
-import React from "react";
-import { Svgx } from ".";
+import { findElement, Svgx } from ".";
 import { Vec2, Vec2able } from "../math/vec2";
 import { assert, assertDefined } from "../utils";
-import { accumulateTransforms, shouldRecurseIntoChildren } from "./hoist";
+import { accumulateTransforms } from "./hoist";
 import { localToGlobal, parseTransform } from "./transform";
 
 /**
@@ -49,22 +48,7 @@ export function pointRef(elementId: string, localPos: Vec2able): PointRef {
  * Finds an element by ID in the SVG tree.
  */
 function findElementById(tree: Svgx, id: string): Svgx | null {
-  const props = tree.props as any;
-  if (props.id === id) {
-    return tree;
-  }
-
-  if (shouldRecurseIntoChildren(tree)) {
-    const children = React.Children.toArray(props.children);
-    for (const child of children) {
-      if (React.isValidElement(child)) {
-        const found = findElementById(child as Svgx, id);
-        if (found) return found;
-      }
-    }
-  }
-
-  return null;
+  return findElement(tree, (el) => el.props.id === id);
 }
 
 /**

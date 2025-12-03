@@ -30,7 +30,7 @@ import {
   HoistedSvgx,
   hoistSvg,
 } from "./svgx/hoist";
-import { lerpSvgNode } from "./svgx/lerp";
+import { lerpSvgx } from "./svgx/lerp";
 import { assignPaths, findByPath, getPath } from "./svgx/path";
 import { globalToLocal, localToGlobal, parseTransform } from "./svgx/transform";
 import { useRenderError } from "./useRenderError";
@@ -136,7 +136,7 @@ function lerpHoisted(a: HoistedSvgx, b: HoistedSvgx, t: number): HoistedSvgx {
 
     if (aVal && bVal) {
       // console.log("lerpHoisted is lerping key:", key);
-      result.set(key, lerpSvgNode(aVal, bVal, t));
+      result.set(key, lerpSvgx(aVal, bVal, t));
     } else if (aVal) {
       result.set(key, aVal);
     } else if (bVal) {

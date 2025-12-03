@@ -1,19 +1,10 @@
-import { Children, cloneElement, isValidElement, ReactNode } from "react";
-import { Svgx } from ".";
-import { assert, emptyToUndefined } from "../utils";
+import { cloneElement } from "react";
+import { Svgx, updateElement } from ".";
+import { assert } from "../utils";
 
 export type HoistedSvgx = Map<string, Svgx>;
 
 const accumulatedTransformProp = "data-accumulated-transform";
-
-/**
- * Determines if we should recurse into an element's children when walking the tree.
- * Returns false for foreignObject to avoid processing non-SVG content inside it.
- * It's still fine to read the foreignObject element's props (like transform).
- */
-export function shouldRecurseIntoChildren(element: Svgx): boolean {
-  return element.type !== "foreignObject";
-}
 
 /**
  * Step 1: Walks the SVG tree and adds data-accumulated-transform to all elements.
@@ -34,33 +25,13 @@ function walkAndAccumulateTransforms(
     elementTransform
   );
 
-  // Process children recursively (skip foreignObject children)
-  const children = Children.toArray(props.children);
-  const newChildren: ReactNode[] = [];
-
-  if (shouldRecurseIntoChildren(element)) {
-    for (const child of children) {
-      if (isValidElement(child)) {
-        const processedChild = walkAndAccumulateTransforms(
-          child as Svgx,
-          newAccumulatedTransform
-        );
-        newChildren.push(processedChild);
-      } else {
-        // Preserve non-element children (like text nodes)
-        newChildren.push(child);
-      }
+  return updateElement(
+    element,
+    (child) => walkAndAccumulateTransforms(child, newAccumulatedTransform),
+    {
+      [accumulatedTransformProp as any]: newAccumulatedTransform || undefined,
     }
-  } else {
-    // For foreignObject, preserve children as-is
-    newChildren.push(...children);
-  }
-
-  // Clone element with data-accumulated-transform and new children
-  return cloneElement(element, {
-    children: emptyToUndefined(newChildren),
-    [accumulatedTransformProp as any]: newAccumulatedTransform || undefined,
-  });
+  );
 }
 
 /**
@@ -68,29 +39,26 @@ function walkAndAccumulateTransforms(
  * to the top level. Reads data-accumulated-transform and sets it as
  * transform for extracted nodes. Returns a map of elements keyed by
  * their id.
- * - Key "" contains the root with extracted nodes removed (or null
- *   if root has an ID)
+ * - Key "" contains the root with extracted nodes removed (or is not
+ *   set if root has an ID)
  * - Extracted nodes are removed from their parents
  * - Recurses into nodes with IDs to find deeper IDs
  */
 export function hoistSvg(element: Svgx): HoistedSvgx {
   const result: HoistedSvgx = new Map();
   const rootWithExtractedRemoved = extractIdNodes(element, result);
-
-  // If the root element has an ID, it was extracted, so "" should be null
-  const props = element.props as any;
-  if (!props.id) {
+  if (rootWithExtractedRemoved) {
     result.set("", rootWithExtractedRemoved);
   }
-
   return result;
 }
 
 /**
  * Recursively extracts nodes with IDs into hoistedSvg map. Returns
- * the element with extracted children removed.
+ * the element with extracted children removed (or null if this
+ * element itself has an ID and is extracted).
  */
-function extractIdNodes(element: Svgx, hoistedSvg: HoistedSvgx): Svgx {
+function extractIdNodes(element: Svgx, hoistedSvg: HoistedSvgx): Svgx | null {
   const props = element.props as any;
 
   // Validate: data-z-index can only be set on nodes with ids
@@ -100,48 +68,26 @@ function extractIdNodes(element: Svgx, hoistedSvg: HoistedSvgx): Svgx {
     );
   }
 
-  // Process children first, recursively (skip foreignObject children)
-  const children = Children.toArray(props.children);
+  const newElement = updateElement(element, (child) =>
+    extractIdNodes(child, hoistedSvg)
+  );
 
-  const newChildren: ReactNode[] = [];
-
-  if (shouldRecurseIntoChildren(element)) {
-    for (const child of children) {
-      if (isValidElement(child)) {
-        const processedChild = extractIdNodes(child as Svgx, hoistedSvg);
-
-        // Only keep the child if it doesn't have an ID (wasn't extracted)
-        if (!(child.props as any).id) {
-          newChildren.push(processedChild);
-        }
-      } else {
-        // Preserve non-element children (like text nodes)
-        newChildren.push(child);
-      }
-    }
-  } else {
-    // For foreignObject, preserve children as-is
-    newChildren.push(...children);
-  }
-
-  // If this element has an ID, extract it and set transform from data-accumulated-transform
   if (props.id) {
-    // Check for duplicate IDs
     assert(
       !hoistedSvg.has(props.id),
       `Duplicate id "${props.id}" found in SVG tree. Each element must have a unique id.`
     );
 
     const accumulatedTransform = props[accumulatedTransformProp];
-    const elementToHoist = cloneElement(element, {
-      children: emptyToUndefined(newChildren),
+    const elementToHoist = cloneElement(newElement, {
       transform: accumulatedTransform || undefined,
     });
 
     hoistedSvg.set(props.id, elementToHoist);
+    return null;
+  } else {
+    return newElement;
   }
-
-  return cloneElement(element, { children: newChildren });
 }
 
 export function getAccumulatedTransform(element: Svgx): string | undefined {
