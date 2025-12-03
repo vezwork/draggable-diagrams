@@ -2,13 +2,13 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { HashRouter, Routes } from "react-router-dom";
 import { autoRoute } from "./autoRoute";
-import { demosCanvas } from "./canvas/demos-canvas";
 import { DemoListPage, SingleDemoPage } from "./DemoLayout";
 import { demos } from "./demos";
 import { DocsIndexPage } from "./DocsIndexPage";
 import { DocsPage } from "./DocsPage";
 import "./index.css";
 import { IndexPage } from "./IndexPage";
+import { demosCanvas } from "./old-canvas-version/demos-canvas";
 import { PrettyPrintDemo } from "./pretty-print-demo";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
