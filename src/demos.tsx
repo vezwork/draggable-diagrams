@@ -268,8 +268,20 @@ export const demos: ReactElement[] = [
   <Demo
     id="order-preserving"
     title="Order-preserving maps (tree3 → tree3)"
+    notes={
+      <>
+        Featuring multi-drag from{" "}
+        <a
+          href="https://elliot.website/"
+          className="hover:text-gray-700 hover:underline"
+        >
+          Elliot Evans
+        </a>
+        .
+      </>
+    }
     manipulable={OrderPreserving.manipulable}
-    initialState={OrderPreserving.state1}
+    initialState={OrderPreserving.state3To3}
     height={400}
     padding={20}
     defaultConfig={OrderPreserving.defaultConfig}
@@ -279,8 +291,20 @@ export const demos: ReactElement[] = [
   <Demo
     id="order-preserving-large"
     title="Order-preserving maps (tree7 → tree7)"
+    notes={
+      <>
+        Featuring multi-drag from{" "}
+        <a
+          href="https://elliot.website/"
+          className="hover:text-gray-700 hover:underline"
+        >
+          Elliot Evans
+        </a>
+        .
+      </>
+    }
     manipulable={OrderPreserving.manipulable}
-    initialState={OrderPreserving.state2}
+    initialState={OrderPreserving.state7To7}
     height={600}
     padding={20}
     defaultConfig={OrderPreserving.defaultConfig}

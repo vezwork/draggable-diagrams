@@ -96,6 +96,22 @@ export function nodesInTree(root: TreeNode): TreeNode[] {
   return nodes;
 }
 
+// given a tree, return a map from node ID to node
+const nodeByIdByRoot = new WeakMap<TreeNode, Map<string, TreeNode>>();
+export function getNodesById(tree: TreeNode): Map<string, TreeNode> {
+  if (nodeByIdByRoot.has(tree)) {
+    return nodeByIdByRoot.get(tree)!;
+  }
+  const codomainNodes = nodesInTree(tree);
+  const map = new Map(codomainNodes.map((n) => [n.id, n]));
+  nodeByIdByRoot.set(tree, map);
+  return map;
+}
+export function getNodeById(tree: TreeNode, id: string) {
+  const map = getNodesById(tree);
+  return map.get(id);
+}
+
 // /**
 //  * We're descending the codomain tree, drawing bits of the domain
 //  * tree in the right places. By the time we get to a codomain node,
@@ -167,7 +183,10 @@ export const testMorphs: TreeMorph[] = [
  * A morphism is a map that preserves the ancestor-descendant partial order:
  * if x is an ancestor of y in domain, then f(x) must be an ancestor of f(y) in codomain.
  */
-export function allMorphs(domain: TreeNode, codomain: TreeNode): TreeMorph[] {
+export function getAllMorphs(
+  domain: TreeNode,
+  codomain: TreeNode
+): TreeMorph[] {
   const results: TreeMorph[] = [];
 
   // Memoization cache: key is "domainId->codomainId"
@@ -339,7 +358,7 @@ export function buildHasseDiagram(
   domain: TreeNode,
   codomain: TreeNode
 ): HasseDiagram {
-  const morphs = allMorphs(domain, codomain);
+  const morphs = getAllMorphs(domain, codomain);
   const edges: [number, number, string][] = [];
 
   // Build a map from morphism to its index for fast lookup

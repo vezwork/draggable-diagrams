@@ -4,7 +4,7 @@ import { ConfigPanelProps } from "./Demo";
 import { span } from "./DragSpec";
 import { SvgElem } from "./jsx-flatten";
 import { overlapIntervals } from "./layout";
-import { Manipulable, translate } from "./manipulable";
+import { Drag, Manipulable, translate } from "./manipulable";
 import {
   Finalizers,
   pointRef,
@@ -12,8 +12,8 @@ import {
   resolvePointRef,
 } from "./svg-finalizers";
 import {
-  buildHasseDiagram,
-  HasseDiagram,
+  getAllMorphs,
+  getNodeById,
   tree3,
   tree7,
   TreeMorph,
@@ -22,32 +22,14 @@ import {
 import { assert } from "./utils";
 import { Vec2 } from "./vec2";
 
-// HELPERS
-const least = (arr: Array<any>, scorer: Function) => {
-  if (arr.length === 0) {
-    return undefined; // Or handle as appropriate for an empty array
-  }
-
-  return arr.reduce(
-    ([bestScore, bestEl], currentElement) => {
-      const score = scorer(currentElement);
-      if (score < bestScore) {
-        return [score, currentElement];
-      } else {
-        return [bestScore, bestEl];
-      }
-    },
-    [Infinity, undefined]
-  )[1];
-};
 // returns the path from `node` to another node `n` such that `pred(n)==true`.
-const traverseUntilPred = (
-  node: any,
-  next: (n: any) => any[],
-  pred: (n: any) => boolean
-) => {
+function traverseUntilPred<T>(
+  node: T,
+  next: (n: T) => T[],
+  pred: (n: T) => boolean
+) {
   const visited = new Set([node]);
-  const todo: [any, any][] = [[node, []]];
+  const todo: [T, T[]][] = [[node, []]];
   while (todo.length > 0) {
     const [cur, path] = todo.pop()!;
     if (pred(cur)) return path;
@@ -59,24 +41,49 @@ const traverseUntilPred = (
       }
     }
   }
-};
-const sum = (ns: number[]) => ns.reduce((acc, cur) => acc + cur, 0);
+}
+
+const nodeDist = (a: TreeNode, b: TreeNode) =>
+  traverseUntilPred(
+    a,
+    (n) => (n ? [...n.children, ...(n.parent ? [n.parent] : [])] : []),
+    (n) => n === b
+  )!.length;
 
 export namespace OrderPreserving {
   export type State = {
     domainTree: TreeNode;
     codomainTree: TreeNode;
-    hasseDiagram: HasseDiagram;
-    // all we are doing is changing the current morphism
-    curMorphIdx: number;
+    morph: TreeMorph;
+    allMorphs: TreeMorph[];
     yForTradRep: number;
   };
 
+  const allMorphs3To3 = getAllMorphs(tree3, tree3);
+  export const state3To3: State = {
+    domainTree: tree3,
+    codomainTree: tree3,
+    morph: allMorphs3To3[0],
+    allMorphs: allMorphs3To3,
+    yForTradRep: 300,
+  };
+
+  const allMorphs7To7 = getAllMorphs(tree7, tree7);
+  export const state7To7: State = {
+    domainTree: tree7,
+    codomainTree: tree7,
+    morph: allMorphs7To7[0],
+    allMorphs: allMorphs7To7,
+    yForTradRep: 500,
+  };
+
   export type Config = {
+    oneNodeAtATime: boolean;
     showTradRep: boolean;
   };
 
   export const defaultConfig: Config = {
+    oneNodeAtATime: false,
     showTradRep: false,
   };
 
@@ -85,7 +92,7 @@ export namespace OrderPreserving {
     drag,
     config,
   }) => {
-    const morph = state.hasseDiagram.nodes[state.curMorphIdx];
+    const { morph } = state;
     const elements: SvgElem[] = [];
     const finalizers = new Finalizers();
 
@@ -95,7 +102,8 @@ export namespace OrderPreserving {
       morph,
       finalizers,
       state,
-      drag
+      drag,
+      config
     );
     elements.push(r.element);
 
@@ -155,30 +163,26 @@ export namespace OrderPreserving {
     return <g>{[mainTree, ...finalizers.resolve(mainTree)]}</g>;
   };
 
-  export const state1: State = {
-    domainTree: tree3,
-    codomainTree: tree3,
-    hasseDiagram: buildHasseDiagram(tree3, tree3),
-    curMorphIdx: 0,
-    yForTradRep: 300,
-  };
-
-  export const state2: State = {
-    domainTree: tree7,
-    codomainTree: tree7,
-    hasseDiagram: buildHasseDiagram(tree7, tree7),
-    curMorphIdx: 0,
-    yForTradRep: 500,
-  };
-
   export function ConfigPanel({ config, setConfig }: ConfigPanelProps<Config>) {
     return (
-      <ConfigCheckbox
-        value={config.showTradRep}
-        onChange={(newValue) => setConfig({ ...config, showTradRep: newValue })}
-      >
-        Show traditional representation
-      </ConfigCheckbox>
+      <>
+        <ConfigCheckbox
+          value={config.oneNodeAtATime}
+          onChange={(newValue) =>
+            setConfig({ ...config, oneNodeAtATime: newValue })
+          }
+        >
+          Only drag one node at a time
+        </ConfigCheckbox>
+        <ConfigCheckbox
+          value={config.showTradRep}
+          onChange={(newValue) =>
+            setConfig({ ...config, showTradRep: newValue })
+          }
+        >
+          Show traditional representation
+        </ConfigCheckbox>
+      </>
     );
   }
 
@@ -197,7 +201,8 @@ export namespace OrderPreserving {
     morph: TreeMorph,
     finalizers: Finalizers,
     state: State,
-    drag: any
+    drag: Drag<State>,
+    config: Config
   ): { element: SvgElem; w: number; h: number } {
     const result = drawBgSubtree(
       bgNode,
@@ -206,7 +211,8 @@ export namespace OrderPreserving {
       {},
       finalizers,
       state,
-      drag
+      drag,
+      config
     );
     return {
       element: result.element,
@@ -222,7 +228,8 @@ export namespace OrderPreserving {
     fgNodeCenters: Record<string, PointRef>,
     finalizers: Finalizers,
     state: State,
-    drag: any
+    drag: Drag<State>,
+    config: Config
   ): {
     element: SvgElem;
     w: number;
@@ -243,7 +250,8 @@ export namespace OrderPreserving {
       fgNodeCenters,
       finalizers,
       state,
-      drag
+      drag,
+      config
     );
 
     fgNodesBelow.push(...bgNodeR.fgNodesBelow);
@@ -265,7 +273,8 @@ export namespace OrderPreserving {
         fgNodeCenters,
         finalizers,
         state,
-        drag
+        drag,
+        config
       )
     );
 
@@ -340,7 +349,8 @@ export namespace OrderPreserving {
     fgNodeCenters: Record<string, PointRef>,
     finalizers: Finalizers,
     state: State,
-    drag: any
+    drag: Drag<State>,
+    config: Config
   ): {
     element: SvgElem;
     w: number;
@@ -364,7 +374,8 @@ export namespace OrderPreserving {
         fgNodeCenters,
         finalizers,
         state,
-        drag
+        drag,
+        config
       );
       elementsInRect.push(
         <g
@@ -420,7 +431,8 @@ export namespace OrderPreserving {
     fgNodeCenters: Record<string, PointRef>,
     finalizers: Finalizers,
     state: State,
-    drag: any
+    drag: Drag<State>,
+    config: Config
   ): {
     element: SvgElem;
     fgNodesBelow: TreeNode[];
@@ -449,7 +461,8 @@ export namespace OrderPreserving {
           fgNodeCenters,
           finalizers,
           state,
-          drag
+          drag,
+          config
         );
         childrenElements.push(
           <g id={childGroupId} transform={translate(childrenX, 0)}>
@@ -540,13 +553,6 @@ export namespace OrderPreserving {
 
     const nodeCenter = Vec2(nodeX, FG_NODE_SIZE / 2);
 
-    const dist = (a: any, b: any) =>
-      traverseUntilPred(
-        a,
-        (n) => (n ? [...n.children, n.parent] : []),
-        (n) => n === b
-      ).length;
-
     return {
       element: (
         <g>
@@ -558,62 +564,43 @@ export namespace OrderPreserving {
             r={FG_NODE_SIZE / 2}
             fill="black"
             data-on-drag={drag(() => {
-              const { hasseDiagram, curMorphIdx, codomainTree } = state;
-              const allMorphisms = hasseDiagram.nodes;
-              const curMorph = allMorphisms[curMorphIdx];
+              const { morph, allMorphs, codomainTree } = state;
+              const domainIds = Object.keys(morph);
 
-              const byId = new Map<any, any>();
-              traverseUntilPred(
-                codomainTree,
-                (n) => {
-                  byId.set(n.id, n);
-                  return n.children;
-                },
-                (n) => false
-              );
+              let newMorphs;
 
-              const distCache = new Map();
-              const cachedDist = (aid: any, bid: any) => {
-                const a = byId.get(aid);
-                const b = byId.get(bid);
-                if (distCache.has(a)) {
-                  const aCache = distCache.get(a);
-                  if (aCache.has(b)) return aCache.get(b);
-                  else {
-                    const d = dist(a, b);
-                    aCache.set(b, d);
-                    return d;
-                  }
-                } else {
-                  const d = dist(a, b);
-                  distCache.set(a, new Map([[b, d]]));
-                  return d;
-                }
-              };
+              if (config.oneNodeAtATime) {
+                newMorphs = allMorphs.filter((newMorph) => {
+                  return domainIds.every(
+                    (nodeId) =>
+                      nodeId === fgNode.id || // dragged node can go anywhere
+                      morph[nodeId] === newMorph[nodeId] // others stay put
+                  );
+                });
+              } else {
+                // 1. group morphisms by where they send fgNode.id
+                const morphsByDragTarget = _.groupBy(
+                  allMorphs,
+                  (targetMorph) => targetMorph[fgNode.id]
+                );
 
-              // 1. group morphisms by where they send fgNode.id
-              const a = _.groupBy(
-                allMorphisms,
-                (targetMorph) => targetMorph[fgNode.id]
-              );
-              // 2. sort groups by how many nodes they change, and pick first
-              const curMorphMap = Object.entries(curMorph);
-              const b = Object.values(a).map((morphs) =>
-                least(morphs, (morph: any) =>
-                  sum(curMorphMap.map(([k, v]) => cachedDist(morph[k], v)))
-                )
-              );
-              // 3. to indices
-              const c = b.map((morph: any) =>
-                allMorphisms.findIndex((a) => a === morph)
-              );
+                // 2. sort groups by how many nodes they change, and pick first
+                newMorphs = Object.values(morphsByDragTarget).map(
+                  (morphsWithDragTarget) =>
+                    _.minBy(morphsWithDragTarget, (newMorph) =>
+                      _.sum(
+                        domainIds.map((nodeId) =>
+                          nodeDist(
+                            getNodeById(codomainTree, morph[nodeId])!,
+                            getNodeById(codomainTree, newMorph[nodeId])!
+                          )
+                        )
+                      )
+                    )!
+                );
+              }
 
-              return span(
-                c.map((idx) => ({
-                  ...state,
-                  curMorphIdx: idx,
-                }))
-              );
+              return span(newMorphs.map((morph) => ({ ...state, morph })));
             })}
           />
           {childrenContainer}
