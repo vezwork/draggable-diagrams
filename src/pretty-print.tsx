@@ -1,6 +1,6 @@
 import * as prettier from "prettier";
 import React from "react";
-import { colorizeSecret, expandSecret } from "./secret-colorize";
+import { StringTagger } from "./string-tagger";
 
 const { group, indent, line, softline, ifBreak } = prettier.doc.builders;
 
@@ -20,22 +20,16 @@ const COLORS = [
 
 type ColorType = (typeof COLORS)[number]["name"];
 
-// Derived: ANSI codes array for expandSecret
-const ANSI_CODES = COLORS.map((c) => c.ansi);
+const ANSI_RESET = "\x1b[0m";
 
-// Derived: name -> index lookup
-const COLOR_NAME_TO_INDEX = Object.fromEntries(
-  COLORS.map((c, i) => [c.name, i])
-) as Record<ColorType, number>;
+const COLOR_NAME_TO_ANSI = Object.fromEntries(
+  COLORS.map((c) => [c.name, c.ansi])
+) as Record<ColorType, string>;
 
 // Derived: ANSI code -> hex color lookup
 const ANSI_TO_HEX = Object.fromEntries(
   COLORS.map((c) => [c.ansi.match(/\d+/)?.[0] || "", c.hex])
 ) as Record<string, string>;
-
-function colorize(text: string, colorType: ColorType): string {
-  return colorizeSecret(text, COLOR_NAME_TO_INDEX[colorType]);
-}
 
 /**
  * Converts ANSI color codes to browser console %c format with CSS styles.
@@ -192,9 +186,15 @@ export function PrettyPrint({
  */
 function prettyPrintToDoc(
   value: unknown,
-  useColor: boolean = true,
+  tagger: StringTagger | null,
   visited: Set<unknown> = new Set()
 ): Doc {
+  // Helper to colorize text if tagger is available
+  const colorize = (text: string, colorType: ColorType): string => {
+    if (!tagger) return text;
+    const ansi = COLOR_NAME_TO_ANSI[colorType];
+    return tagger.tag(text, ansi, ANSI_RESET);
+  };
   // Handle JSX elements
   if (true) {
     // Change to false to disable JSX printing
@@ -207,24 +207,20 @@ function prettyPrintToDoc(
       const props = element.props as any;
       const { children, ...otherProps } = props;
 
-      const openTag = useColor ? colorize(`<${type}`, "keyword") : `<${type}`;
-      const closeTag = useColor
-        ? colorize(`</${type}>`, "keyword")
-        : `</${type}>`;
-      const selfCloseTag = useColor ? colorize("/>", "keyword") : "/>";
+      const openTag = colorize(`<${type}`, "keyword");
+      const closeTag = colorize(`</${type}>`, "keyword");
+      const selfCloseTag = colorize("/>", "keyword");
 
       // Format props
       const propEntries = Object.entries(otherProps);
       const propDocs: Doc[] = [];
       for (let i = 0; i < propEntries.length; i++) {
         const [key, val] = propEntries[i];
-        const keyStr = useColor ? colorize(key, "key") : key;
+        const keyStr = colorize(key, "key");
         const valDoc =
           typeof val === "string"
-            ? useColor
-              ? colorize(JSON.stringify(val), "string")
-              : JSON.stringify(val)
-            : ["{", prettyPrintToDoc(val, useColor, visited), "}"];
+            ? colorize(JSON.stringify(val), "string")
+            : ["{", prettyPrintToDoc(val, tagger, visited), "}"];
         propDocs.push(ifBreak(line, " "), keyStr, "=", valDoc);
       }
 
@@ -247,7 +243,7 @@ function prettyPrintToDoc(
       const childDocs = childrenArray.map((child) =>
         typeof child === "string" || typeof child === "number"
           ? String(child)
-          : prettyPrintToDoc(child, useColor, visited)
+          : prettyPrintToDoc(child, tagger, visited)
       );
 
       // Add conditional line breaks between children
@@ -265,7 +261,7 @@ function prettyPrintToDoc(
       const openingTag = group([
         openTag,
         indent(propDocs),
-        useColor ? colorize(">", "keyword") : ">",
+        colorize(">", "keyword"),
       ]);
 
       return group([
@@ -278,23 +274,19 @@ function prettyPrintToDoc(
   }
 
   // Handle primitives
-  if (value === null) return useColor ? colorize("null", "null") : "null";
-  if (value === undefined)
-    return useColor ? colorize("undefined", "null") : "undefined";
+  if (value === null) return colorize("null", "null");
+  if (value === undefined) return colorize("undefined", "null");
 
   if (typeof value === "string") {
-    const str = JSON.stringify(value);
-    return useColor ? colorize(str, "string") : str;
+    return colorize(JSON.stringify(value), "string");
   }
 
   if (typeof value === "number") {
-    const str = String(value);
-    return useColor ? colorize(str, "number") : str;
+    return colorize(String(value), "number");
   }
 
   if (typeof value === "boolean") {
-    const str = String(value);
-    return useColor ? colorize(str, "boolean") : str;
+    return colorize(String(value), "boolean");
   }
 
   if (typeof value === "function") {
@@ -306,14 +298,13 @@ function prettyPrintToDoc(
   }
 
   if (typeof value === "bigint") {
-    const str = `${value}n`;
-    return useColor ? colorize(str, "number") : str;
+    return colorize(`${value}n`, "number");
   }
 
   // Check for circular references (objects and arrays)
   if (typeof value === "object" && value !== null) {
     if (visited.has(value)) {
-      return useColor ? colorize("[Circular]", "null") : "[Circular]";
+      return colorize("[Circular]", "null");
     }
   }
   // Mark this object/array as visited
@@ -327,7 +318,7 @@ function prettyPrintToDoc(
     }
 
     const elements = value.map((item) =>
-      prettyPrintToDoc(item, useColor, visited)
+      prettyPrintToDoc(item, tagger, visited)
     );
 
     // Use commas when inline, line breaks when multi-line
@@ -346,32 +337,31 @@ function prettyPrintToDoc(
   if (typeof value === "object") {
     // Handle special objects
     if (value instanceof Date) {
-      const keyword = useColor ? colorize("new", "keyword") : "new";
-      const ctor = useColor ? colorize("Date", "keyword") : "Date";
-      const str = useColor
+      const keyword = colorize("new", "keyword");
+      const ctor = colorize("Date", "keyword");
+      const str = tagger
         ? colorize(`"${value.toISOString()}"`, "string")
         : `"${value.toISOString()}"`;
       return [keyword, " ", ctor, "(", str, ")"];
     }
 
     if (value instanceof RegExp) {
-      const str = value.toString();
-      return useColor ? colorize(str, "string") : str;
+      return colorize(value.toString(), "string");
     }
 
     if (value instanceof Map) {
       if (value.size === 0) {
-        const keyword = useColor ? colorize("new", "keyword") : "new";
-        const ctor = useColor ? colorize("Map", "keyword") : "Map";
+        const keyword = colorize("new", "keyword");
+        const ctor = colorize("Map", "keyword");
         return [keyword, " ", ctor, "()"];
       }
-      const keyword = useColor ? colorize("new", "keyword") : "new";
-      const ctor = useColor ? colorize("Map", "keyword") : "Map";
+      const keyword = colorize("new", "keyword");
+      const ctor = colorize("Map", "keyword");
       const entries = Array.from(value.entries()).map(([k, v]) => [
         "[",
-        prettyPrintToDoc(k, useColor, visited),
+        prettyPrintToDoc(k, tagger, visited),
         ", ",
-        prettyPrintToDoc(v, useColor, visited),
+        prettyPrintToDoc(v, tagger, visited),
         "]",
       ]);
 
@@ -396,14 +386,14 @@ function prettyPrintToDoc(
 
     if (value instanceof Set) {
       if (value.size === 0) {
-        const keyword = useColor ? colorize("new", "keyword") : "new";
-        const ctor = useColor ? colorize("Set", "keyword") : "Set";
+        const keyword = colorize("new", "keyword");
+        const ctor = colorize("Set", "keyword");
         return [keyword, " ", ctor, "()"];
       }
-      const keyword = useColor ? colorize("new", "keyword") : "new";
-      const ctor = useColor ? colorize("Set", "keyword") : "Set";
+      const keyword = colorize("new", "keyword");
+      const ctor = colorize("Set", "keyword");
       const items = Array.from(value).map((v) =>
-        prettyPrintToDoc(v, useColor, visited)
+        prettyPrintToDoc(v, tagger, visited)
       );
 
       const withSeparators: Doc[] = [];
@@ -446,8 +436,8 @@ function prettyPrintToDoc(
       const keyStr = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)
         ? key
         : JSON.stringify(key);
-      const coloredKey = useColor ? colorize(keyStr, "key") : keyStr;
-      return [coloredKey, ": ", prettyPrintToDoc(val, useColor, visited)];
+      const coloredKey = colorize(keyStr, "key");
+      return [coloredKey, ": ", prettyPrintToDoc(val, tagger, visited)];
     });
 
     // Use commas when inline, line breaks when multi-line
@@ -462,11 +452,10 @@ function prettyPrintToDoc(
     // Build the prefix: "type#id" or "type" or "#id"
     const prefix: Doc[] = [];
     if (typeValue && typeof typeValue === "string") {
-      prefix.push(useColor ? colorize(typeValue, "type") : typeValue);
+      prefix.push(colorize(typeValue, "type"));
     }
     if (idValue !== undefined) {
-      const idStr = "#" + String(idValue);
-      prefix.push(useColor ? colorize(idStr, "id") : idStr);
+      prefix.push(colorize("#" + String(idValue), "id"));
     }
 
     return group([
@@ -493,19 +482,15 @@ export function prettyPrintToString(
   printWidth: number = 80,
   useColor: boolean = true
 ): string {
-  const doc = prettyPrintToDoc(value, useColor);
+  const tagger = useColor ? new StringTagger() : null;
+  const doc = prettyPrintToDoc(value, tagger);
   const formatted = prettier.doc.printer.printDocToString(doc, {
     printWidth,
     tabWidth: 2,
     useTabs: false,
   }).formatted;
 
-  // If color is enabled, expand the secret color markers to ANSI codes
-  if (useColor) {
-    return expandSecret(formatted, ANSI_CODES);
-  }
-
-  return formatted;
+  return tagger ? tagger.expand(formatted) : formatted;
 }
 
 // Shared test data
