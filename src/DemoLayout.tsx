@@ -1,10 +1,11 @@
-import { ReactElement, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { DemoContext } from "./DemoContext";
+import { Demo } from "./Demo";
+import { SomeDemoData } from "./demos";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { PrettyPrint } from "./pretty-print";
 
-export function DemoListPage({ demos }: { demos: ReactElement[] }) {
+export function DemoListPage({ demos }: { demos: SomeDemoData[] }) {
   const [debugMode, setDebugMode] = useState(false);
   const location = useLocation();
   const baseUrl = location.pathname;
@@ -20,12 +21,11 @@ export function DemoListPage({ demos }: { demos: ReactElement[] }) {
       </div>
       <div className="flex flex-col gap-5 px-5 pb-5 max-w-3xl mx-auto flex-1">
         {demos.map((demo) => {
-          const id = (demo.props as any).id;
-          return (
-            <DemoContext.Provider key={id} value={{ debugMode, baseUrl }}>
-              <ErrorBoundary>{demo}</ErrorBoundary>
-            </DemoContext.Provider>
-          );
+          return demo.run((demo) => (
+            <ErrorBoundary>
+              <Demo demoData={demo} debugMode={debugMode} baseUrl={baseUrl} />
+            </ErrorBoundary>
+          ));
         })}
       </div>
       <div className="sticky bottom-0 bg-white/95 py-4 px-5 border-t border-gray-200 flex gap-5 items-center justify-center shadow-[0_-2px_4px_rgba(0,0,0,0.1)]">
@@ -46,12 +46,12 @@ export function SingleDemoPage({
   demos,
   id,
 }: {
-  demos: ReactElement[];
+  demos: SomeDemoData[];
   id: string;
 }) {
   const [debugMode, setDebugMode] = useState(false);
 
-  const demo = demos.find((d) => (d.props as any).id === id);
+  const demo = demos.find((d) => d.run((demo) => demo.id === id));
 
   const [dragState, setDragState] = useState<any>(null);
   const lastExcitingDragStateRef = useRef<any>(null);
@@ -97,11 +97,15 @@ export function SingleDemoPage({
         </Link>
       </div>
       <div className="flex flex-col gap-5 px-5 pb-5 max-w-3xl mx-auto min-w-1/2">
-        <DemoContext.Provider
-          value={{ debugMode, onDragStateChange: setDragState }}
-        >
-          <ErrorBoundary>{demo}</ErrorBoundary>
-        </DemoContext.Provider>
+        <ErrorBoundary>
+          {demo.run((demo) => (
+            <Demo
+              demoData={demo}
+              debugMode={debugMode}
+              onDragStateChange={setDragState}
+            />
+          ))}
+        </ErrorBoundary>
       </div>
       {false && debugMode ? (
         <div className="px-5 max-w-3xl mx-auto w-full flex-1 overflow-y-auto overflow-x-hidden min-h-0">

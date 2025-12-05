@@ -1,7 +1,8 @@
 import _ from "lodash";
-import { ConfigCheckbox } from "../config-controls";
+import { ConfigCheckbox, ConfigPanelProps } from "../configurable";
+import { configurableManipulable } from "../demos";
 import { span } from "../DragSpec";
-import { Manipulable, translate } from "../manipulable";
+import { translate } from "../manipulable";
 
 type Car = {
   x: number;
@@ -19,135 +20,140 @@ export namespace RushHour {
     cars: Record<string, Car>;
   };
 
-  export type Config = {
+  type Config = {
     oneSquareAtATime: boolean;
   };
 
-  export const manipulable: Manipulable<State, Config> = ({
-    state,
-    drag,
-    config,
-  }) => {
-    const TILE_SIZE = 50;
-    const BORDER_WIDTH = 10;
-    const redCarY = Object.values(state.cars).find((t) => t.color === "red")?.y;
-
-    return (
-      <g>
-        {/* Grid */}
-        {_.range(state.w).map((x) =>
-          _.range(state.h).map((y) => (
-            <rect
-              id={`grid-${x}-${y}`}
-              x={x * TILE_SIZE}
-              y={y * TILE_SIZE}
-              width={TILE_SIZE}
-              height={TILE_SIZE}
-              stroke="gray"
-              strokeWidth={1}
-              fill="none"
-              data-z-index={-5}
-            />
-          ))
-        )}
-
-        {/* Cars */}
-        {Object.entries(state.cars).map(([key, car]) => (
-          <rect
-            id={`car-${key}`}
-            x={0}
-            y={0}
-            width={car.w * TILE_SIZE}
-            height={car.h * TILE_SIZE}
-            fill={car.color}
-            stroke="black"
-            strokeWidth={2}
-            transform={translate(car.x * TILE_SIZE, car.y * TILE_SIZE)}
-            data-z-index={5}
-            data-on-drag={drag(() => {
-              // Calculate all valid positions for this car
-              const nextStates: State[] = [state];
-
-              function tryMove(dx: number, dy: number) {
-                let x = car.x + dx;
-                let y = car.y + dy;
-                while (true) {
-                  const rightBoundary =
-                    car.color === "red" ? state.w + 2 : state.w;
-                  if (
-                    x < 0 ||
-                    x + car.w > rightBoundary ||
-                    y < 0 ||
-                    y + car.h > state.h
-                  )
-                    break;
-                  if (
-                    Object.entries(state.cars).some(([k, t]) => {
-                      if (k === key) return false;
-                      return !(
-                        x + car.w <= t.x ||
-                        x >= t.x + t.w ||
-                        y + car.h <= t.y ||
-                        y >= t.y + t.h
-                      );
-                    })
-                  ) {
-                    break;
-                  }
-                  nextStates.push({
-                    ...state,
-                    cars: {
-                      ...state.cars,
-                      [key]: { ...car, x, y },
-                    },
-                  });
-                  x += dx;
-                  y += dy;
-                  if (config.oneSquareAtATime) break;
-                }
-              }
-
-              if (car.dir === "h") {
-                tryMove(-1, 0);
-                tryMove(1, 0);
-              }
-              if (car.dir === "v") {
-                tryMove(0, -1);
-                tryMove(0, 1);
-              }
-
-              return span(nextStates);
-            })}
-          />
-        ))}
-
-        {/* Border */}
-        <rect
-          x={-BORDER_WIDTH / 2}
-          y={-BORDER_WIDTH / 2}
-          width={state.w * TILE_SIZE + BORDER_WIDTH}
-          height={state.h * TILE_SIZE + BORDER_WIDTH}
-          stroke="gray"
-          strokeWidth={BORDER_WIDTH}
-          fill="none"
-          data-z-index={-10}
-          id="border"
-        />
-
-        {/* Exit line for red car */}
-        {redCarY !== undefined && (
-          <line
-            x1={state.w * TILE_SIZE + BORDER_WIDTH / 2}
-            y1={redCarY * TILE_SIZE}
-            x2={state.w * TILE_SIZE + BORDER_WIDTH / 2}
-            y2={(redCarY + 1) * TILE_SIZE}
-            stroke="white"
-            strokeWidth={BORDER_WIDTH}
-          />
-        )}
-      </g>
-    );
+  const initialConfig: Config = {
+    oneSquareAtATime: false,
   };
+
+  export const manipulable = configurableManipulable<State, Config>(
+    { initialConfig, ConfigPanel },
+    (config, { state, drag }) => {
+      const TILE_SIZE = 50;
+      const BORDER_WIDTH = 10;
+      const redCarY = Object.values(state.cars).find(
+        (t) => t.color === "red"
+      )?.y;
+
+      return (
+        <g>
+          {/* Grid */}
+          {_.range(state.w).map((x) =>
+            _.range(state.h).map((y) => (
+              <rect
+                id={`grid-${x}-${y}`}
+                x={x * TILE_SIZE}
+                y={y * TILE_SIZE}
+                width={TILE_SIZE}
+                height={TILE_SIZE}
+                stroke="gray"
+                strokeWidth={1}
+                fill="none"
+                data-z-index={-5}
+              />
+            ))
+          )}
+
+          {/* Cars */}
+          {Object.entries(state.cars).map(([key, car]) => (
+            <rect
+              id={`car-${key}`}
+              x={0}
+              y={0}
+              width={car.w * TILE_SIZE}
+              height={car.h * TILE_SIZE}
+              fill={car.color}
+              stroke="black"
+              strokeWidth={2}
+              transform={translate(car.x * TILE_SIZE, car.y * TILE_SIZE)}
+              data-z-index={5}
+              data-on-drag={drag(() => {
+                // Calculate all valid positions for this car
+                const nextStates: State[] = [state];
+
+                function tryMove(dx: number, dy: number) {
+                  let x = car.x + dx;
+                  let y = car.y + dy;
+                  while (true) {
+                    const rightBoundary =
+                      car.color === "red" ? state.w + 2 : state.w;
+                    if (
+                      x < 0 ||
+                      x + car.w > rightBoundary ||
+                      y < 0 ||
+                      y + car.h > state.h
+                    )
+                      break;
+                    if (
+                      Object.entries(state.cars).some(([k, t]) => {
+                        if (k === key) return false;
+                        return !(
+                          x + car.w <= t.x ||
+                          x >= t.x + t.w ||
+                          y + car.h <= t.y ||
+                          y >= t.y + t.h
+                        );
+                      })
+                    ) {
+                      break;
+                    }
+                    nextStates.push({
+                      ...state,
+                      cars: {
+                        ...state.cars,
+                        [key]: { ...car, x, y },
+                      },
+                    });
+                    x += dx;
+                    y += dy;
+                    if (config.oneSquareAtATime) break;
+                  }
+                }
+
+                if (car.dir === "h") {
+                  tryMove(-1, 0);
+                  tryMove(1, 0);
+                }
+                if (car.dir === "v") {
+                  tryMove(0, -1);
+                  tryMove(0, 1);
+                }
+
+                return span(nextStates);
+              })}
+            />
+          ))}
+
+          {/* Border */}
+          <rect
+            x={-BORDER_WIDTH / 2}
+            y={-BORDER_WIDTH / 2}
+            width={state.w * TILE_SIZE + BORDER_WIDTH}
+            height={state.h * TILE_SIZE + BORDER_WIDTH}
+            stroke="gray"
+            strokeWidth={BORDER_WIDTH}
+            fill="none"
+            data-z-index={-10}
+            id="border"
+          />
+
+          {/* Exit line for red car */}
+          {redCarY !== undefined && (
+            <line
+              x1={state.w * TILE_SIZE + BORDER_WIDTH / 2}
+              y1={redCarY * TILE_SIZE}
+              x2={state.w * TILE_SIZE + BORDER_WIDTH / 2}
+              y2={(redCarY + 1) * TILE_SIZE}
+              stroke="white"
+              strokeWidth={BORDER_WIDTH}
+            />
+          )}
+        </g>
+      );
+    }
+  );
 
   export const state1: State = {
     w: 6,
@@ -164,21 +170,13 @@ export namespace RushHour {
     },
   };
 
-  export const defaultConfig: Config = {
-    oneSquareAtATime: false,
-  };
-
-  export const ConfigPanel = ({
-    config,
-    setConfig,
-  }: {
-    config: Config;
-    setConfig: (config: Config) => void;
-  }) => (
-    <ConfigCheckbox
-      label="Move one square at a time"
-      value={config.oneSquareAtATime}
-      onChange={(newValue) => setConfig({ oneSquareAtATime: newValue })}
-    />
-  );
+  function ConfigPanel({ config, setConfig }: ConfigPanelProps<Config>) {
+    return (
+      <ConfigCheckbox
+        label="Move one square at a time"
+        value={config.oneSquareAtATime}
+        onChange={(newValue) => setConfig({ oneSquareAtATime: newValue })}
+      />
+    );
+  }
 }

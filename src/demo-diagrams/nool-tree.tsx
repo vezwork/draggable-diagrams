@@ -1,8 +1,8 @@
 import _ from "lodash";
-import { ConfigCheckbox } from "../config-controls";
-import { ConfigPanelProps } from "../Demo";
+import { ConfigCheckbox, ConfigPanelProps } from "../configurable";
+import { configurableManipulable } from "../demos";
 import { DragSpec, straightTo } from "../DragSpec";
-import { Drag, Manipulable, translate } from "../manipulable";
+import { Drag, translate } from "../manipulable";
 import { Svgx } from "../svgx";
 import { insertImm, removeImm, setImm } from "../utils";
 
@@ -27,7 +27,7 @@ export namespace NoolTree {
 
   export type State = Tree;
 
-  export type Config = {
+  type Config = {
     commutativity: boolean;
     pullUpOp: boolean;
     pullDownOp: boolean;
@@ -35,7 +35,7 @@ export namespace NoolTree {
     pullDownTail: boolean;
   };
 
-  export const defaultConfig: Config = {
+  const initialConfig: Config = {
     commutativity: true,
     pullUpOp: false,
     pullDownOp: false,
@@ -43,13 +43,12 @@ export namespace NoolTree {
     pullDownTail: true,
   };
 
-  export const manipulable: Manipulable<State, Config> = ({
-    state,
-    drag,
-    config,
-  }) => {
-    return renderTree(state, state, drag, config).element;
-  };
+  export const manipulable = configurableManipulable<State, Config>(
+    { initialConfig, ConfigPanel },
+    (config, { state, drag }) => {
+      return renderTree(state, state, drag, config).element;
+    }
+  );
 
   function renderTree(
     state: State,
@@ -390,7 +389,7 @@ export namespace NoolTree {
     ],
   };
 
-  export function ConfigPanel({ config, setConfig }: ConfigPanelProps<Config>) {
+  function ConfigPanel({ config, setConfig }: ConfigPanelProps<Config>) {
     const plus1 = <span className="text-red-600 font-bold">+</span>;
     const plus2 = <span className="text-green-600 font-bold">+</span>;
     const D = ({ children }: { children: React.ReactNode }) => (

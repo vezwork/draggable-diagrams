@@ -12,7 +12,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { useDemoContext } from "./DemoContext";
 import { DragSpec, span, TargetStateLike, toTargetState } from "./DragSpec";
 import { ErrorWithJSX } from "./ErrorBoundary";
 import { projectOntoConvexHull } from "./math/delaunay";
@@ -82,12 +81,11 @@ export type SetState<T> = (
 /**
  * A Manipulable is a function that takes state and draggable helper, returns SVG JSX.
  */
-export type Manipulable<T extends object, Config = undefined> = (props: {
+export type Manipulable<T extends object> = (props: {
   state: T;
   drag: typeof drag<T>;
   draggedId: string | null;
   setState: SetState<T>;
-  config: Config;
 }) => Svgx;
 
 function noOp(): void {}
@@ -260,14 +258,13 @@ function postProcessForDrawing(element: Svgx): HoistedSvgx {
   return pipe(element, assignPaths, accumulateTransforms, hoistSvg);
 }
 
-function computeEnterDraggingMode<T extends object, Config>(
+function computeEnterDraggingMode<T extends object>(
   state: T,
   draggedPath: string,
   draggedId: string | null,
   dragSpec: DragSpec<T>,
   pointerLocal: Vec2,
-  manipulable: Manipulable<T, Config>,
-  diagramConfig: Config
+  manipulable: Manipulable<T>
 ): DragState<T> {
   console.log("enterDraggingMode", state, draggedPath);
 
@@ -318,7 +315,6 @@ function computeEnterDraggingMode<T extends object, Config>(
       drag,
       draggedId,
       setState: noOp,
-      config: diagramConfig,
     });
     const hoisted = postProcessForDrawing(content);
     // prettyLog(hoisted, { label: "hoisted in makeManifoldPoint" });
@@ -383,19 +379,13 @@ function computeEnterDraggingMode<T extends object, Config>(
   };
 }
 
-function computeRenderState<T extends object, Config>(
+function computeRenderState<T extends object>(
   dragState: DragState<T>,
   pointer: { x: number; y: number } | null,
-  drawerConfig: {
-    snapRadius: number;
-    chainDrags: boolean;
-    relativePointerMotion: boolean;
-    animationDuration: number;
-  },
-  manipulable: Manipulable<T, Config>,
+  drawerConfig: DrawerConfig,
+  manipulable: Manipulable<T>,
   postProcessForInteraction: (element: Svgx, state: T) => HoistedSvgx,
-  setDragState: (newDragState: DragState<T>) => void,
-  diagramConfig: Config
+  setDragState: (newDragState: DragState<T>) => void
 ): {
   hoistedToRender: HoistedSvgx;
   currentHoisted: HoistedSvgx;
@@ -440,7 +430,6 @@ function computeRenderState<T extends object, Config>(
           drag,
           draggedId: null,
           setState: noOp,
-          config: diagramConfig,
         });
         setDragState({
           type: "animating",
@@ -452,7 +441,6 @@ function computeRenderState<T extends object, Config>(
           duration: seconds * 1000,
         });
       },
-      config: diagramConfig,
     });
     // console.log("content from idle state:", content);
     // prettyLog(content, { label: "content from idle state" });
@@ -587,8 +575,7 @@ function computeRenderState<T extends object, Config>(
             dragState.draggedId,
             dragSpecCallback(),
             dragState.pointerLocal,
-            manipulable,
-            diagramConfig
+            manipulable
           );
         }
       }
@@ -627,7 +614,6 @@ function computeRenderState<T extends object, Config>(
           drag,
           draggedId: dragState.draggedId,
           setState: noOp,
-          config: diagramConfig,
         }),
         assignPaths,
         accumulateTransforms
@@ -649,7 +635,6 @@ function computeRenderState<T extends object, Config>(
       drag,
       draggedId: dragState.draggedId,
       setState: noOp,
-      config: diagramConfig,
     });
     hoistedToRender = postProcessForDrawing(content);
 
@@ -699,33 +684,35 @@ function computeRenderState<T extends object, Config>(
   };
 }
 
-interface ManipulableProps<T extends object, Config> {
-  manipulable: Manipulable<T, Config>;
+export type DrawerConfig = {
+  snapRadius: number;
+  chainDrags: boolean;
+  relativePointerMotion: boolean;
+  animationDuration: number;
+};
+
+interface ManipulableProps<T extends object> {
+  manipulable: Manipulable<T>;
   initialState: T;
   width?: number;
   height?: number;
-  drawerConfig?: {
-    snapRadius?: number;
-    chainDrags?: boolean;
-    relativePointerMotion?: boolean;
-    animationDuration?: number;
-  };
-  diagramConfig: Config;
+  drawerConfig?: Partial<DrawerConfig>;
+  debugMode?: boolean;
+  onDragStateChange?: (dragState: any) => void;
 }
 
-export function ManipulableDrawer<T extends object, Config>({
+export function ManipulableDrawer<T extends object>({
   manipulable,
   initialState,
   width,
   height,
   drawerConfig = {},
-  diagramConfig,
-}: ManipulableProps<T, Config>) {
+  debugMode,
+  onDragStateChange,
+}: ManipulableProps<T>) {
   // console.log("ManipulableDrawer render");
 
   const throwRenderError = useRenderError();
-
-  const { onDragStateChange, debugMode } = useDemoContext();
 
   const [dragState, setDragStateRaw] = useState<DragState<T>>({
     type: "idle",
@@ -842,8 +829,7 @@ export function ManipulableDrawer<T extends object, Config>({
                     el.props.id || null,
                     dragSpecCallback(),
                     pointerLocal,
-                    manipulable,
-                    diagramConfig
+                    manipulable
                   )
                 );
               } catch (error) {
@@ -862,8 +848,7 @@ export function ManipulableDrawer<T extends object, Config>({
     drawerConfigWithDefaults,
     manipulable,
     postProcessForInteraction,
-    setDragState,
-    diagramConfig
+    setDragState
   );
   const { hoistedToRender, newState, pendingTransition, debugRender } =
     renderState;
@@ -902,7 +887,6 @@ export function ManipulableDrawer<T extends object, Config>({
           drag,
           draggedId: null,
           setState: noOp,
-          config: diagramConfig,
         });
         setDragState({
           type: "animating",
@@ -933,7 +917,6 @@ export function ManipulableDrawer<T extends object, Config>({
     };
   }, [
     drawerConfig,
-    diagramConfig,
     dragState.type,
     drawerConfig.animationDuration,
     hoistedToRender,

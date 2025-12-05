@@ -1,11 +1,11 @@
 import { curveCardinal, line } from "d3-shape";
 import _ from "lodash";
 import { arrowhead } from "../arrows";
-import { ConfigCheckbox } from "../config-controls";
-import { ConfigPanelProps } from "../Demo";
+import { ConfigCheckbox, ConfigPanelProps } from "../configurable";
+import { configurableManipulable } from "../demos";
 import { span } from "../DragSpec";
 import { overlapIntervals } from "../layout";
-import { Drag, Manipulable, path, translate } from "../manipulable";
+import { Drag, path, translate } from "../manipulable";
 import { Vec2 } from "../math/vec2";
 import { Svgx } from "../svgx";
 import { Finalizers, pointRef, PointRef } from "../svgx/finalizers";
@@ -73,45 +73,44 @@ export namespace OrderPreserving {
     yForTradRep: 500,
   };
 
-  export type Config = {
+  type Config = {
     oneNodeAtATime: boolean;
     showTradRep: boolean;
   };
 
-  export const defaultConfig: Config = {
+  const initialConfig: Config = {
     oneNodeAtATime: false,
     showTradRep: false,
   };
 
-  export const manipulable: Manipulable<State, Config> = ({
-    state,
-    drag,
-    config,
-  }) => {
-    const { morph } = state;
-    const elements: Svgx[] = [];
-    const finalizers = new Finalizers();
+  export const manipulable = configurableManipulable<State, Config>(
+    { initialConfig, ConfigPanel },
+    (config, { state, drag }) => {
+      const { morph } = state;
+      const elements: Svgx[] = [];
+      const finalizers = new Finalizers();
 
-    const r = drawBgTree(
-      state.codomainTree,
-      state.domainTree,
-      morph,
-      finalizers,
-      state,
-      drag,
-      config
-    );
-    elements.push(r.element);
+      const r = drawBgTree(
+        state.codomainTree,
+        state.domainTree,
+        morph,
+        finalizers,
+        state,
+        drag,
+        config
+      );
+      elements.push(r.element);
 
-    if (config.showTradRep) {
-      elements.push(...drawTradRep(state, morph, finalizers, drag, config));
+      if (config.showTradRep) {
+        elements.push(...drawTradRep(state, morph, finalizers, drag, config));
+      }
+
+      const mainTree = <g>{elements}</g>;
+      return <g>{[mainTree, ...finalizers.run(mainTree)]}</g>;
     }
+  );
 
-    const mainTree = <g>{elements}</g>;
-    return <g>{[mainTree, ...finalizers.run(mainTree)]}</g>;
-  };
-
-  export function ConfigPanel({ config, setConfig }: ConfigPanelProps<Config>) {
+  function ConfigPanel({ config, setConfig }: ConfigPanelProps<Config>) {
     return (
       <>
         <ConfigCheckbox

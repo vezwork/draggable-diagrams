@@ -1,79 +1,49 @@
-import { ReactElement, ReactNode, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ConfigCheckbox } from "./config-controls";
-import { useDemoContext } from "./DemoContext";
+import { ConfigCheckbox } from "./configurable";
+import { DemoData } from "./demos";
 import { ErrorBoundary } from "./ErrorBoundary";
-import { Manipulable, ManipulableDrawer } from "./manipulable";
-import { hasKey } from "./utils";
+import { ManipulableDrawer } from "./manipulable";
 
-type DemoPropsBase<T extends object, Config> = {
-  id: string;
-  title: string;
-  notes?: ReactNode;
-  manipulable: Manipulable<T, Config>;
-  initialState: T;
-  height: number;
-  padding?: number;
-  initialSnapRadius?: number;
-  initialChainDrags?: boolean;
-  initialRelativePointerMotion?: boolean;
-  sourceFile?: string;
-};
-
-type DemoPropsWithConfig<T extends object, Config> = DemoPropsBase<
-  T,
-  Config
-> & {
-  defaultConfig: Config;
-  ConfigPanel: React.ComponentType<ConfigPanelProps<Config>>;
-};
-
-type DemoProps<T extends object, Config> =
-  | DemoPropsBase<T, Config>
-  | DemoPropsWithConfig<T, Config>;
-
-export function hasConfig<T extends object, Config>(
-  props: DemoProps<T, Config>
-): props is DemoPropsWithConfig<T, Config> {
-  return hasKey(props, "defaultConfig");
-}
-
-export interface ConfigPanelProps<Config> {
-  config: Config;
-  setConfig: (newConfig: Config) => void;
-}
-
-export function Demo<T extends object>(
-  props: DemoPropsBase<T, undefined>
-): ReactElement;
-export function Demo<T extends object, Config>(
-  props: DemoPropsWithConfig<T, Config>
-): ReactElement;
-export function Demo<T extends object, Config>(props: DemoProps<T, Config>) {
+export function Demo<T extends object>({
+  demoData,
+  onDragStateChange,
+  debugMode,
+  baseUrl,
+  docEmbedMode,
+}: {
+  demoData: DemoData<T>;
+  onDragStateChange?: (dragState: any) => void;
+  debugMode?: boolean;
+  baseUrl?: string;
+  docEmbedMode?: boolean;
+}) {
   const {
     id,
     title,
     notes,
     manipulable,
-    initialState,
+    initialStates,
     height,
-    padding = 0,
-    initialSnapRadius = 10,
-    initialChainDrags = true,
-    initialRelativePointerMotion = false,
+    padding,
+    initialDrawerConfig,
     sourceFile,
-  } = props;
+  } = demoData;
 
-  const { baseUrl, docEmbedMode } = useDemoContext();
-
-  const [snapRadius, setSnapRadius] = useState(initialSnapRadius);
-  const [chainDrags, setChainDrags] = useState(initialChainDrags);
+  const [snapRadius, setSnapRadius] = useState(
+    initialDrawerConfig?.snapRadius ?? 10
+  );
+  const [chainDrags, setChainDrags] = useState(
+    initialDrawerConfig?.chainDrags ?? true
+  );
   const [relativePointerMotion, setRelativePointerMotion] = useState(
-    initialRelativePointerMotion
+    initialDrawerConfig?.relativePointerMotion ?? false
   );
 
-  const [diagramConfig, setDiagramConfig] = useState<Config>(
-    hasConfig(props) ? props.defaultConfig : (undefined as Config)
+  const [diagramConfig, setDiagramConfig] = useState<any>(
+    demoData.manipulable.type === "configurable"
+      ? demoData.manipulable.initialConfig
+      : undefined
   );
 
   return (
@@ -110,24 +80,34 @@ export function Demo<T extends object, Config>(props: DemoProps<T, Config>) {
       {notes && <div className="mt-2 mb-4 text-sm text-gray-600">{notes}</div>}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1 min-w-0" style={{ padding }}>
-          <ErrorBoundary>
-            <ManipulableDrawer
-              manipulable={manipulable}
-              initialState={initialState}
-              drawerConfig={{
-                snapRadius,
-                chainDrags,
-                relativePointerMotion,
-                animationDuration: 300,
-              }}
-              height={height}
-              diagramConfig={diagramConfig}
-            />
-          </ErrorBoundary>
+          {initialStates.map((initialState, idx) => (
+            <div key={idx}>
+              <ErrorBoundary>
+                <ManipulableDrawer
+                  manipulable={manipulable.withConfig(diagramConfig)}
+                  initialState={initialState}
+                  drawerConfig={{
+                    snapRadius,
+                    chainDrags,
+                    relativePointerMotion,
+                    animationDuration: 300,
+                  }}
+                  height={height}
+                  debugMode={debugMode}
+                  onDragStateChange={onDragStateChange}
+                />
+              </ErrorBoundary>
+              {initialStates.length > 1 && idx < initialStates.length - 1 && (
+                <div className="border-t border-gray-200 my-8" />
+              )}
+            </div>
+          ))}
         </div>
         <div
           className={`${
-            hasConfig(props) ? "w-64 md:w-52" : "w-48 md:w-32"
+            demoData.manipulable.type === "configurable"
+              ? "w-64 md:w-52"
+              : "w-48 md:w-32"
           } bg-gray-50 rounded p-3 flex flex-col gap-2`}
         >
           <label className="flex flex-col gap-1 text-xs">
@@ -155,10 +135,10 @@ export function Demo<T extends object, Config>(props: DemoProps<T, Config>) {
             value={relativePointerMotion}
             onChange={setRelativePointerMotion}
           /> */}
-          {hasConfig(props) && (
+          {demoData.manipulable.type === "configurable" && (
             <>
               <div className="border-t border-gray-300 my-1" />
-              <props.ConfigPanel
+              <demoData.manipulable.ConfigPanel
                 config={diagramConfig}
                 setConfig={setDiagramConfig}
               />

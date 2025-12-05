@@ -6,7 +6,6 @@ import _ from "lodash";
 import parserBabel from "prettier/parser-babel";
 import prettier from "prettier/standalone";
 import { createElement, useMemo, useState } from "react";
-import { DemoContext } from "../DemoContext";
 import * as DragSpecModule from "../DragSpec";
 import { ErrorBoundary } from "../ErrorBoundary";
 import * as ManipulableModule from "../manipulable";
@@ -138,20 +137,18 @@ export function LiveEditor({
                 </div>
               ) : result ? (
                 <ErrorBoundary resetOnChange={code}>
-                  <DemoContext.Provider value={{ debugMode }}>
-                    <ManipulableDrawer
-                      manipulable={result.manipulable as Manipulable<any>}
-                      initialState={result.initialState}
-                      drawerConfig={{
-                        snapRadius: 10,
-                        chainDrags: true,
-                        relativePointerMotion: false,
-                        animationDuration: 300,
-                      }}
-                      height={height ?? minHeight}
-                      diagramConfig={undefined}
-                    />
-                  </DemoContext.Provider>
+                  <ManipulableDrawer
+                    manipulable={result.manipulable as Manipulable<any>}
+                    initialState={result.initialState}
+                    drawerConfig={{
+                      snapRadius: 10,
+                      chainDrags: true,
+                      relativePointerMotion: false,
+                      animationDuration: 300,
+                    }}
+                    height={height ?? minHeight}
+                    debugMode={debugMode}
+                  />
                 </ErrorBoundary>
               ) : null}
             </div>

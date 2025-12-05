@@ -1,7 +1,8 @@
 import _ from "lodash";
-import { ConfigCheckbox } from "../config-controls";
+import { ConfigCheckbox } from "../configurable";
+import { configurableManipulable } from "../demos";
 import { straightTo } from "../DragSpec";
-import { Manipulable, translate } from "../manipulable";
+import { translate } from "../manipulable";
 import { Vec2 } from "../math/vec2";
 import { inXYWH } from "../math/xywh";
 import { defined } from "../utils";
@@ -23,194 +24,200 @@ export namespace Sokoban {
     levelEditable: boolean;
   };
 
-  export const manipulable: Manipulable<State, Config> = ({
-    state,
-    drag,
-    config,
-  }) => {
-    const TILE_SIZE = 50;
+  export const initialConfig: Config = {
+    levelEditable: false,
+  };
 
-    function isInBounds(pos: Vec2): boolean {
-      return inXYWH(pos, [0, 0, state.w - 1, state.h - 1]);
-    }
+  export const manipulable = configurableManipulable<State, Config>(
+    { initialConfig, ConfigPanel },
+    (config, { state, drag }) => {
+      const TILE_SIZE = 50;
 
-    function isFloor(pos: Vec2): boolean {
+      function isInBounds(pos: Vec2): boolean {
+        return inXYWH(pos, [0, 0, state.w - 1, state.h - 1]);
+      }
+
+      function isFloor(pos: Vec2): boolean {
+        return (
+          isInBounds(pos) &&
+          !Object.values(state.objects).some(
+            (w) => w.type === "wall" && pos.eq(w.pos)
+          )
+        );
+      }
+
+      function idOfBoxAt(pos: Vec2): string | undefined {
+        return _.findKey(
+          state.objects,
+          (o) => o.type === "box" && pos.eq(o.pos)
+        );
+      }
+
       return (
-        isInBounds(pos) &&
-        !Object.values(state.objects).some(
-          (w) => w.type === "wall" && pos.eq(w.pos)
-        )
-      );
-    }
+        <g>
+          {/* Grid */}
+          {_.range(state.w).map((x) =>
+            _.range(state.h).map((y) => (
+              <rect
+                id={`grid-${x}-${y}`}
+                x={x * TILE_SIZE}
+                y={y * TILE_SIZE}
+                width={TILE_SIZE}
+                height={TILE_SIZE}
+                stroke="gray"
+                strokeWidth={1}
+                fill="none"
+                data-z-index={-5}
+              />
+            ))
+          )}
 
-    function idOfBoxAt(pos: Vec2): string | undefined {
-      return _.findKey(state.objects, (o) => o.type === "box" && pos.eq(o.pos));
-    }
+          {/* Objects */}
+          {Object.entries(state.objects).map(([id, object]) => (
+            <g
+              id={`object-${id}`}
+              transform={translate(
+                object.pos.x * TILE_SIZE,
+                object.pos.y * TILE_SIZE
+              )}
+              data-z-index={object.type === "goal" ? 1 : 0}
+              data-on-drag={
+                config.levelEditable
+                  ? drag(() => {
+                      // Drag spec for objects (when level editable)
+                      const objectMoves = (
+                        [
+                          [-1, 0],
+                          [1, 0],
+                          [0, -1],
+                          [0, 1],
+                        ] as const
+                      )
+                        .map((d) => {
+                          const curLoc = object.pos;
+                          const newLoc = curLoc.add(d);
+                          if (isInBounds(newLoc)) {
+                            return straightTo({
+                              ...state,
+                              objects: {
+                                ...state.objects,
+                                [id]: {
+                                  ...object,
+                                  pos: newLoc,
+                                },
+                              },
+                            });
+                          }
+                        })
+                        .filter(defined);
 
-    return (
-      <g>
-        {/* Grid */}
-        {_.range(state.w).map((x) =>
-          _.range(state.h).map((y) => (
+                      return objectMoves;
+                    })
+                  : undefined
+              }
+            >
+              {object.type === "wall" ? (
+                <rect
+                  x={0}
+                  y={0}
+                  width={TILE_SIZE}
+                  height={TILE_SIZE}
+                  fill="black"
+                />
+              ) : object.type === "box" ? (
+                <rect
+                  x={0}
+                  y={0}
+                  width={TILE_SIZE}
+                  height={TILE_SIZE}
+                  fill="brown"
+                  stroke="black"
+                  strokeWidth={2}
+                />
+              ) : (
+                <rect
+                  x={TILE_SIZE / 4}
+                  y={TILE_SIZE / 4}
+                  width={TILE_SIZE / 2}
+                  height={TILE_SIZE / 2}
+                  fill="orange"
+                />
+              )}
+            </g>
+          ))}
+
+          {/* Player */}
+          <g
+            id="player"
+            transform={translate(
+              state.player.x * TILE_SIZE,
+              state.player.y * TILE_SIZE
+            )}
+            data-z-index={2}
+            data-on-drag={drag(() => {
+              // Player drag spec
+              const playerMoves = (
+                [
+                  [-1, 0],
+                  [1, 0],
+                  [0, -1],
+                  [0, 1],
+                ] as const
+              )
+                .map((d) => {
+                  const curLoc = Vec2(state.player);
+                  const newLoc = curLoc.add(d);
+                  if (!isFloor(newLoc)) return;
+
+                  // Check for box
+                  const boxId = idOfBoxAt(newLoc);
+                  if (boxId === undefined) {
+                    // No box, just move player
+                    return straightTo({ ...state, player: newLoc });
+                  }
+
+                  // Box present, try to push
+                  const boxNewLoc = newLoc.add(d);
+                  if (!isFloor(boxNewLoc)) return;
+                  if (idOfBoxAt(boxNewLoc) !== undefined) return;
+
+                  // Can push box
+                  return straightTo({
+                    ...state,
+                    player: newLoc,
+                    objects: {
+                      ...state.objects,
+                      [boxId]: { ...state.objects[boxId], pos: boxNewLoc },
+                    },
+                  });
+                })
+                .filter(defined);
+
+              return playerMoves;
+            })}
+          >
             <rect
-              id={`grid-${x}-${y}`}
-              x={x * TILE_SIZE}
-              y={y * TILE_SIZE}
+              x={0}
+              y={0}
               width={TILE_SIZE}
               height={TILE_SIZE}
-              stroke="gray"
-              strokeWidth={1}
-              fill="none"
-              data-z-index={-5}
+              fill="transparent"
             />
-          ))
-        )}
-
-        {/* Objects */}
-        {Object.entries(state.objects).map(([id, object]) => (
-          <g
-            id={`object-${id}`}
-            transform={translate(
-              object.pos.x * TILE_SIZE,
-              object.pos.y * TILE_SIZE
-            )}
-            data-z-index={object.type === "goal" ? 1 : 0}
-            data-on-drag={
-              config.levelEditable
-                ? drag(() => {
-                    // Drag spec for objects (when level editable)
-                    const objectMoves = (
-                      [
-                        [-1, 0],
-                        [1, 0],
-                        [0, -1],
-                        [0, 1],
-                      ] as const
-                    )
-                      .map((d) => {
-                        const curLoc = object.pos;
-                        const newLoc = curLoc.add(d);
-                        if (isInBounds(newLoc)) {
-                          return straightTo({
-                            ...state,
-                            objects: {
-                              ...state.objects,
-                              [id]: {
-                                ...object,
-                                pos: newLoc,
-                              },
-                            },
-                          });
-                        }
-                      })
-                      .filter(defined);
-
-                    return objectMoves;
-                  })
-                : undefined
-            }
-          >
-            {object.type === "wall" ? (
-              <rect
-                x={0}
-                y={0}
-                width={TILE_SIZE}
-                height={TILE_SIZE}
-                fill="black"
-              />
-            ) : object.type === "box" ? (
-              <rect
-                x={0}
-                y={0}
-                width={TILE_SIZE}
-                height={TILE_SIZE}
-                fill="brown"
-                stroke="black"
-                strokeWidth={2}
-              />
-            ) : (
-              <rect
-                x={TILE_SIZE / 4}
-                y={TILE_SIZE / 4}
-                width={TILE_SIZE / 2}
-                height={TILE_SIZE / 2}
-                fill="orange"
-              />
-            )}
+            <text
+              x={TILE_SIZE / 2}
+              y={TILE_SIZE / 2}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={40}
+              pointerEvents="none"
+            >
+              🧍
+            </text>
           </g>
-        ))}
-
-        {/* Player */}
-        <g
-          id="player"
-          transform={translate(
-            state.player.x * TILE_SIZE,
-            state.player.y * TILE_SIZE
-          )}
-          data-z-index={2}
-          data-on-drag={drag(() => {
-            // Player drag spec
-            const playerMoves = (
-              [
-                [-1, 0],
-                [1, 0],
-                [0, -1],
-                [0, 1],
-              ] as const
-            )
-              .map((d) => {
-                const curLoc = Vec2(state.player);
-                const newLoc = curLoc.add(d);
-                if (!isFloor(newLoc)) return;
-
-                // Check for box
-                const boxId = idOfBoxAt(newLoc);
-                if (boxId === undefined) {
-                  // No box, just move player
-                  return straightTo({ ...state, player: newLoc });
-                }
-
-                // Box present, try to push
-                const boxNewLoc = newLoc.add(d);
-                if (!isFloor(boxNewLoc)) return;
-                if (idOfBoxAt(boxNewLoc) !== undefined) return;
-
-                // Can push box
-                return straightTo({
-                  ...state,
-                  player: newLoc,
-                  objects: {
-                    ...state.objects,
-                    [boxId]: { ...state.objects[boxId], pos: boxNewLoc },
-                  },
-                });
-              })
-              .filter(defined);
-
-            return playerMoves;
-          })}
-        >
-          <rect
-            x={0}
-            y={0}
-            width={TILE_SIZE}
-            height={TILE_SIZE}
-            fill="transparent"
-          />
-          <text
-            x={TILE_SIZE / 2}
-            y={TILE_SIZE / 2}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={40}
-            pointerEvents="none"
-          >
-            🧍
-          </text>
         </g>
-      </g>
-    );
-  };
+      );
+    }
+  );
 
   export function makeSokobanState(board: string): State {
     const lines = board.split("\n");
@@ -250,21 +257,19 @@ export namespace Sokoban {
 #   g  #
 ########`);
 
-  export const defaultConfig: Config = {
-    levelEditable: false,
-  };
-
-  export const ConfigPanel = ({
+  export function ConfigPanel({
     config,
     setConfig,
   }: {
     config: Config;
     setConfig: (config: Config) => void;
-  }) => (
-    <ConfigCheckbox
-      label="Make level editable"
-      value={config.levelEditable}
-      onChange={(newValue) => setConfig({ levelEditable: newValue })}
-    />
-  );
+  }) {
+    return (
+      <ConfigCheckbox
+        label="Make level editable"
+        value={config.levelEditable}
+        onChange={(newValue) => setConfig({ levelEditable: newValue })}
+      />
+    );
+  }
 }
