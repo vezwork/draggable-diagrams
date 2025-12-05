@@ -157,10 +157,10 @@ type DragState<T> =
       type: "animating";
       startHoisted: HoistedSvgx;
       targetHoisted: HoistedSvgx;
-      targetState: T;
       easing: (t: number) => number;
       startTime: number;
       duration: number;
+      nextDragState: DragState<T>;
     };
 
 function findByPathInHoisted(path: string, hoisted: HoistedSvgx): Svgx | null {
@@ -435,10 +435,10 @@ function computeRenderState<T extends object>(
           type: "animating",
           startHoisted: postProcessForDrawing(content),
           targetHoisted: postProcessForDrawing(endContent),
-          targetState: newState,
           startTime: Date.now(),
           easing,
           duration: seconds * 1000,
+          nextDragState: { type: "idle", state: newState },
         });
       },
     });
@@ -748,7 +748,7 @@ export function ManipulableDrawer<T extends object>({
         const progress = Math.min(elapsed / dragState.duration, 1);
 
         if (progress >= 1) {
-          setDragState({ type: "idle", state: dragState.targetState });
+          setDragState(dragState.nextDragState);
         } else {
           setDragStateRaw({ ...dragState });
           rafId = requestAnimationFrame(animate);
@@ -892,10 +892,10 @@ export function ManipulableDrawer<T extends object>({
           type: "animating",
           startHoisted: hoistedToRender,
           targetHoisted: postProcessForDrawing(targetContent),
-          targetState: newState,
           startTime: Date.now(),
           easing: d3Ease.easeElastic,
           duration: drawerConfigWithDefaults.animationDuration,
+          nextDragState: { type: "idle", state: newState },
         });
       } else if (dragState.type === "dragging-params" && newState) {
         setDragState({ type: "idle", state: newState });
