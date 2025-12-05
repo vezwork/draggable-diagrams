@@ -22,7 +22,7 @@ export function DemoListPage({ demos }: { demos: SomeDemoData[] }) {
       <div className="flex flex-col gap-5 px-5 pb-5 max-w-3xl mx-auto flex-1">
         {demos.map((demo) => {
           return demo.run((demo) => (
-            <ErrorBoundary>
+            <ErrorBoundary key={demo.id}>
               <Demo demoData={demo} debugMode={debugMode} baseUrl={baseUrl} />
             </ErrorBoundary>
           ));
