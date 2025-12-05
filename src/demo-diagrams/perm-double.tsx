@@ -8,6 +8,14 @@ export namespace PermDouble {
     rows: string[][];
   };
 
+  export const state1: State = {
+    rows: [
+      ["A1", "B1", "C1"],
+      ["A2", "B2", "C2"],
+      ["A3", "B3", "C3"],
+    ],
+  };
+
   export const manipulable: Manipulable<State> = ({
     state,
     drag,
@@ -88,13 +96,5 @@ export namespace PermDouble {
         ))}
       </g>
     );
-  };
-
-  export const state1: State = {
-    rows: [
-      ["A1", "B1", "C1"],
-      ["A2", "B2", "C2"],
-      ["A3", "B3", "C3"],
-    ],
   };
 }

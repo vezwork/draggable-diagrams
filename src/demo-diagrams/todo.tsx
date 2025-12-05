@@ -16,6 +16,15 @@ export namespace Todo {
     todoDraft: TodoItem;
   };
 
+  export const state1: State = {
+    todos: [
+      { id: "a", completed: false, text: "Buy milk" },
+      { id: "b", completed: true, text: "Walk the dog" },
+      { id: "c", completed: false, text: "Read a book" },
+    ],
+    todoDraft: { id: "draft", completed: false, text: "" },
+  };
+
   const TILE_SIZE = 55;
 
   export const manipulable: Manipulable<State> = ({
@@ -153,13 +162,4 @@ export namespace Todo {
       </foreignObject>
     );
   }
-
-  export const state1: State = {
-    todos: [
-      { id: "a", completed: false, text: "Buy milk" },
-      { id: "b", completed: true, text: "Walk the dog" },
-      { id: "c", completed: false, text: "Read a book" },
-    ],
-    todoDraft: { id: "draft", completed: false, text: "" },
-  };
 }

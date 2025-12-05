@@ -7,6 +7,10 @@ export namespace Spinny {
     perm: string[];
   };
 
+  export const state1: State = {
+    perm: ["A", "B", "C", "D"],
+  };
+
   const TILE_SIZE = 50;
   const RADIUS = 100;
 
@@ -67,8 +71,4 @@ export namespace Spinny {
       })}
     </g>
   );
-
-  export const state1: State = {
-    perm: ["A", "B", "C", "D"],
-  };
 }

@@ -20,11 +20,49 @@ export namespace Sokoban {
     objects: Record<string, GameObject>;
   };
 
-  export type Config = {
+  export function makeSokobanState(board: string): State {
+    const lines = board.split("\n");
+    const state: State = {
+      w: Math.max(...lines.map((l) => l.length)),
+      h: lines.length,
+      player: Vec2(0, 0),
+      objects: {},
+    };
+    lines.forEach((line, y) => {
+      line.split("").forEach((ch, x) => {
+        const pos = Vec2(x, y);
+        if (ch === "#") {
+          state.objects[`wall-${x}-${y}`] = { type: "wall", pos };
+        } else if (ch === "g") {
+          state.objects[`goal-${x}-${y}`] = { type: "goal", pos };
+        } else if (ch === "p") {
+          state.player = pos;
+        } else if (ch === "b") {
+          state.objects[`box-${x}-${y}`] = { type: "box", pos };
+        } else if (ch === "B") {
+          state.objects[`box-${x}-${y}`] = { type: "box", pos };
+          state.objects[`goal-${x}-${y}`] = { type: "goal", pos };
+        }
+      });
+    });
+    return state;
+  }
+
+  export const state1 = makeSokobanState(`  #####
+###   #
+#gpb  #
+### bg#
+#g##b #
+# # g ##
+#b Bbbg#
+#   g  #
+########`);
+
+  type Config = {
     levelEditable: boolean;
   };
 
-  export const initialConfig: Config = {
+  const initialConfig: Config = {
     levelEditable: false,
   };
 
@@ -218,44 +256,6 @@ export namespace Sokoban {
       );
     }
   );
-
-  export function makeSokobanState(board: string): State {
-    const lines = board.split("\n");
-    const state: State = {
-      w: Math.max(...lines.map((l) => l.length)),
-      h: lines.length,
-      player: Vec2(0, 0),
-      objects: {},
-    };
-    lines.forEach((line, y) => {
-      line.split("").forEach((ch, x) => {
-        const pos = Vec2(x, y);
-        if (ch === "#") {
-          state.objects[`wall-${x}-${y}`] = { type: "wall", pos };
-        } else if (ch === "g") {
-          state.objects[`goal-${x}-${y}`] = { type: "goal", pos };
-        } else if (ch === "p") {
-          state.player = pos;
-        } else if (ch === "b") {
-          state.objects[`box-${x}-${y}`] = { type: "box", pos };
-        } else if (ch === "B") {
-          state.objects[`box-${x}-${y}`] = { type: "box", pos };
-          state.objects[`goal-${x}-${y}`] = { type: "goal", pos };
-        }
-      });
-    });
-    return state;
-  }
-
-  export const state1 = makeSokobanState(`  #####
-###   #
-#gpb  #
-### bg#
-#g##b #
-# # g ##
-#b Bbbg#
-#   g  #
-########`);
 
   export function ConfigPanel({
     config,

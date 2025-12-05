@@ -27,6 +27,77 @@ export namespace NoolTree {
 
   export type State = Tree;
 
+  export const state1: State = {
+    id: "root",
+    label: "+",
+    children: [
+      {
+        id: "root-1",
+        label: "+",
+        children: [
+          {
+            id: "root-1-1",
+            label: "+",
+            children: [
+              { id: "root-1-1-1", label: "⛅", children: [] },
+              {
+                id: "root-1-1-2",
+                label: "-",
+                children: [{ id: "root-1-1-2-1", label: "🍄", children: [] }],
+              },
+            ],
+          },
+          { id: "root-1-2", label: "🍄", children: [] },
+        ],
+      },
+      {
+        id: "root-2",
+        label: "+",
+        children: [
+          {
+            id: "root-2-1",
+            label: "×",
+            children: [
+              { id: "root-2-1-1", label: "🎲", children: [] },
+              { id: "root-2-1-2", label: "🦠", children: [] },
+            ],
+          },
+          {
+            id: "root-2-2",
+            label: "×",
+            children: [
+              { id: "root-2-2-1", label: "🎲", children: [] },
+              { id: "root-2-2-2", label: "🐝", children: [] },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  export const state2: State = {
+    id: "+1",
+    label: "+",
+    children: [
+      {
+        id: "+2",
+        label: "+",
+        children: [
+          { id: "A", label: "A", children: [] },
+          { id: "B", label: "B", children: [] },
+        ],
+      },
+      {
+        id: "+3",
+        label: "+",
+        children: [
+          { id: "C", label: "C", children: [] },
+          { id: "D", label: "D", children: [] },
+        ],
+      },
+    ],
+  };
+
   type Config = {
     commutativity: boolean;
     pullUpOp: boolean;
@@ -317,77 +388,6 @@ export namespace NoolTree {
     });
     return spec;
   }
-
-  export const state1: State = {
-    id: "root",
-    label: "+",
-    children: [
-      {
-        id: "root-1",
-        label: "+",
-        children: [
-          {
-            id: "root-1-1",
-            label: "+",
-            children: [
-              { id: "root-1-1-1", label: "⛅", children: [] },
-              {
-                id: "root-1-1-2",
-                label: "-",
-                children: [{ id: "root-1-1-2-1", label: "🍄", children: [] }],
-              },
-            ],
-          },
-          { id: "root-1-2", label: "🍄", children: [] },
-        ],
-      },
-      {
-        id: "root-2",
-        label: "+",
-        children: [
-          {
-            id: "root-2-1",
-            label: "×",
-            children: [
-              { id: "root-2-1-1", label: "🎲", children: [] },
-              { id: "root-2-1-2", label: "🦠", children: [] },
-            ],
-          },
-          {
-            id: "root-2-2",
-            label: "×",
-            children: [
-              { id: "root-2-2-1", label: "🎲", children: [] },
-              { id: "root-2-2-2", label: "🐝", children: [] },
-            ],
-          },
-        ],
-      },
-    ],
-  };
-
-  export const state2: State = {
-    id: "+1",
-    label: "+",
-    children: [
-      {
-        id: "+2",
-        label: "+",
-        children: [
-          { id: "A", label: "A", children: [] },
-          { id: "B", label: "B", children: [] },
-        ],
-      },
-      {
-        id: "+3",
-        label: "+",
-        children: [
-          { id: "C", label: "C", children: [] },
-          { id: "D", label: "D", children: [] },
-        ],
-      },
-    ],
-  };
 
   function ConfigPanel({ config, setConfig }: ConfigPanelProps<Config>) {
     const plus1 = <span className="text-red-600 font-bold">+</span>;

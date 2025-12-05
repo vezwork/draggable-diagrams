@@ -8,6 +8,10 @@ export namespace Perm {
     perm: string[];
   };
 
+  export const state1: State = {
+    perm: ["A", "B", "C", "D", "E"],
+  };
+
   export const manipulable: Manipulable<State> = ({
     state,
     drag,
@@ -60,9 +64,5 @@ export namespace Perm {
         })}
       </g>
     );
-  };
-
-  export const state1: State = {
-    perm: ["A", "B", "C", "D", "E"],
   };
 }

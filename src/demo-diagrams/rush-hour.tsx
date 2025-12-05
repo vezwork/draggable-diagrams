@@ -20,6 +20,21 @@ export namespace RushHour {
     cars: Record<string, Car>;
   };
 
+  export const state1: State = {
+    w: 6,
+    h: 6,
+    cars: {
+      A: { x: 0, y: 0, w: 2, h: 1, dir: "h", color: "lightgreen" },
+      B: { x: 0, y: 1, w: 1, h: 3, dir: "v", color: "purple" },
+      C: { x: 1, y: 2, w: 2, h: 1, dir: "h", color: "red" },
+      D: { x: 0, y: 4, w: 1, h: 2, dir: "v", color: "orange" },
+      E: { x: 3, y: 1, w: 1, h: 3, dir: "v", color: "blue" },
+      F: { x: 5, y: 0, w: 1, h: 3, dir: "v", color: "yellow" },
+      G: { x: 4, y: 4, w: 2, h: 1, dir: "h", color: "lightblue" },
+      H: { x: 2, y: 5, w: 3, h: 1, dir: "h", color: "green" },
+    },
+  };
+
   type Config = {
     oneSquareAtATime: boolean;
   };
@@ -154,21 +169,6 @@ export namespace RushHour {
       );
     }
   );
-
-  export const state1: State = {
-    w: 6,
-    h: 6,
-    cars: {
-      A: { x: 0, y: 0, w: 2, h: 1, dir: "h", color: "lightgreen" },
-      B: { x: 0, y: 1, w: 1, h: 3, dir: "v", color: "purple" },
-      C: { x: 1, y: 2, w: 2, h: 1, dir: "h", color: "red" },
-      D: { x: 0, y: 4, w: 1, h: 2, dir: "v", color: "orange" },
-      E: { x: 3, y: 1, w: 1, h: 3, dir: "v", color: "blue" },
-      F: { x: 5, y: 0, w: 1, h: 3, dir: "v", color: "yellow" },
-      G: { x: 4, y: 4, w: 2, h: 1, dir: "h", color: "lightblue" },
-      H: { x: 2, y: 5, w: 3, h: 1, dir: "h", color: "green" },
-    },
-  };
 
   function ConfigPanel({ config, setConfig }: ConfigPanelProps<Config>) {
     return (

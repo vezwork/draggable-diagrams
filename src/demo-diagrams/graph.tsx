@@ -10,6 +10,21 @@ export namespace Graph {
     edges: { [key: string]: { from: string; to: string } };
   };
 
+  export const state1: State = {
+    nodes: {
+      "1": { x: 0, y: 0 },
+      "2": { x: 100, y: 0 },
+      "3": { x: 100, y: 100 },
+      "4": { x: 0, y: 100 },
+    },
+    edges: {
+      "1": { from: "1", to: "2" },
+      "2": { from: "2", to: "3" },
+      "3": { from: "3", to: "4" },
+      "4": { from: "4", to: "1" },
+    },
+  };
+
   export const manipulable: Manipulable<State> = ({ state, drag }) => {
     const NODE_R = 20;
 
@@ -143,20 +158,5 @@ export namespace Graph {
         ))}
       </g>
     );
-  };
-
-  export const state1: State = {
-    nodes: {
-      "1": { x: 0, y: 0 },
-      "2": { x: 100, y: 0 },
-      "3": { x: 100, y: 100 },
-      "4": { x: 0, y: 100 },
-    },
-    edges: {
-      "1": { from: "1", to: "2" },
-      "2": { from: "2", to: "3" },
-      "3": { from: "3", to: "4" },
-      "4": { from: "4", to: "1" },
-    },
   };
 }

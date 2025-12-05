@@ -12,6 +12,19 @@ export namespace InsertAndRemove {
     deleted?: Tile;
   };
 
+  export const state1: State = {
+    store: [
+      { key: "D", label: "🍎" },
+      { key: "E", label: "🍌" },
+      { key: "F", label: "🍇" },
+    ],
+    items: [
+      { key: "A", label: "🍎" },
+      { key: "B", label: "🍎" },
+      { key: "C", label: "🍌" },
+    ],
+  };
+
   export const manipulable: Manipulable<State> = ({
     state,
     drag,
@@ -169,18 +182,5 @@ export namespace InsertAndRemove {
         </g>
       </g>
     );
-  };
-
-  export const state1: State = {
-    store: [
-      { key: "D", label: "🍎" },
-      { key: "E", label: "🍌" },
-      { key: "F", label: "🍇" },
-    ],
-    items: [
-      { key: "A", label: "🍎" },
-      { key: "B", label: "🍎" },
-      { key: "C", label: "🍌" },
-    ],
   };
 }

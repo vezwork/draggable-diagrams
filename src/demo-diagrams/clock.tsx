@@ -6,6 +6,10 @@ export namespace Clock {
     hours: number;
   };
 
+  export const state1: State = {
+    hours: 4.333333,
+  };
+
   export const manipulable: Manipulable<State> = ({ state, drag }) => {
     function hand(
       name: string,
@@ -42,9 +46,5 @@ export namespace Clock {
         {hand("second", state.hours * 60 * 360 - 90, 90, 2)}
       </g>
     );
-  };
-
-  export const state1: State = {
-    hours: 4.333333,
   };
 }

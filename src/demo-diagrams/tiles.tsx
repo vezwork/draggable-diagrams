@@ -11,6 +11,15 @@ export namespace Tiles {
     tiles: { [key: string]: { x: number; y: number } };
   };
 
+  export const stateLonely: State = {
+    w: 5,
+    h: 5,
+    tiles: {
+      A: { x: 2, y: 2 },
+      B: { x: 4, y: 4 },
+    },
+  };
+
   export const manipulable: Manipulable<State> = ({ state, drag }) => {
     const TILE_SIZE = 50;
     return (
@@ -73,14 +82,5 @@ export namespace Tiles {
         ))}
       </g>
     );
-  };
-
-  export const stateLonely: State = {
-    w: 5,
-    h: 5,
-    tiles: {
-      A: { x: 2, y: 2 },
-      B: { x: 4, y: 4 },
-    },
   };
 }

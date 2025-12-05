@@ -7,6 +7,10 @@ export namespace Angle {
     angle: number;
   };
 
+  export const state1: State = {
+    angle: 0,
+  };
+
   export const manipulable: Manipulable<State> = ({ state, drag }) => {
     const center = Vec2(100, 100);
     const radius = 100;
@@ -32,9 +36,5 @@ export namespace Angle {
         />
       </g>
     );
-  };
-
-  export const state1: State = {
-    angle: 0,
   };
 }

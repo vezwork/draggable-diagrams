@@ -6,6 +6,10 @@ export namespace AngleViaTransform {
     angle: number;
   };
 
+  export const state1: State = {
+    angle: 0,
+  };
+
   export const manipulable: Manipulable<State> = ({ state, drag }) => {
     const radius = 100;
 
@@ -31,9 +35,5 @@ export namespace AngleViaTransform {
         </g>
       </g>
     );
-  };
-
-  export const state1: State = {
-    angle: 0,
   };
 }
