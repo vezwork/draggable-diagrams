@@ -91,60 +91,54 @@ With this knowledge we can take on a more involved example: reordering objects.
       perm: ["A", "B", "C", "D", "E"],
     };
 
+    const TILE_SIZE = 50;
+
     const manipulable: Manipulable<State> = ({
       state,
       drag,
       draggedId,
-    }) => {
-      const TILE_SIZE = 50;
-
-      return (
-        <g transform={translate(50, 50)}>
-          {state.perm.map((p, idx) => {
-            const isDragged = p === draggedId;
-            return (
-              <g
-                id={p}
-                transform={translate(idx * TILE_SIZE, isDragged ? -10 : 0)}
-                data-z-index={isDragged ? 1 : 0}
-                data-on-drag={drag(() => {
-                  const draggedIdx = state.perm.indexOf(p);
-                  return span(
-                    _.range(state.perm.length).map((idx) =>
-                      produce(state, (draft) => {
-                        draft.perm.splice(draggedIdx, 1);
-                        draft.perm.splice(idx, 0, p);
-                      }),
-                    ),
-                  );
-                })}
+    }) => (
+      <g transform={translate(50, 50)}>
+        {state.perm.map((p, idx) => {
+          const isDragged = p === draggedId;
+          return (
+            <g
+              id={p}
+              transform={translate(idx * TILE_SIZE, isDragged ? -10 : 0)}
+              data-z-index={isDragged ? 1 : 0}
+              data-on-drag={drag(() =>
+                span(
+                  _.range(state.perm.length).map((newIdx) =>
+                    produce(state, (draft) => {
+                      draft.perm.splice(idx, 1);
+                      draft.perm.splice(newIdx, 0, p);
+                    }),
+                  ),
+                )
+              )}
+            >
+              <rect
+                width={TILE_SIZE}
+                height={TILE_SIZE}
+                stroke="black"
+                strokeWidth={2}
+                fill="white"
+              />
+              <text
+                x={TILE_SIZE / 2}
+                y={TILE_SIZE / 2}
+                dominantBaseline="middle"
+                textAnchor="middle"
+                fontSize={20}
+                fill="black"
               >
-                <rect
-                  x={0}
-                  y={0}
-                  width={TILE_SIZE}
-                  height={TILE_SIZE}
-                  stroke="black"
-                  strokeWidth={2}
-                  fill="white"
-                />
-                <text
-                  x={TILE_SIZE / 2}
-                  y={TILE_SIZE / 2}
-                  dominantBaseline="middle"
-                  textAnchor="middle"
-                  fontSize={20}
-                  fill="black"
-                >
-                  {p}
-                </text>
-              </g>
-            );
-          })}
-        </g>
-      );
-    };
-
+                {p}
+              </text>
+            </g>
+          );
+        })}
+      </g>
+    );
 `}
 />
 
@@ -270,6 +264,10 @@ Or for making trending apps:
 <DemoEmbed demoId="todo" />
 
 (To be clear: This isn't a DD feature, just a note that we haven't broken `<foreignObject>` yet.)
+
+### Detach + Reattach
+
+[TODO]
 
 ## Challenges
 
