@@ -138,11 +138,26 @@ function lerpHoisted3(
   return lerpHoisted(ab, c, l2);
 }
 
+/**
+ * A ManifoldPoint is a state that's accessible by dragging an
+ * element to a certain position.
+ */
 export type ManifoldPoint<T> = {
   state: T;
+  /**
+   * A pre-rendered hoisted diagram of the state.
+   */
   hoisted: HoistedSvgx;
   dragSpecCallbackAtNewState: (() => DragSpec<T>) | undefined;
+  /**
+   * The global position of the dragged point of the dragged element,
+   * when it's in this state.
+   */
   position: Vec2;
+  /**
+   * If defined, a state to immediately transition to after reaching
+   * this state.
+   */
   andThen: T | undefined;
 };
 
@@ -168,6 +183,7 @@ export type DragState<T> =
       pointerLocal: Vec2;
       startingPoint: ManifoldPoint<T>;
       draggedHoisted: HoistedSvgx;
+      detachedState: T;
       detachedHoisted: HoistedSvgx;
       reattachedPoints: ManifoldPoint<T>[];
       backgroundSpring: LerpSpring<HoistedSvgx>;
@@ -393,8 +409,9 @@ function computeEnterDraggingMode<T extends object>(
     );
 
     // draw the detached state
+    const { detachedState, reattachedStates } = dragSpec;
     const detachedContent = manipulable({
-      state: dragSpec.detachedState,
+      state: detachedState,
       drag,
       draggedId,
       setState: noOp,
@@ -407,9 +424,10 @@ function computeEnterDraggingMode<T extends object>(
       draggedId,
       pointerLocal,
       startingPoint,
+      detachedState,
       draggedHoisted,
       detachedHoisted,
-      reattachedPoints: dragSpec.reattachedStates.map((state) =>
+      reattachedPoints: reattachedStates.map((state) =>
         makeManifoldPoint({
           state: state.targetState,
           targetStateLike: state,
@@ -737,6 +755,8 @@ function computeRenderState<T extends object>(
     )!;
     let newState = dragState.startingPoint.state;
     let newStateTarget = dragState.startingPoint.hoisted;
+    // let newState = dragState.detachedState;
+    // let newStateTarget = dragState.detachedHoisted;
     let backgroundTarget = dragState.detachedHoisted;
     if (pointer.dist(closestPoint.position) < 50) {
       // that's perm TILE_SIZE lol
