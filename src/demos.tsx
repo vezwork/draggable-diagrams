@@ -120,34 +120,25 @@ export const demos: SomeDemoData[] = [
     sourceFile: "simplest-clicker.tsx",
   }),
   demoData({
-    id: "todo",
-    title: "Todo",
-    manipulable: Todo.manipulable,
-    initialStates: [Todo.state1],
-    height: 400,
+    id: "order-preserving",
+    title: "Order-preserving maps (tree3 → tree3)",
+    notes: (
+      <>
+        Featuring multi-drag from{" "}
+        <a
+          href="https://elliot.website/"
+          className="hover:text-gray-700 hover:underline"
+        >
+          Elliot Evans
+        </a>
+        .
+      </>
+    ),
+    manipulable: OrderPreserving.manipulable,
+    initialStates: [OrderPreserving.state3To3, OrderPreserving.state7To7],
+    height: 650,
     padding: 20,
-    sourceFile: "todo.tsx",
-  }),
-  demoData({
-    id: "lonely-tile-on-a-grid",
-    title: "Lonely tile on a grid",
-    notes:
-      "I'm trying to make dragging feel right here. Goal is for the tile to only drag orthogonally, AND to not jump discontinuously. This seems to require 'Relative Pointer Motion' mode (or divergent approaches).",
-    manipulable: Tiles.manipulable,
-    initialStates: [Tiles.stateLonely],
-    height: 300,
-    padding: 20,
-    initialDrawerConfig: { relativePointerMotion: true },
-    sourceFile: "tiles.tsx",
-  }),
-  demoData({
-    id: "grid-polygon",
-    title: "Grid polygon",
-    manipulable: GridPoly.manipulable,
-    initialStates: [GridPoly.state1],
-    height: 300,
-    padding: 20,
-    sourceFile: "grid-poly.tsx",
+    sourceFile: "order-preserving.tsx",
   }),
   demoData({
     id: "perm",
@@ -194,15 +185,36 @@ export const demos: SomeDemoData[] = [
     sourceFile: "list-of-lists.tsx",
   }),
   demoData({
-    id: "spinny",
-    title: "Spinny",
-    notes: "Tests interpolation of rotations.",
-    manipulable: Spinny.manipulable,
-    initialStates: [Spinny.state1],
-    height: 200,
-    padding: 30,
-    initialDrawerConfig: { relativePointerMotion: false },
-    sourceFile: "spinny.tsx",
+    id: "inserting-removing-items",
+    title: "Inserting & removing items",
+    notes:
+      "This shows kinda-hacky ways to insert and remove items from a draggable diagram. Much to consider.",
+    manipulable: InsertAndRemove.manipulable,
+    initialStates: [InsertAndRemove.state1],
+    height: 150,
+    padding: 10,
+    sourceFile: "insert-and-remove.tsx",
+  }),
+  demoData({
+    id: "lonely-tile-on-a-grid",
+    title: "Lonely tile on a grid",
+    notes:
+      "I'm trying to make dragging feel right here. Goal is for the tile to only drag orthogonally, AND to not jump discontinuously. This seems to require 'Relative Pointer Motion' mode (or divergent approaches).",
+    manipulable: Tiles.manipulable,
+    initialStates: [Tiles.stateLonely],
+    height: 300,
+    padding: 20,
+    initialDrawerConfig: { relativePointerMotion: true },
+    sourceFile: "tiles.tsx",
+  }),
+  demoData({
+    id: "grid-polygon",
+    title: "Grid polygon",
+    manipulable: GridPoly.manipulable,
+    initialStates: [GridPoly.state1],
+    height: 300,
+    padding: 20,
+    sourceFile: "grid-poly.tsx",
   }),
   demoData({
     id: "nool-tree",
@@ -223,6 +235,64 @@ export const demos: SomeDemoData[] = [
     padding: 20,
     initialDrawerConfig: { snapRadius: 5 },
     sourceFile: "outline.tsx",
+  }),
+  demoData({
+    id: "braids",
+    title: "Braids",
+    manipulable: Braid.manipulable,
+    initialStates: [Braid.state1],
+    height: 400,
+    padding: 20,
+    sourceFile: "braid.tsx",
+  }),
+  demoData({
+    id: "todo",
+    title: "Todo",
+    manipulable: Todo.manipulable,
+    initialStates: [Todo.state1],
+    height: 400,
+    padding: 20,
+    sourceFile: "todo.tsx",
+  }),
+  demoData({
+    id: "rush-hour",
+    title: "Rush Hour",
+    manipulable: RushHour.manipulable,
+    initialStates: [RushHour.state1],
+    height: 320,
+    padding: 20,
+    sourceFile: "rush-hour.tsx",
+  }),
+  demoData({
+    id: "15-puzzle",
+    title: "15 puzzle",
+    notes: "Weird experiment: I made the blank draggable",
+    manipulable: Fifteen.manipulable,
+    initialStates: [Fifteen.state1],
+    height: 200,
+    padding: 20,
+    sourceFile: "fifteen.tsx",
+  }),
+  demoData({
+    id: "sokoban",
+    title: "Sokoban",
+    manipulable: Sokoban.manipulable,
+    initialStates: [Sokoban.state1],
+    height: 500,
+    padding: 20,
+    initialDrawerConfig: { relativePointerMotion: true },
+    sourceFile: "sokoban.tsx",
+  }),
+  demoData({
+    id: "spinny",
+    title: "Spinny",
+    notes: "Tests interpolation of rotations.",
+    manipulable: Spinny.manipulable,
+    initialStates: [Spinny.state1],
+    height: 200,
+    padding: 30,
+    initialDrawerConfig: { relativePointerMotion: false },
+    sourceFile: "spinny.tsx",
   }),
   demoData({
     id: "graph",
@@ -331,76 +401,6 @@ export const demos: SomeDemoData[] = [
     height: 200,
     padding: 20,
     sourceFile: "clock.tsx",
-  }),
-  demoData({
-    id: "braids",
-    title: "Braids",
-    manipulable: Braid.manipulable,
-    initialStates: [Braid.state1],
-    height: 400,
-    padding: 20,
-    sourceFile: "braid.tsx",
-  }),
-  demoData({
-    id: "order-preserving",
-    title: "Order-preserving maps (tree3 → tree3)",
-    notes: (
-      <>
-        Featuring multi-drag from{" "}
-        <a
-          href="https://elliot.website/"
-          className="hover:text-gray-700 hover:underline"
-        >
-          Elliot Evans
-        </a>
-        .
-      </>
-    ),
-    manipulable: OrderPreserving.manipulable,
-    initialStates: [OrderPreserving.state3To3, OrderPreserving.state7To7],
-    height: 400,
-    padding: 20,
-    sourceFile: "order-preserving.tsx",
-  }),
-  demoData({
-    id: "rush-hour",
-    title: "Rush Hour",
-    manipulable: RushHour.manipulable,
-    initialStates: [RushHour.state1],
-    height: 320,
-    padding: 20,
-    sourceFile: "rush-hour.tsx",
-  }),
-  demoData({
-    id: "15-puzzle",
-    title: "15 puzzle",
-    notes: "Weird experiment: I made the blank draggable",
-    manipulable: Fifteen.manipulable,
-    initialStates: [Fifteen.state1],
-    height: 200,
-    padding: 20,
-    sourceFile: "fifteen.tsx",
-  }),
-  demoData({
-    id: "inserting-removing-items",
-    title: "Inserting & removing items",
-    notes:
-      "This shows kinda-hacky ways to insert and remove items from a draggable diagram. Much to consider.",
-    manipulable: InsertAndRemove.manipulable,
-    initialStates: [InsertAndRemove.state1],
-    height: 150,
-    padding: 10,
-    sourceFile: "insert-and-remove.tsx",
-  }),
-  demoData({
-    id: "sokoban",
-    title: "Sokoban",
-    manipulable: Sokoban.manipulable,
-    initialStates: [Sokoban.state1],
-    height: 500,
-    padding: 20,
-    initialDrawerConfig: { relativePointerMotion: true },
-    sourceFile: "sokoban.tsx",
   }),
   demoData({
     id: "dragon",

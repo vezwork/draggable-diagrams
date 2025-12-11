@@ -219,7 +219,7 @@ export namespace Outline {
   };
 
   const defaultConfig: Config = {
-    useDetachReattach: false,
+    useDetachReattach: true,
   };
 
   const HEIGHT = 25;
