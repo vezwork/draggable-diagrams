@@ -43,13 +43,17 @@ export class ErrorBoundary extends Component<
       this.state.hasError &&
       this.props.resetOnChange !== prevProps.resetOnChange
     ) {
-      this.setState({
-        hasError: false,
-        error: null,
-        errorInfo: null,
-      });
+      this.reset();
     }
   }
+
+  reset = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    });
+  };
 
   render() {
     if (this.state.hasError && this.state.error) {
@@ -63,8 +67,16 @@ export class ErrorBoundary extends Component<
 
       return (
         <div className="border border-red-300 bg-red-50 rounded p-4 m-4 select-text self-start">
-          <div className="font-semibold text-red-800 mb-2 text-lg">
-            Error: {error.message}
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="font-semibold text-red-800 text-lg">
+              Error: {error.message}
+            </div>
+            <button
+              onClick={this.reset}
+              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
+            >
+              Reset
+            </button>
           </div>
 
           {isErrorWithJSX && (
