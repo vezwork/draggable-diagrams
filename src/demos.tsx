@@ -27,13 +27,8 @@ import { Spinny } from "./demo-diagrams/spinny";
 import { Tiles } from "./demo-diagrams/tiles";
 import { Todo } from "./demo-diagrams/todo";
 import { numsAtPaths } from "./DragSpec";
-import {
-  DrawerConfig,
-  Manipulable,
-  rotateDeg,
-  scale,
-  translate,
-} from "./manipulable";
+import { DrawerConfig, Manipulable } from "./manipulable";
+import { rotateDeg, scale, translate } from "./svgx/helpers";
 import { hasKey } from "./utils";
 
 export type DemoData<T extends object> = {

@@ -2,7 +2,8 @@ import { produce } from "immer";
 import _ from "lodash";
 import { amb, produceAmb } from "../amb";
 import { andThen, detachReattach } from "../DragSpec";
-import { Manipulable, translate } from "../manipulable";
+import { Manipulable } from "../manipulable";
+import { translate } from "../svgx/helpers";
 
 type Tile = { key: string; label: string };
 

@@ -1,6 +1,7 @@
 import _ from "lodash";
 import { straightTo } from "../DragSpec";
-import { Manipulable, translate } from "../manipulable";
+import { Manipulable } from "../manipulable";
+import { translate } from "../svgx/helpers";
 import { Vec2 } from "../math/vec2";
 import { inXYWH } from "../math/xywh";
 

@@ -1,5 +1,6 @@
 import { span } from "../DragSpec";
-import { Manipulable, translate } from "../manipulable";
+import { Manipulable } from "../manipulable";
+import { translate } from "../svgx/helpers";
 
 export namespace Simplest {
   export type State = {

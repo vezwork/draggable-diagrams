@@ -1,7 +1,8 @@
 import { produce } from "immer";
 import _ from "lodash";
 import { detachReattach, TargetStateLike } from "../DragSpec";
-import { Manipulable, translate } from "../manipulable";
+import { Manipulable } from "../manipulable";
+import { translate } from "../svgx/helpers";
 import { assertDefined } from "../utils";
 
 export namespace ListOfListsSizes {

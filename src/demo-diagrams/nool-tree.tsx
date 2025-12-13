@@ -2,7 +2,8 @@ import _ from "lodash";
 import { ConfigCheckbox, ConfigPanelProps } from "../configurable";
 import { configurableManipulable } from "../demos";
 import { DragSpec, straightTo } from "../DragSpec";
-import { Drag, translate } from "../manipulable";
+import { Drag } from "../manipulable";
+import { translate } from "../svgx/helpers";
 import { Svgx } from "../svgx";
 import { insertImm, removeImm, setImm } from "../utils";
 

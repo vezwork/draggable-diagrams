@@ -1,5 +1,6 @@
 import { numAtPath } from "../DragSpec";
-import { Manipulable, translate } from "../manipulable";
+import { Manipulable } from "../manipulable";
+import { translate } from "../svgx/helpers";
 import { Vec2 } from "../math/vec2";
 
 export namespace Angle {

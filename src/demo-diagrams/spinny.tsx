@@ -1,6 +1,7 @@
 import { produce } from "immer";
 import { straightTo } from "../DragSpec";
-import { Manipulable, rotateDeg, translate } from "../manipulable";
+import { Manipulable } from "../manipulable";
+import { rotateDeg, translate } from "../svgx/helpers";
 
 export namespace Spinny {
   export type State = {

@@ -6,7 +6,7 @@ import {
 } from "../configurable";
 import { configurableManipulable } from "../demos";
 import { numsAtPaths } from "../DragSpec";
-import { translate } from "../manipulable";
+import { translate } from "../svgx/helpers";
 import { Vec2 } from "../math/vec2";
 import { Svgx } from "../svgx";
 

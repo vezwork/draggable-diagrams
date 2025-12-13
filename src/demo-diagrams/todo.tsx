@@ -3,7 +3,8 @@ import _ from "lodash";
 import { ConfigCheckbox, ConfigPanelProps } from "../configurable";
 import { configurableManipulable } from "../demos";
 import { detachReattach, span } from "../DragSpec";
-import { SetState, translate } from "../manipulable";
+import { SetState } from "../manipulable";
+import { translate } from "../svgx/helpers";
 import { Svgx } from "../svgx";
 
 export namespace Todo {

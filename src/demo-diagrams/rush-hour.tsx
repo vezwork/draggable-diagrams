@@ -2,7 +2,7 @@ import _ from "lodash";
 import { ConfigCheckbox, ConfigPanelProps } from "../configurable";
 import { configurableManipulable } from "../demos";
 import { span } from "../DragSpec";
-import { translate } from "../manipulable";
+import { translate } from "../svgx/helpers";
 
 type Car = {
   x: number;

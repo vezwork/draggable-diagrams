@@ -15,10 +15,11 @@ import { ErrorWithJSX } from "./ErrorBoundary";
 import { Delaunay } from "./math/delaunay";
 import { LerpSpring } from "./math/lerp-spring";
 import { minimize } from "./math/minimize";
-import { Vec2, Vec2able } from "./math/vec2";
+import { Vec2 } from "./math/vec2";
 import { getAtPath, setAtPath } from "./paths";
 import { PrettyPrint } from "./pretty-print";
 import { Svgx, updatePropsDownTree } from "./svgx";
+import { path, translate } from "./svgx/helpers";
 import {
   accumulateTransforms,
   drawHoisted,
@@ -29,7 +30,7 @@ import {
   hoistedTransform,
   hoistSvg,
 } from "./svgx/hoist";
-import { lerpSvgx } from "./svgx/lerp";
+import { lerpHoisted, lerpHoisted3 } from "./svgx/lerp";
 import { assignPaths, findByPath, getPath } from "./svgx/path";
 import { globalToLocal, localToGlobal, parseTransform } from "./svgx/transform";
 import { useRenderError } from "./useRenderError";
@@ -42,39 +43,6 @@ import {
   manyToArray,
   pipe,
 } from "./utils";
-
-export function translate(v: Vec2able): string;
-export function translate(x: number, y: number): string;
-export function translate(a: Vec2able | number, b?: number): string {
-  const [x, y] = b !== undefined ? [a, b] : Vec2(a).arr();
-  return `translate(${x},${y}) `; // end in space
-}
-
-export function rotateDeg(degrees: number, c: Vec2able = Vec2(0)): string {
-  const [cx, cy] = Vec2(c).arr();
-  return `rotate(${degrees},${cx},${cy}) `; // end in space
-}
-
-export function rotateRad(radians: number, c: Vec2able = Vec2(0)): string {
-  return rotateDeg((radians * 180) / Math.PI, c);
-}
-
-export function scale(sx: number, sy?: number): string {
-  if (sy === undefined) sy = sx;
-  return `scale(${sx},${sy}) `; // end in space
-}
-
-export function path(...pts: (Vec2able | string | number)[]): string {
-  return pts
-    .map((pt) =>
-      typeof pt === "string"
-        ? pt
-        : typeof pt === "number"
-        ? pt.toString()
-        : Vec2(pt).str()
-    )
-    .join(" ");
-}
 
 export type SetState<T> = (
   newState: SetStateAction<T>,
@@ -96,41 +64,6 @@ export type Manipulable<T extends object> = (props: {
 }) => Svgx;
 
 function noOp(): void {}
-
-function lerpHoisted(a: HoistedSvgx, b: HoistedSvgx, t: number): HoistedSvgx {
-  const result = new Map<string, Svgx>();
-  const allKeys = new Set([...a.byId.keys(), ...b.byId.keys()]);
-
-  for (const key of allKeys) {
-    const aVal = a.byId.get(key);
-    const bVal = b.byId.get(key);
-
-    if (aVal && bVal) {
-      // console.log("lerpHoisted is lerping key:", key);
-      result.set(key, lerpSvgx(aVal, bVal, t));
-    } else if (aVal) {
-      result.set(key, aVal);
-    } else if (bVal) {
-      result.set(key, bVal);
-    }
-  }
-
-  return {
-    byId: result,
-    descendents: null,
-  };
-}
-
-function lerpHoisted3(
-  a: HoistedSvgx,
-  b: HoistedSvgx,
-  c: HoistedSvgx,
-  { l0, l1, l2 }: { l0: number; l1: number; l2: number }
-): HoistedSvgx {
-  if (l0 + l1 < 1e-6) return c;
-  const ab = lerpHoisted(a, b, l1 / (l0 + l1));
-  return lerpHoisted(ab, c, l2);
-}
 
 /**
  * A ManifoldPoint is a state that's accessible by dragging an

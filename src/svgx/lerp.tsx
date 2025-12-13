@@ -6,6 +6,7 @@ import { shouldRecurseIntoChildren, Svgx } from ".";
 import { ErrorWithJSX } from "../ErrorBoundary";
 import { prettyLog, PrettyPrint } from "../pretty-print";
 import { emptyToUndefined } from "../utils";
+import { HoistedSvgx } from "./hoist";
 import { lerpTransformString } from "./transform";
 
 // SVG properties that should be interpolated as colors
@@ -268,4 +269,43 @@ export function lerpSvgx(a: Svgx, b: Svgx, t: number): Svgx {
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
+}
+
+export function lerpHoisted(
+  a: HoistedSvgx,
+  b: HoistedSvgx,
+  t: number
+): HoistedSvgx {
+  const result = new Map<string, Svgx>();
+  const allKeys = new Set([...a.byId.keys(), ...b.byId.keys()]);
+
+  for (const key of allKeys) {
+    const aVal = a.byId.get(key);
+    const bVal = b.byId.get(key);
+
+    if (aVal && bVal) {
+      // console.log("lerpHoisted is lerping key:", key);
+      result.set(key, lerpSvgx(aVal, bVal, t));
+    } else if (aVal) {
+      result.set(key, aVal);
+    } else if (bVal) {
+      result.set(key, bVal);
+    }
+  }
+
+  return {
+    byId: result,
+    descendents: null,
+  };
+}
+
+export function lerpHoisted3(
+  a: HoistedSvgx,
+  b: HoistedSvgx,
+  c: HoistedSvgx,
+  { l0, l1, l2 }: { l0: number; l1: number; l2: number }
+): HoistedSvgx {
+  if (l0 + l1 < 1e-6) return c;
+  const ab = lerpHoisted(a, b, l1 / (l0 + l1));
+  return lerpHoisted(ab, c, l2);
 }

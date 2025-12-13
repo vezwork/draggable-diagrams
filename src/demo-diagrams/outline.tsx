@@ -1,7 +1,8 @@
 import { ConfigCheckbox, ConfigPanelProps } from "../configurable";
 import { configurableManipulable } from "../demos";
 import { detachReattach, span } from "../DragSpec";
-import { Drag, translate } from "../manipulable";
+import { Drag } from "../manipulable";
+import { translate } from "../svgx/helpers";
 import { Svgx } from "../svgx";
 
 export namespace Outline {
