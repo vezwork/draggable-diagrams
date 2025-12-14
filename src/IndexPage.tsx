@@ -23,12 +23,25 @@ export function IndexPage() {
             Demos
           </Link>
 
-          <Link
-            to="/pretty-print"
-            className="mt-6 text-sm text-gray-600 hover:text-gray-800 underline"
-          >
-            Pretty Print Demo
-          </Link>
+          <details className="mt-6">
+            <summary className="text-sm text-gray-600 hover:text-gray-800 cursor-pointer">
+              Tech demos
+            </summary>
+            <div className="flex flex-col gap-2 mt-2 pl-4">
+              <Link
+                to="/pretty-print"
+                className="text-sm text-gray-600 hover:text-gray-800 underline"
+              >
+                Pretty Print Demo
+              </Link>
+              <Link
+                to="/bluefish"
+                className="text-sm text-gray-600 hover:text-gray-800 underline"
+              >
+                Bluefish Demo
+              </Link>
+            </div>
+          </details>
 
           <a
             href="https://github.com/joshuahhh/draggable-diagrams"

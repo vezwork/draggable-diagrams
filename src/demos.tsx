@@ -429,7 +429,7 @@ export const demos: SomeDemoData[] = [
     initialStates: [BluefishStatic.state1],
     height: 200,
     padding: 20,
-    sourceFile: "manipulable-bluefish.tsx",
+    sourceFile: "bluefish-static.tsx",
   }),
   demoData({
     id: "bluefish-perm",
@@ -438,6 +438,6 @@ export const demos: SomeDemoData[] = [
     initialStates: [BluefishPerm.state1],
     height: 100,
     padding: 15,
-    sourceFile: "manipulable-bluefish-perm.tsx",
+    sourceFile: "bluefish-perm.tsx",
   }),
 ];
