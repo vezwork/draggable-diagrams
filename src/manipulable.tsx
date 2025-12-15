@@ -23,6 +23,7 @@ import { path, translate } from "./svgx/helpers";
 import {
   accumulateTransforms,
   drawHoisted,
+  findByPathInHoisted,
   getAccumulatedTransform,
   hoistedExtract,
   hoistedMerge,
@@ -132,14 +133,6 @@ export type DragState<T> =
       duration: number;
       nextDragState: DragState<T>;
     };
-
-function findByPathInHoisted(path: string, hoisted: HoistedSvgx): Svgx | null {
-  for (const element of hoisted.byId.values()) {
-    const found = findByPath(path, element);
-    if (found) return found;
-  }
-  return null;
-}
 
 const onDragPropName = "data-on-drag";
 

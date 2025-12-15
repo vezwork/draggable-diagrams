@@ -1,6 +1,7 @@
 import { cloneElement, Fragment } from "react";
 import { Svgx, updateElement, updatePropsDownTree } from ".";
 import { assert } from "../utils";
+import { findByPath } from "./path";
 
 export type HoistedSvgx = {
   /**
@@ -261,4 +262,15 @@ export function hoistedTransform(
     transformedById.set(key, transformedElement);
   }
   return { byId: transformedById, descendents: hoisted.descendents };
+}
+
+export function findByPathInHoisted(
+  path: string,
+  hoisted: HoistedSvgx
+): Svgx | null {
+  for (const element of hoisted.byId.values()) {
+    const found = findByPath(path, element);
+    if (found) return found;
+  }
+  return null;
 }
