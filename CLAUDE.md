@@ -75,3 +75,89 @@ IDs cannot contain `/` - use hyphens or other separators:
 ### 4. Read Before Edit/Write
 
 The Edit and Write tools require reading the file first. Always use Read tool before modifying files.
+
+## How to Make a Draggable Diagram
+
+### Basic Structure
+
+1. **Define your state type** - Must be an object. This represents all possible configurations of your diagram:
+   ```typescript
+   export type State = {
+     items: string[];
+     selectedId?: string;
+   };
+   ```
+
+2. **Export initial states** - Provide one or more starting configurations:
+   ```typescript
+   export const state1: State = {
+     items: ["A", "B", "C"],
+   };
+   ```
+
+3. **Write the manipulable** - A function that renders SVG based on state:
+   ```typescript
+   export const manipulable: Manipulable<State> = ({ state, drag, draggedId }) => {
+     return <g>{/* your SVG elements */}</g>;
+   };
+   ```
+
+### Making Things Draggable
+
+**For discrete state changes** (e.g., reordering, moving between positions):
+
+- Attach `data-on-drag={drag(...)}` to the element
+- Use `span([...states])` to drag between multiple states
+- Only attach to elements that should be draggable (check conditions first)
+
+**For continuous state changes** (e.g., angles, positions):
+
+- Use `numAtPath(["path", "to", "number"])` to control a numeric value
+- Use `numsAtPaths([["x"], ["y"]])` for multiple values
+
+**Detach-reattach pattern** (moving items between containers):
+
+```typescript
+data-on-drag={drag(() => {
+  // Remove item from current location
+  const detached = produce(state, (draft) => {
+    draft.items.splice(currentIdx, 1);
+  });
+
+  // Generate all valid placement states
+  const validStates = possiblePositions.map(pos =>
+    produce(detached, (draft) => {
+      draft.items.splice(pos, 0, item);
+    })
+  );
+
+  return detachReattach(detached, validStates);
+})}
+```
+
+### Key Patterns
+
+- **Positioning**: Always use `transform={translate(x, y)}`, never `x` and `y` attributes
+- **Element tracking**: Use `id` attributes on draggable elements (required for proper interpolation)
+- **Layering**: Use `data-z-index={isDragged ? 2 : 1}` to control draw order
+- **Conditional draggability**: Use `data-on-drag={condition && drag(...)}` to only make certain elements draggable
+- **Visual feedback**: Use `draggedId` to style the currently-dragged element differently
+
+### Registration
+
+Add your diagram to `src/demos.tsx`:
+
+```typescript
+import { YourDiagram } from "./demo-diagrams/your-diagram";
+
+demoData({
+  id: "your-diagram",
+  title: "Your Diagram Title",
+  notes: <>Optional description</>,
+  manipulable: YourDiagram.manipulable,
+  initialStates: [YourDiagram.state1],
+  height: 200,
+  padding: 20,
+  sourceFile: "your-diagram.tsx",
+})
+```

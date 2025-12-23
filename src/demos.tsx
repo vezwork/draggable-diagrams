@@ -12,6 +12,7 @@ import { Dragon } from "./demo-diagrams/dragon";
 import { Fifteen } from "./demo-diagrams/fifteen";
 import { Graph } from "./demo-diagrams/graph";
 import { GridPoly } from "./demo-diagrams/grid-poly";
+import { Hanoi } from "./demo-diagrams/hanoi";
 import { InsertAndRemove } from "./demo-diagrams/insert-and-remove";
 import { ListOfLists } from "./demo-diagrams/list-of-lists";
 import { ListOfListsSizes } from "./demo-diagrams/list-of-lists-sizes";
@@ -297,6 +298,16 @@ export const demos: SomeDemoData[] = [
     height: 200,
     padding: 20,
     sourceFile: "fifteen.tsx",
+  }),
+  demoData({
+    id: "hanoi",
+    title: "Towers of Hanoi",
+    notes: <>Uses detach-reattach. Only top disks can be dragged.</>,
+    manipulable: Hanoi.manipulable,
+    initialStates: [Hanoi.state3, Hanoi.state4],
+    height: 180,
+    padding: 20,
+    sourceFile: "hanoi.tsx",
   }),
   demoData({
     id: "sokoban",
