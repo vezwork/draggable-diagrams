@@ -1,3 +1,4 @@
+import { Falsey } from "lodash";
 import "react";
 import type { OnDragPropValue } from "./manipulable";
 
@@ -17,7 +18,7 @@ declare module "react" {
      *
      * @see ManipulableSvg for more details
      */
-    "data-on-drag"?: OnDragPropValue<any>;
+    "data-on-drag"?: OnDragPropValue<any> | Falsey;
 
     "data-z-index"?: number;
   }
