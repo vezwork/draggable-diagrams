@@ -8,10 +8,10 @@ import prettier from "prettier/standalone";
 import { createElement, useMemo, useState } from "react";
 import * as DragSpecModule from "../DragSpec";
 import { ErrorBoundary } from "../ErrorBoundary";
-import * as ManipulableModule from "../manipulable";
 import { Manipulable } from "../manipulable";
 import { ManipulableDrawer } from "../ManipulableDrawer";
 import { normalizeIndent } from "../normalizeIndent";
+import * as Helpers from "../svgx/helpers";
 import { numberScrubber } from "./numberScrubber";
 
 interface LiveEditorProps {
@@ -62,12 +62,12 @@ export function LiveEditor({
       const fn = new Function(
         "createElement",
         "DragSpec",
-        "Manipulable",
+        "Helpers",
         "_",
         "produce",
         `
         const { numsAtPaths, straightTo, span, numAtPath } = DragSpec;
-        const { translate, rotateDeg, scale } = Manipulable;
+        const { translate, rotateDeg, scale } = Helpers;
         ${transformed}
         return { manipulable, initialState };
         `
@@ -77,7 +77,7 @@ export function LiveEditor({
       const { manipulable, initialState } = fn(
         createElement,
         DragSpecModule,
-        ManipulableModule,
+        Helpers,
         _,
         produce
       );
