@@ -294,8 +294,8 @@ export type DragState<T> =
           projectedPt: Vec2;
           dist: number;
         }>;
-        pointer: Vec2;
         newState: T;
+        debugView: () => Svgx;
       };
     }
   | {
@@ -334,7 +334,7 @@ export type DragState<T> =
       stateFromParams: (...params: number[]) => T;
       byproducts: {
         content: Svgx;
-        pointer: Vec2;
+        debugView: () => Svgx;
       };
     }
   | {
@@ -628,7 +628,7 @@ function debugForDragMode(
   }>,
   snapRadius: number,
   pointer: Vec2
-) {
+): Svgx {
   const debugRender: React.ReactElement[] = [];
 
   manifoldProjections.forEach((proj, manifoldIdx) => {
@@ -686,7 +686,7 @@ function debugForDragMode(
     );
   });
 
-  return debugRender;
+  return <>{debugRender}</>;
 }
 
 function debugForDragParamsMode(
@@ -694,7 +694,7 @@ function debugForDragParamsMode(
   draggedPath: string,
   pointerLocal: Vec2,
   pointer: Vec2
-) {
+): Svgx {
   const debugRender: React.ReactElement[] = [];
 
   const processedContent = pipe(content, assignPaths, accumulateTransforms);
@@ -730,7 +730,7 @@ function debugForDragParamsMode(
     );
   }
 
-  return debugRender;
+  return <>{debugRender}</>;
 }
 
 type DragContext<T extends object> = {
@@ -852,8 +852,13 @@ function updateDragState<T extends object>(
       byproducts: {
         hoistedToRender,
         manifoldProjections,
-        pointer,
         newState,
+        debugView: () =>
+          debugForDragMode(
+            manifoldProjections,
+            ctx.drawerConfig.snapRadius,
+            pointer
+          ),
       },
     };
   } else if (dragState.type === "drag-detach-reattach") {
@@ -943,7 +948,16 @@ function updateDragState<T extends object>(
 
     return {
       ...dragState,
-      byproducts: { content, pointer },
+      byproducts: {
+        content,
+        debugView: () =>
+          debugForDragParamsMode(
+            content,
+            dragState.draggedPath,
+            dragState.pointerLocal,
+            pointer
+          ),
+      },
     };
   } else {
     assertNever(dragState);
@@ -1076,12 +1090,7 @@ const DrawDragMode = memoGeneric(
     return (
       <>
         {drawHoisted(dragState.byproducts.hoistedToRender)}
-        {ctx.debugMode &&
-          debugForDragMode(
-            dragState.byproducts.manifoldProjections,
-            ctx.drawerConfig.snapRadius,
-            dragState.byproducts.pointer
-          )}
+        {ctx.debugMode && dragState.byproducts.debugView()}
       </>
     );
   }
@@ -1100,13 +1109,7 @@ const DrawDragParamsMode = memoGeneric(
     return (
       <>
         {drawHoisted(postProcessReadOnly(dragState.byproducts.content))}
-        {ctx.debugMode &&
-          debugForDragParamsMode(
-            dragState.byproducts.content,
-            dragState.draggedPath,
-            dragState.pointerLocal,
-            dragState.byproducts.pointer
-          )}
+        {ctx.debugMode && dragState.byproducts.debugView()}
       </>
     );
   }
