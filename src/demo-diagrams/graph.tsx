@@ -28,6 +28,17 @@ export namespace Graph {
     },
   };
 
+  function stateIsValid(state: State) {
+    return (
+      // No self-loops
+      Object.values(state.edges).every((e) => e.from !== e.to) &&
+      // No duplicate edges
+      uPairs(Object.values(state.edges)).every(
+        ([e1, e2]) => !(e1.from === e2.from && e1.to === e2.to)
+      )
+    );
+  }
+
   export const manipulable: Manipulable<State> = ({ state, drag }) => {
     const NODE_R = 20;
 
@@ -80,10 +91,7 @@ export namespace Graph {
                   span(
                     produceAmb(state, (draft) => {
                       draft.edges[key].to = amb(Object.keys(state.nodes));
-                      require(draft.edges[key].to !== draft.edges[key].from);
-                      require(uPairs(Object.values(draft.edges)).every(
-                        ([e1, e2]) => !(e1.from === e2.from && e1.to === e2.to)
-                      ));
+                      require(stateIsValid(draft));
                     })
                   )
                 ),
@@ -98,10 +106,7 @@ export namespace Graph {
                   span(
                     produceAmb(state, (draft) => {
                       draft.edges[key].from = amb(Object.keys(state.nodes));
-                      require(draft.edges[key].to !== draft.edges[key].from);
-                      require(uPairs(Object.values(draft.edges)).every(
-                        ([e1, e2]) => !(e1.from === e2.from && e1.to === e2.to)
-                      ));
+                      require(stateIsValid(draft));
                     })
                   )
                 )}
